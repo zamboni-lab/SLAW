@@ -304,7 +304,7 @@ createNetworkMultifiles <-
 
     intensity <- apply(dm,1,function(x){mean(x[3:length(x)],na.rm=TRUE)})
     anclique <- createanClique(mzdata)
-    anclique$peaklist <- data.frame(
+    anclique@peaklist <- data.frame(
       mz = dm[, "mz"],
       mzmin = dm[, "mz"] - 0.0003,
       mzmax = dm[, "mz"] + 0.0003,
@@ -324,7 +324,7 @@ createNetworkMultifiles <-
 
 
 
-    anclique$network <- gadj
+    anclique@network <- gadj
     return(anclique)
   }
 
@@ -346,8 +346,8 @@ annotateCliques <- function(cliques, adducts, main_adducts,
 
   vfeat <-
     bplapply(
-      cliques$cliques,FUN = annotateCliqueInterpretMSspectrum,
-      dm = cliques$peaklist,adducts=adducts,main_adducts=main_adducts,
+      cliques@cliques,FUN = annotateCliqueInterpretMSspectrum,
+      dm = cliques@peaklist,adducts=adducts,main_adducts=main_adducts,
       ionization_mode=ionization_mode,val_int = val_int,BPPARAM = bpp
     )
 

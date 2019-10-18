@@ -1,4 +1,4 @@
-FROM adelabriere/basis_workflow:first_version
+FROM adelabriere/basis_workflow
 #Base image should always include all the dependencies
 
 ###INPUT FOLDER :
@@ -11,9 +11,6 @@ FROM adelabriere/basis_workflow:first_version
 COPY pylcmsprocessing /pylcmsprocessing
 
 COPY MZmine-2.51-Linux /MZmine-2.51-Linux
-
-#We copy the python code
-
 
 #The data needs to be run inside the docker.
 COPY wrapper_docker.py /wrapper_docker.py
