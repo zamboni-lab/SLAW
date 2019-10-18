@@ -158,12 +158,8 @@ makeDataMatrix <- function(samples,sampnames,path_output_dm,path_output_index,fu
 
       if(is.na(pint)) message("intensity not found in file : ",x)
       ### The first two columns are always the mz and the rt
-      message(paste(colnames(tab),collapse="||"))
-      message("required",paste(c("mz","rt",intensity,"peakwidth","SN","right_on_left_assymetry"),collapse="::"))
-      message(paste(c("mz","rt",intensity,"peakwidth","SN","right_on_left_assymetry") %in% colnames(tab)))
       tab <- tab[,c("mz","rt",intensity,"peakwidth","SN","right_on_left_assymetry"),drop=FALSE]
       tab$sample <-  rep(y,nrow(tab))
-      message("Done tab")
       return(tab)
     },SIMPLIFY = FALSE,MoreArgs=list("intensity"=int))
 
@@ -235,7 +231,7 @@ makeDataMatrix <- function(samples,sampnames,path_output_dm,path_output_index,fu
   close.connection(ff)
 }
 
-message("Beginning grouping extracting, ",VAL_INTENSITY)
+message("Beginning grouping using metric, ",VAL_INTENSITY)
 
 
 vfiles <- read.table(FNAMES,sep=",",header=FALSE,stringsAsFactors = FALSE)

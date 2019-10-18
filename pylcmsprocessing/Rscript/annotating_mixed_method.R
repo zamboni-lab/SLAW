@@ -324,7 +324,7 @@ createNetworkMultifiles <-
 
 
 
-    anclique@network <- gadj
+    anclique$network <- gadj
     return(anclique)
   }
 
@@ -429,9 +429,7 @@ annotateCliqueInterpretMSspectrum <-
         num_feat <- num_feat + 1
         break
       }
-      # cat("INMAIN")
-      # print(current_val[sel_idx,])
-      # cat("dim",dim(current_val[sel_idx,]))
+
       annots <-
         findMAIN(
           current_val[sel_idx,,drop=FALSE],ionmode = ionization_mode,
@@ -631,17 +629,11 @@ FILES_USED <- as.numeric(args[12])
 dm <- read.table(PATH_DATAMATRIX,header=TRUE,sep=",")
 
 posIntensities <- getIntensityPos(dm)
-
-# message(paste(posIntensities,"|"))
-
-# message(paste(posIntensities,collapse = "|"))
-
-
 num_detect <- apply(dm[,posIntensities,drop=FALSE],1,function(x){sum(!is.na(x))})
-message(paste(as.numeric(table(num_detect)),collapse = ".."))
+
 num_detect <- num_detect>=FILTER_NUMS
 
-message("Retained ",sum(num_detect),"files on ",nrow(dm))
+message("Retained ",sum(num_detect)," signals on ",nrow(dm))
 dm <- dm[num_detect,,drop=FALSE]
 
 
