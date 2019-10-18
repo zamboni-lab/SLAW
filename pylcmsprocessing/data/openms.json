@@ -1,0 +1,35 @@
+{
+  "algorithm.common.noise_threshold_int": [
+    10,5
+  ],
+  "algorithm.common.chrom_peak_snr": [
+    3
+  ],
+  "algorithm.common.chrom_fwhm": [
+    5
+  ],
+  "algorithm.mtd.mass_error_ppm": [
+    20
+  ],
+  "algorithm.mtd.quant_method": [
+    "area"
+  ],
+  "algorithm.mtd.trace_termination_criterion": [
+    "outlier"
+  ],
+  "algorithm.mtd.min_sample_rate": [
+    0.5
+  ],
+  "algorithm.epd.min_fwhm": [
+    3
+  ],
+  "algorithm.epd.max_fwhm": [
+    60
+  ],
+  "algorithm.epd.masstrace_snr_filtering": [
+    "false"
+  ],
+  "algorithm.ffm.use_smoothed_intensities": [
+    "true"
+  ]
+}

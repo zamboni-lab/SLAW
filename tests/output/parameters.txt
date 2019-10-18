@@ -1,0 +1,157 @@
+grouping:
+  description: Alignment of peaktables of different samples and building of a common
+    data matrix. This step is done using a personnalized package for retention time
+    correction.
+  dmz:
+    description: Float. The minimum m/z tolerance in Da to be considered. Mass tolerance
+      between peaks of different samples to aligned is given by max(ppm x m/z x 1e-6,dmz).
+    priority: LOW
+    value: 0.01
+  drt:
+    description: Float. The size of the bandwitdth of th gaussian to be considered.
+      Should be half of the rt deviation expected approximately.
+    priority: HIGH
+    value: 0.03
+  extracted_quantity:
+    description: String. The extracted type of information. Can be 'intensity' or
+      'height'
+    priority: HIGH
+    value: height
+  ppm:
+    description: Float. The m/z tolerance in part per million between peaks of different
+      samples to aligned is given by max(ppm x m/z x 1e-6,dmz).
+    priority: HIGH
+    value: 15
+ion_annotation:
+  adducts_negative:
+    description: Character. A list of adducts to be considered as chemical formula.
+      See the provided examples for syntax.
+    priority: HIGH
+    value: NONE
+  adducts_positive:
+    description: Character. A list of adducts to be considered as chemical formula.
+      See the provided examples for syntax.
+    priority: HIGH
+    value:
+    - '[M+H]+'
+    - '[M+2H]2+'
+    - '[M+Na]+'
+    - '[M+K]+'
+    - '[M+NH4]+'
+    - '[M+2Na-H]+'
+    - '[2M+H]+'
+    - '[2M+2H]2+'
+    - '[2M+H+Na]2+'
+    - '[2M+Na]+'
+    - '[2M+2Na-H]+'
+    - '[M+2H-NH3]2+'
+    - '[M+H-H2O]+'
+    - '[M+2H-H2O]2+'
+    - '[M+3H]3+'
+    - '[M+CH3COONa+H]+'
+    - '[M+CH3COONa+Na]+'
+    - '[M+CH3COONa+NH4]+'
+  description: Grouping of ions originating form the same metabolite and annotations
+    of adducts and fragments. The detection is done using a modified MScliques the
+    annotation of ion is done using the InterpretMSSpectrum package.
+  dmz:
+    description: Float. The minimum m/z tolerance in Da to match ions coming for the
+      same metabolites. It is given by max(ppm x m/z x 1e-6,dmz).
+    priority: HIGH
+    value: 0.007
+  main_adducts_negative:
+    description: Character. A list of adducts to be considered as possibly most intense
+      peaks. See the provided examples for syntax.
+    priority: HIGH
+    value: NONE
+  main_adducts_positive:
+    description: Character. A list of adducts to be considered as possibly most intense
+      peaks. See the provided examples for syntax.
+    priority: HIGH
+    value:
+    - '[M+H]+'
+    - '[M+2H]2+'
+    - '[M+Na]+'
+    - '[M+NH4]+'
+  min_filter:
+    description: Integer. The minimum number of detection in the file to be detected
+      for the data to be kept.
+    priority: HIGH
+    value: 2
+  num_files:
+    description: The number of files used to generate EICs profile for ion annotations.
+      This number should be at most 100
+    priority: HIGH
+    value: 100
+  polarity:
+    description: The polarity of the acquired mass spectrometry data, can be 'positive'
+      or 'negative'
+    priority: ESSENTIAL
+    value: positive
+  ppm:
+    description: Float. The m/z tolerance in part per million to match ions coming
+      for the same metabolites. It is given by max(ppm x m/z x 1e-6,dmz).
+    priority: HIGH
+    value: 15
+peakpicking:
+  centroidization:
+    description: This step is the passge of the raw centroided data to the new non
+      cnetorided data.
+    noise_level:
+      description: Integer. An absolute noise threshold to be used. Any points in
+        a RAW file below this file will be discarded. This should not be too high,
+        as low intensity part can still occurs at the border of a peak,
+      priority: HIGH
+      value: 10000
+  description: This step includes all the necessary sub steps to pass from an individual
+    .mzML file to a processed peaktable. The data are processed using the ADAP algorithm
+    implemented in MZmine.
+  peaks_deconvolution:
+    SN:
+      description: Float. The signal-over-noise threshold for a peak to be discarded.
+      priority: HIGH
+      value: 15
+    description: Deconvolute traces to extract peaks corresponding to individuals
+      ions.
+    noise_level:
+      description: Float. The min feature height for a deconvoluted peak to be kept.
+      priority: HIGH
+      value: 200000
+    peak_width_max:
+      description: Float. The maximum width of a peak in minutes. This parameter is
+        highly dependent of you chromatography setup.
+      priority: HIGH
+      value: 0.1
+    peak_width_min:
+      description: Float. The minimum width of a peak in minutes. This parameter is
+        highly dependent of you chromatography setup.
+      priority: HIGH
+      value: 0.02
+    rt_wavelet_max:
+      description: Float. The maximum width the considered wavelet.
+      priority: LOW
+      value: 0.05
+    rt_wavelet_min:
+      description: Float. The minimum width the considered wavelet.
+      priority: LOW
+      value: 0.005
+  traces_construction:
+    description: Detection of consecutive mass points with similar masses in different
+      acquisitions.
+    dmz:
+      description: Float. The minimum tolerance in Da to be considered. Mass tolerance
+        for a point of mass m/z is given by max(ppm x m/z x 1e-6,dmz).
+      priority: LOW
+      value: 0.007
+    min_scan:
+      description: Integer. The minimum number of points detected in consecutive scans
+        for a trace to be valid. Any trace containing less than min_scan point is
+        discarded.
+      priority: LOW
+      value: 15
+    ppm:
+      description: Float. The tolerance in part per million between different scans
+        to be considered. Mass tolerance for a point of mass m/z is given by max(ppm
+        x m/z x 1e-6,dmz).
+      priority: HIGH
+      value: 15
