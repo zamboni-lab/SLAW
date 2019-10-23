@@ -1,39 +1,61 @@
 # LCMSprocessing pipeline.
 
-The LCMS processing which has been devlopped has mainly been built for scalability and
+The LCMS processing which has been developped has mainly been built for scalability and
 efficiency, meaning that it supposed to be able to process thousands of samples and it should
-extract them in a sensitive and reliable manner. However it wa snot design for user-friendliness.
-If you want to manually inspect some small dataset, I compounds discoverer aswelll as
+extract them in a sensitive and reliable manner. However it was not design for user-friendliness.
+If you want to manually inspect some small dataset, consider looking for compoundsDiscoverer or MZmine.
 
 Therefore it is composed of different piece of software wrapped together in different languages for
 maximum speed and efficiency bundled in a *Docker*
 
 The LCMS processing pipeline wrapped within a docker. A Docker is conceptually similar
 to a virtual machine. All the dependencies aswell as the latest version of the pipeline have
-bene installed on it, meaning that you can run the docker and that's it. We can discuss about the interactivity later.
+been installed on it, meaning that you can run the docker without caring about the dependencies.
 
-Let's start with the basics :
+Let's start by the basics :
 
-## Installing docker
+## Before processing any data installing docker
+
 Docker can be installed following this [tutorial](https://runnable.com/docker/install-docker-on-windows-10).
 The whole installation process should take less than 5 minutes.
 
-You then have to add yourself to the docker-user group of ETH to run Docker. It is interesting because you can do it your self except if you
-Here is a detailed step by step tutorial to do so :
+You then have to add yourself to the docker-user group of ETH to run Docker. Here is a detailed step by step tutorial to do so :
 
 TUTORIAL ADDING USERS
 
 ## Running the docker
 
-Now that Docker is installed you are ready to go, you have to launch the docker
-in order to process LC-MS pipeline. To do you need to specify two repository, one which contains
-your .mzML file (.mzML is the standard format used in the hyphenated MS world, you can convert your file in .mzML using the MSconvert Proteowizard softare), and one empty repository which will store the data. If the processing stop or fail for any reasons external to the software (updating code) don t erase this repository, calculation can restart.
+Now that Docker is installed you are ready to go, you have to launch the docker this is done using the docker run command.
+
+ To do you need to specify two repository, one which contains
+your .mzML file (.mzML is the standard format used in the hyphenated MS world, you can convert your file in .mzML using the MSconvert Proteowizard softare), and one empty repository which will store the data. If the processing stop or fail for any reasons external to the software (updating code) don't erase this folder, calculations can restart.
 
 The main step are the following :
 - 1a You run the docker and a file paramters.yaml is created in the output directory.
 - 1b You already have a patameters.yaml file, you copy it into the output directory
 - 2 If needed you tune or modify the parameters with the HIGH or ESSENTIAL tag. The other can be let as it is.
 - 3 Run the docker fetch your results in the output directory.
+
+### Step 1 Running the docker a first time:
+The docker needs two things run :
+* An input directory containing the data to be processed, a bunch of .mzML files.
+* An output directory, in this directory the parameters will be placed aswell as the
+
+At the run time you also need to input your session password to connect on sauer1 using your session.
+
+The LCMS workflow can take as output data placed on the sauer1 *NAS* or on a local drive (C:, etc...). The sauer1 drive is by default mounted inside the docker under the path */sauer1*. A demo version on a small subset of data is included inside my repository.
+
+  -e "input=path/to/raw/files/directory"
+  -e "output=path/to/output directory"
+
+
+
+docker run --cap-add=SYS_ADMIN --cap-add=DAC_READ_SEARCH --privileged lcms_workflow_zamboni -e INPUT=/sauer1/users/Alexis/examples_lcms_workflow/input -e OUTPUT=/sauer1/users/Alexis/examples_lcms_workflow/output -e USERNAME=dalexis
+
+In return the first time that you are launching the data eventually the majority o
+
+
+
 
 ### Step 3 : Running the docker.
 

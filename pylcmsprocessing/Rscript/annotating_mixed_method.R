@@ -323,8 +323,7 @@ createNetworkMultifiles <-
     # browser()
 
 
-
-    anclique$network <- gadj
+    anclique@network <- gadj
     return(anclique)
   }
 
@@ -335,15 +334,6 @@ annotateCliques <- function(cliques, adducts, main_adducts,
   if (is.null(bpp))
     bpp <- bpparam()
 
-  # vfeat <-
-  #   bplapply(
-  #     cliques$cliques,
-  #     FUN = annotateCliqueInterpretMSspectrum,
-  #     BPPARAM = bpp,
-  #     dm = cliques$peaklist,adducts=adducts,main_adducts=main_adducts,
-  #     ionization_mode=ionization_mode
-  #   )
-
   vfeat <-
     bplapply(
       cliques@cliques,FUN = annotateCliqueInterpretMSspectrum,
@@ -351,7 +341,6 @@ annotateCliques <- function(cliques, adducts, main_adducts,
       ionization_mode=ionization_mode,val_int = val_int,BPPARAM = bpp
     )
 
-  # vfeat <- lapply(cliques$cliques[1:maxCliques],annotateCliqueIntepretMSspectrum,dm=cliques$peaklist)
   totfeat <- 1
   for (i in seq_along(vfeat)) {
     seq_idx <-
@@ -407,7 +396,6 @@ annotateCliqueInterpretMSspectrum <-
 
     current_val <- cbind(dm[sel_clust_idx,1],val_int[sel_clust_idx])
     colnames(current_val) <- c("mz","int")
-    # message("dd_", paste(dim(current_val),collapse = "=="))
 
     all_features <- vector(mode = "list", length = 10)
     num_feat <- 1
@@ -586,27 +574,11 @@ groupFeatures <- function(dm,val_int, raw_files, adducts,main_adducts,ionization
 }
 
 
-
-
-
-
-###Examples of commandline
-
-###Rscript annotation_mixed_method.R X:/Documents/dev/LCMSfeatureGrouping/inst/datamatrices_ecoli_philipp/pos_ecoli_splash_mix_group_2.csv
-
-###PATH_DATAMATRIX
+####Actual processin gin the pipeline.
 
 args <- commandArgs(trailingOnly = TRUE)
 
 ###for testing purpose
-
-# args <- c("X:/Documents/dev/LCMSfeatureGrouping/inst/datamatrices_ecoli_philipp/pos_ecoli_splash_mix_group_2.csv",
-#           "U:/users/Alexis/data/philipp_ecoli_splash_mix/res_pos/pos_splash_mix_ecoli_local.db","test_mat_simple.csv",
-#           "test_mat_fule.csv","3","X:/Documents/dev/script/diverse/xcms_raw_with_peaks.RData",
-#           "C:/Users/dalexis/Documents/python/pylcmsprocessing/data/adducts_pos.txt",
-# "C:/Users/dalexis/Documents/python/pylcmsprocessing/data/adducts_main_pos.txt","positive","110",
-# "0.005","2")
-###PATH_DATAMATRIX
 
 
 PATH_DATAMATRIX <- args[1]

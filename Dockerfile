@@ -20,6 +20,4 @@ COPY wrapper_docker.py /wrapper_docker.py
 #We install the mounting the dependencies
 RUN mkdir sauer1
 
-# RUN mount -t cifs //nas22.ethz.ch/biol_imsb_sauer_1 sauer1 -o domain=d.ethz.ch,username=dalexis,vers=3.0,password=wyx5z5r9Milena90
-
-ENTRYPOINT mount -t cifs //nas22.ethz.ch/biol_imsb_sauer_1 sauer1 -o domain=d.ethz.ch,username=dalexis,vers=3.0 && bash
+ENTRYPOINT mount //nas22.ethz.ch/biol_imsb_sauer_1 sauer1 -nobrl -rw -o domain=d.ethz.ch,username=$USERNAME,vers=3.0 && bash

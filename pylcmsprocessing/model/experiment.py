@@ -89,10 +89,7 @@ class Experiment:
             raise Exception("Unknown polarity, it should be one of " + ",".join(cr.DATA["IONMODE"]))
 
         ###We creat ethe common table
-        c.execute('''CREATE TABLE IF NOT EXISTS common
-                             (max_jobs INTEGER,
-                              outdir TEXT,
-                              polarity TEXT)''')
+        c.execute('''CREATE TABLE IF NOT EXISTS common(max_jobs INTEGER,outdir TEXT,polarity TEXT)''')
 
         ###If the value exists
         c.execute('''SELECT * FROM common''')
@@ -104,6 +101,8 @@ class Experiment:
             c.execute('INSERT INTO common VALUES (?,?,?)', values)
         if len(common) is not 0:
             out_dir = common[0][1]
+
+            print("common: ", common)
 
         ###Creating the output directory
         out_dir = os.path.abspath(out_dir)
@@ -333,21 +332,18 @@ class Experiment:
         c = self.conn.cursor()
         c.execute("SELECT * FROM processing")
 
+        ###We modify it to
+
         while True:
             rows = c.fetchmany(batch_size)
             if not rows: break
 
             peakpickings = [mp.PeakPickingMZmine(row, pmzmine) for row in rows]
             need_processing = [x.need_computing() for x in peakpickings]
-            for x in peakpickings:
-                print(x, x.need_computing(), x.output)
 
-            if any(need_processing):
+            while any(need_processing):
                 ####Peak picking
                 clis = [x.command_line_processing(hide=False) for x in peakpickings if x.need_computing()]
-                for x in peakpickings:
-                    print(x, x.need_computing())
-
                 ####We run the jobs actually
                 if len(clis) > 0:
                     runner.run(clis, silent=silent)
@@ -366,6 +362,7 @@ class Experiment:
                 # ###Calling the script on all the processed path
                 cline = "Rscript " + pjoin + " " + path_temp + " " + str(self.get_workers(open=False))
                 subprocess.call(cline, shell=True)
+                need_processing = [not os.path.exists(row[5]) for row in rows]
             else:
                 print("no processing")
         print("Peak picking finished")

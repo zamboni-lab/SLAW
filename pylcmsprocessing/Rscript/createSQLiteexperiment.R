@@ -75,7 +75,6 @@ option_list = list(
 opt_parser <-  OptionParser(option_list = option_list)
 opt <- parse_args(opt_parser)
 
-message(getwd(),opt$directory)
 
 #####We move to the target experiment repostory.
 if (!is.null(opt$directory))
@@ -95,7 +94,11 @@ if (file.exists(opt$summary)) {
     )
 
   ###Getting the pah of the raw files
-  paths <- normalizePath(list.files(opt$mzml, full.names = TRUE,pattern=".mzML"))
+  if(dir.exists(opt$mzml)){
+      paths <- normalizePath(list.files(opt$mzml, full.names = TRUE,pattern=".mzML"))
+  }else{
+    paths <- normalizePath(list.files(opt$directory, full.names = TRUE,pattern=".mzML"))
+  }
   expected_paths <- tsummary[[opt$summarypath]]
   vm <- match(basename(expected_paths), basename(paths))
   if (any(is.na(vm)))
@@ -108,7 +111,11 @@ if (file.exists(opt$summary)) {
     replicates <-  rep(1, length(paths))
   }
 } else{
-  paths <- normalizePath(list.files(opt$mzml, full.names = TRUE,pattern=".mzML"))
+  if(dir.exists(opt$mzml)){
+      paths <- normalizePath(list.files(opt$mzml, full.names = TRUE,pattern=".mzML"))
+  }else{
+    paths <- normalizePath(list.files(opt$directory, full.names = TRUE,pattern=".mzML"))
+  }
   replicates <-  rep(1, length(paths))
 }
 

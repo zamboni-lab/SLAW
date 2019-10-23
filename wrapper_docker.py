@@ -10,13 +10,21 @@ from pylcmsprocessing.model.UI import UI
 from pylcmsprocessing.model.experiment import Experiment
 
 if __name__=="__main__":
+    MANDATORY_ARGS = ["INPUT","OUTPUT","USERNAME"]
 
+    if not all(env in os.environ for env in MANDATORY_ARGS):
+        raise Exception('INPUT, OUTPUT and USERNAME are all mandatory arguments.')
     #The path of the mounted directory is always output
-    OUTPUT_DIR = "/output"
-
+    OUTPUT_DIR = os.environ['OUTPUT']
+    if OUTPUT_DIR.startswith("/sauer1"):
+        if not os.path.isdir(OUTPUT_DIR):
+            print("Output directory "+OUTPUT_DIR+"did not exists, it has been created.")
     #The raw files are always mounted into raw_files
-    RAW_FILES = "/rawfiles"
-
+    INPUT = os.environ['INPUT']
+    if INPUT.startswith("/sauer1"):
+        if not os.path.isdir(INPUT):
+            raise Exception('Directory '+INPUT+' does not exist.' )
+            
     ##The yaml file is always putt in the paramters.text
     PATH_YAML = os.path.join(OUTPUT_DIR,"parameters.txt")
     PATH_XML = os.path.join(OUTPUT_DIR,"batch_xml_adap.xml")
@@ -29,7 +37,7 @@ if __name__=="__main__":
         num_cpus = int(os.environ['NCORES'])
     else:
         print(f'No NCORES environment variables, the number of cores used for parallel processing has been automatically set to {num_cpus}')
-    vui = UI(OUTPUT_DIR, RAW_FILES, polarity="positive", mass_spec="Exactive", num_workers=num_cpus, path_yaml = PATH_YAML)
+    vui = UI(OUTPUT_DIR, INPUT, polarity="positive", mass_spec="Exactive", num_workers=num_cpus, path_yaml = PATH_YAML)
 
     setup_params = False
     #If the yaml parameter file already exist we just read it, else. we don t read it
@@ -46,9 +54,13 @@ if __name__=="__main__":
         with open(vui.path_yaml, 'r') as stream:
             raw_yaml = yaml.safe_load(stream)
 
+        PATH_DB = "/processing_db.sqlite"
         #Procesinf of the pipeline eventually.
         exp = Experiment(PATH_DB,reset=True)
-        exp.initialise_database(num_cpus,OUTPUT_DIR,vui.polarity,RAW_FILES,["ADAP"], 1)
+        ##We check how many file there is
+        INPUT
+
+        exp.initialise_database(num_cpus,OUTPUT_DIR,vui.polarity,INPUT,["ADAP"], 1)
         exp.building_inputs_single_processing(PATH_XML)
         exp.run("/MZmine-2.51-Linux",num_cpus)
         exp.correct_conversion()

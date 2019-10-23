@@ -94,7 +94,7 @@ class MZMineBuilder(inputBuilder):
             ###We try to insert it
             try:
                 # print("_",row[0],"_",len(row))
-                ctuple = (pid, 1, row[1], row[2], row[3], row[4], 1)
+                ctuple = (pid, 1, int(row[1]), row[2], row[3], row[4], 1)
                 pid += 1
                 c.execute("""INSERT INTO processing VALUES (?,?,?,?,?,?,?)""", ctuple)
                 counter_to_process += 1
