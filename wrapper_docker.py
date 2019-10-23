@@ -24,7 +24,7 @@ if __name__=="__main__":
     if INPUT.startswith("/sauer1"):
         if not os.path.isdir(INPUT):
             raise Exception('Directory '+INPUT+' does not exist.' )
-            
+
     ##The yaml file is always putt in the paramters.text
     PATH_YAML = os.path.join(OUTPUT_DIR,"parameters.txt")
     PATH_XML = os.path.join(OUTPUT_DIR,"batch_xml_adap.xml")

@@ -14,14 +14,25 @@ been installed on it, meaning that you can run the docker without caring about t
 
 Let's start by the basics :
 
-## Before processing any data installing docker
+## Installing docker
 
 Docker can be installed following this [tutorial](https://runnable.com/docker/install-docker-on-windows-10).
-The whole installation process should take less than 5 minutes.
+The whole installation process should take less than 5 minutes. You then need 2 things, first to add yourself to the docker-users group and increase the memory available to docker.
 
-You then have to add yourself to the docker-user group of ETH to run Docker. Here is a detailed step by step tutorial to do so :
+You then have to add yourself to the docker-user group of ETH to run Docker. Here is a detailed step by step tutorial.
 
-TUTORIAL ADDING USERS
+First go to the local users group in the control panel :
+![alt text](imgs/local_users.png)
+
+Then on the windows click on the Groups folder in the middle panel, open the docker-users group. You  can then add yourself to the user, using you eth login.
+
+### Increasing processing power.
+By default the docker virtual machine only take a small part of your computing power, however especially if you have a workstation, it can be
+
+
+## Setting up docker
+Docker by default is very limited in processing power, therefore to speed up the processing you should increase the possible memory and cores which are available to docker.
+
 
 ## Running the docker
 
@@ -31,10 +42,15 @@ Now that Docker is installed you are ready to go, you have to launch the docker 
 your .mzML file (.mzML is the standard format used in the hyphenated MS world, you can convert your file in .mzML using the MSconvert Proteowizard softare), and one empty repository which will store the data. If the processing stop or fail for any reasons external to the software (updating code) don't erase this folder, calculations can restart.
 
 The main step are the following :
-- 1a You run the docker and a file paramters.yaml is created in the output directory.
-- 1b You already have a patameters.yaml file, you copy it into the output directory
-- 2 If needed you tune or modify the parameters with the HIGH or ESSENTIAL tag. The other can be let as it is.
-- 3 Run the docker fetch your results in the output directory.
+- 1 Pulling the Docker (only the first time)
+- 2a You run the docker and a file paramters.yaml is created in the output directory.
+- 2b You already have a patameters.yaml file, you copy it into the output directory
+- 3 If needed you tune or modify the parameters with the HIGH or ESSENTIAL tag. The other can be let as it is.
+- 4 Run the docker fetch your results in the output directory.
+
+### Step 1: Pulling the docker
+Pulling the docker can be accomplished.
+
 
 ### Step 1 Running the docker a first time:
 The docker needs two things run :
@@ -43,19 +59,11 @@ The docker needs two things run :
 
 At the run time you also need to input your session password to connect on sauer1 using your session.
 
-The LCMS workflow can take as output data placed on the sauer1 *NAS* or on a local drive (C:, etc...). The sauer1 drive is by default mounted inside the docker under the path */sauer1*. A demo version on a small subset of data is included inside my repository.
+The LCMS workflow can take as output data placed on the sauer1 *NAS* or on a local drive (C:, etc...). The sauer1 drive is by default mounted inside the docker under the path */sauer1*. A demo version on a small subset of data is included inside my sauer1 folder, to run it simply.
 
-  -e "input=path/to/raw/files/directory"
-  -e "output=path/to/output directory"
-
-
-
-docker run --cap-add=SYS_ADMIN --cap-add=DAC_READ_SEARCH --privileged lcms_workflow_zamboni -e INPUT=/sauer1/users/Alexis/examples_lcms_workflow/input -e OUTPUT=/sauer1/users/Alexis/examples_lcms_workflow/output -e USERNAME=dalexis
-
-In return the first time that you are launching the data eventually the majority o
-
-
-
+```
+docker run -it --cap-add=SYS_ADMIN --cap-add=DAC_READ_SEARCH --privileged -e INPUT=/sauer1/users/Alexis/examples_lcms_workflow/input -e OUTPUT=/sauer1/users/Alexis/examples_lcms_workflow/output -e USERNAME=dalexis lcms_workflow_zamboni
+```
 
 ### Step 3 : Running the docker.
 
@@ -66,7 +74,7 @@ docker run lcms_workflow_zamboni:latest -v ./input:/rawfiles/mzML -v ./output:/o
 The docker run eventually the following ocmmand inside the following workflow
 
 
-##What is inside this docker ?
+## What is inside this docker ?
 
 The LCMS processing workflow incorporates three main steps :
 - Peak picking using the MZmine workflow
