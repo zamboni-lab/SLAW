@@ -36,7 +36,8 @@ Docker by default is very limited in processing power, therefore to speed up the
 
 ## Running the docker
 
-Now that Docker is installed you are ready to go, you have to launch the docker this is done using the docker run command.
+Now that Docker is installed you are ready to go, you can process your data using the run command.
+
 
  To do you need to specify two repository, one which contains
 your .mzML file (.mzML is the standard format used in the hyphenated MS world, you can convert your file in .mzML using the MSconvert Proteowizard softare), and one empty repository which will store the data. If the processing stop or fail for any reasons external to the software (updating code) don't erase this folder, calculations can restart.

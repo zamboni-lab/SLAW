@@ -11,6 +11,7 @@ RUN apt-get install -y cifs-utils
 #We copy the MZmine software
 COPY pylcmsprocessing /pylcmsprocessing
 COPY fstab_sauer1 /etc/fstab
+COPY run_lcms_processing.sh /run_workflow.sh
 
 COPY MZmine-2.51-Linux /MZmine-2.51-Linux
 
@@ -20,4 +21,4 @@ COPY wrapper_docker.py /wrapper_docker.py
 #We install the mounting the dependencies
 RUN mkdir sauer1
 
-ENTRYPOINT mount //nas22.ethz.ch/biol_imsb_sauer_1 sauer1 -nobrl -rw -o domain=d.ethz.ch,username=$USERNAME,vers=3.0 && bash
+ENTRYPOINT bash run_workflow.sh

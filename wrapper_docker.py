@@ -18,7 +18,7 @@ if __name__=="__main__":
     OUTPUT_DIR = os.environ['OUTPUT']
     if OUTPUT_DIR.startswith("/sauer1"):
         if not os.path.isdir(OUTPUT_DIR):
-            print("Output directory "+OUTPUT_DIR+"did not exists, it has been created.")
+            print("Output directory "+OUTPUT_DIR+"does not exist.")
     #The raw files are always mounted into raw_files
     INPUT = os.environ['INPUT']
     if INPUT.startswith("/sauer1"):
