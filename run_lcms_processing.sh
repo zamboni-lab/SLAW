@@ -12,6 +12,7 @@ fi
 #If the output is one sauer1 we try to mount the disk
 if [[ "$OUTPUT" == /sauer1*  ]] || [[ "$INPUT" == /sauer1*  ]] ;
 then
+  mkdir sauer1
   ##In this case we mount sauer 1
   if [[ -z "${PASSWORD}" ]]; then
     #If the password is defined we mount it
