@@ -205,7 +205,7 @@ computeNetworkRawfile <-
         rtdiff = 1e-3
       )$network
 
-    if(is.na(netlist)){
+    if(length(netlist)==1 & is.na(netlist)){
       return(matrix(nrow=0,ncol=3))
     }
     alle <- as_data_frame(netlist, "edges")
