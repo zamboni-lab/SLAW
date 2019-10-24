@@ -5,14 +5,9 @@ efficiency, meaning that it supposed to be able to process thousands of samples 
 extract them in a sensitive and reliable manner. However it was not design for user-friendliness.
 If you want to manually inspect some small dataset, consider looking for compoundsDiscoverer or MZmine.
 
-Therefore it is composed of different piece of software wrapped together in different languages for
-maximum speed and efficiency bundled in a *Docker*
+Therefore it is composed of different piece of software wrapped together, this to avoid installation, all the softwares are bundled together in a *Docker*.
 
-The LCMS processing pipeline wrapped within a docker. A Docker is conceptually similar
-to a virtual machine. All the dependencies aswell as the latest version of the pipeline have
-been installed on it, meaning that you can run the docker without caring about the dependencies.
-
-Let's start by the basics :
+A *Docker* is very similar to virtual machine from the user perspectives. In this documentations, two parts will be distinguished.
 
 ## Installing docker
 

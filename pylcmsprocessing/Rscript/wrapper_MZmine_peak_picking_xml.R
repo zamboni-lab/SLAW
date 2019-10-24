@@ -22,11 +22,11 @@ path_candidates <- args[4]
 
 path_peaktables <- args[5]
 
-path_json <- args[6]
+path_msms <- args[6]
+
+path_json <- args[7]
 
 message("Json in ",path_json)
-# message("\n Json done")
-
 db <- dbConnect(RSQLite:::SQLite(),dbpath)
 
 ##The num worker is read form the databse
@@ -80,14 +80,16 @@ singleXMLgeneration <-
 
 
     PREF_SAMPLE <- paste(prefix,num_rawfile,sep = "_")
-    PREF_OUTPUT <- file.path(outp, paste("peaktable_", num_rawfile, sep = ""))
+    PREF_OUTPUT_PEAKTABLE <- file.path(outp, paste("peaktable_", num_rawfile, sep = ""))
+    PREF_OUTPUT_MSMS <- file.path(outp, paste("msms_", num_rawfile, sep = ""))
 
-
+d
     vfiles <-
       exportingAllCombinationsOfXML(mxml,
                                     prefix_xml_files = PREF_SAMPLE,
-                                    prefix_output = PREF_OUTPUT, verbose = FALSE)
+                                    prefix_output = c(PREF_OUTPUT_PEAKTABLE,PREF_OUTPUT_MSMS), verbose = FALSE)
     outfiles <- vfiles[, 2]
+    outmsms <- vfiles[,3]
 
     ###We rename all the files
 

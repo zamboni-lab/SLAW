@@ -1,14 +1,11 @@
 ALGORITHMS_TABLE = {
-    "ADAP": ["MZmine", "adap.json", "/pylcmsprocessing/data/batch_adap_2_50_buggued.xml"],
+    "ADAP": ["MZmine", "adap.json", "/pylcmsprocessing/data/batch_adap_msms_2_51.xml"],
     "SAVGOL": ["MZmine", "savgol.json", "/pylcmsprocessing/data/batch_savgol.xml"],
     "FeatureFinderMetabo": ["openMS", "openms.json", None]
 }
 
-
 SUMMARY_DIR = "summary_parameters"
 SUMMARY_COMBINATIONS = "summary_combinations"
-
-
 
 OUT={"DB":"processing.sqlite",
     "ADAP":
@@ -21,6 +18,7 @@ OUT={"DB":"processing.sqlite",
         "XML_MODEL": "xml_params_mzmine.xml",
         "CANDIDATES": "ADAP/candidates.csv",
         "PEAKTABLES": "ADAP/peaktables",
+        "MSMS": "ADAP/msms"
      },"CENTWAVE":
           {"SUMMARY":"ADAP/ADAP_parameters.csv",
     "SUMMARY_TEMPLATES": "ADAP/summary_templates.csv",

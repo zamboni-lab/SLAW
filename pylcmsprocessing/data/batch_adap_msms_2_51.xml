@@ -159,9 +159,9 @@
     <batchstep method="net.sf.mzmine.modules.peaklistmethods.io.csvexport.CSVExportModule">
         <parameter name="Feature lists" type="BATCH_LAST_PEAKLISTS"/>
         <parameter name="Filename">
-            <current_file>\\pasteur\SysBC-Home\dalexis\Documents\test\ex_output_mzmine\peaktable\test_export.csv</current_file>
-            <last_file>\\pasteur\SysBC-Home\dalexis\Documents\test\ex_output_mzmine\peaktable\test_export.csv</last_file>
-            <last_file>\\pasteur\SysBC-Home\dalexis\Documents\ex_out_peaktable</last_file>
+            <current_file>UNUSED</current_file>
+            <last_file>UNUSED</last_file>
+            <last_file>UNUSED</last_file>
         </parameter>
         <parameter name="Field separator">,</parameter>
         <parameter name="Export common elements">
@@ -212,9 +212,9 @@
     <batchstep method="net.sf.mzmine.modules.peaklistmethods.io.gnpsexport.GNPSExportAndSubmitModule">
         <parameter name="Feature lists" type="BATCH_LAST_PEAKLISTS"/>
         <parameter name="Filename">
-            <current_file>\\pasteur\SysBC-Home\dalexis\Documents\test\ex_output_mzmine\mgf\test_output</current_file>
-            <last_file>\\pasteur\SysBC-Home\dalexis\Documents\test\ex_output_mzmine\mgf\test_output</last_file>
-            <last_file>\\pasteur\SysBC-Home\dalexis\Documents\test_output_gnps.mgf</last_file>
+            <current_file>UNUSED</current_file>
+            <last_file>UNUSED</last_file>
+            <last_file>UNUSED</last_file>
         </parameter>
         <parameter name="Mass list">masses</parameter>
         <parameter name="Merge MS/MS (experimental)" selected="true">

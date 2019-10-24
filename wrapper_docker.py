@@ -62,7 +62,7 @@ if __name__=="__main__":
 
         exp.initialise_database(num_cpus,OUTPUT_DIR,vui.polarity,INPUT,["ADAP"], 1)
         exp.building_inputs_single_processing(PATH_XML)
-        exp.run("/MZmine-2.51-Linux",num_cpus)
+        exp.run("/MZmine-2.52-Linux",num_cpus)
         exp.correct_conversion()
         exp.group(max_workers=1,mztol=float(raw_yaml["grouping"]["dmz"]["value"]),
             rttol=float(raw_yaml["grouping"]["drt"]["value"]),
