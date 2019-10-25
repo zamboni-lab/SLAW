@@ -3,6 +3,8 @@ import os
 import multiprocessing
 import yaml
 import sys
+import psutil
+import math
 
 ##We import the module of python processing.
 sys.path.append('/pylcmsprocessing')
@@ -10,6 +12,36 @@ from pylcmsprocessing.model.UI import UI
 from pylcmsprocessing.model.experiment import Experiment
 
 if __name__=="__main__":
+##Two thing to check the number of CPUs and the ocnsumed meory eventually.
+
+    ###We determine the amount of memory allocated to each process
+    avail_memory = (psutil.virtual_memory()[1] >> 20) -1000
+
+    ###We allocate the memory to each process
+    num_cpus = multiprocessing.cpu_count()-1
+
+    ###Two limits to check, the number of CPUs and the memory consumption eventually.
+    #1.5 Go
+
+    ###1.5 Go by default
+    memory_by_core = 1048*1.5
+    if "MEMORY" in os.environ:
+        memory_by_core = int(os.environ["MEMORY"])
+
+    ##This is the number of thread
+    ncores = avail_memory//memory_by_core
+
+    ###Now we check if this number is bigger than the number of thread
+    if ncores >= num_cpus:
+        ncores = num_cpus
+        memory_by_core = avail_memory/ncores
+
+    percent_mem = math.floor((avail_memory+1000)*100/memory_by_core)
+    ###We set the JAVA option for the peak picking evnetually
+    os.environ["JAVA_OPTS"] = "-XX:InitialRAMPercentage="+str(percent_mem)+" -XX:MinRAMPercentage="+str(percent_mem)+" -XX:MaxRAMPercentage="+str(percent_mem)
+
+    ##We output information
+    print("Memory available: "+str(avail_memory)+" with "+str(num_cpus)+" cores used.")
     MANDATORY_ARGS = ["INPUT","OUTPUT","USERNAME"]
 
     if not all(env in os.environ for env in MANDATORY_ARGS):
@@ -32,11 +64,7 @@ if __name__=="__main__":
     #Path of the outpu pytho file resuming the processing eventually.
     PATH_PYTHON = "python_script.py"
     PATH_DB = os.path.join(OUTPUT_DIR,"database_lcms_processing.sqlite")
-    num_cpus = multiprocessing.cpu_count()-1
-    if "NCORES" in os.environ:
-        num_cpus = int(os.environ['NCORES'])
-    else:
-        print(f'No NCORES environment variables, the number of cores used for parallel processing has been automatically set to {num_cpus}')
+
     vui = UI(OUTPUT_DIR, INPUT, polarity="positive", mass_spec="Exactive", num_workers=num_cpus, path_yaml = PATH_YAML)
 
     setup_params = False

@@ -82,8 +82,7 @@ singleXMLgeneration <-
     PREF_SAMPLE <- paste(prefix,num_rawfile,sep = "_")
     PREF_OUTPUT_PEAKTABLE <- file.path(outp, paste("peaktable_", num_rawfile, sep = ""))
     PREF_OUTPUT_MSMS <- file.path(outp, paste("msms_", num_rawfile, sep = ""))
-
-d
+    
     vfiles <-
       exportingAllCombinationsOfXML(mxml,
                                     prefix_xml_files = PREF_SAMPLE,

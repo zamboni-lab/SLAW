@@ -7,32 +7,30 @@ If you want to manually inspect some small dataset, consider looking for compoun
 
 Therefore it is composed of different piece of software wrapped together, this to avoid installation, all the softwares are bundled together in a *Docker*.
 
-A *Docker* is very similar to virtual machine from the user perspectives. In this documentations, two parts will be distinguished.
+A *Docker* is very similar to virtual machine from the user perspectives. However making docker work in the ETH infrastructure is difficult,and the first part of this tutorial is the installation.
 
 ## Installing docker
 
 Docker can be installed following this [tutorial](https://runnable.com/docker/install-docker-on-windows-10).
-The whole installation process should take less than 5 minutes. You then need 2 things, first to add yourself to the docker-users group and increase the memory available to docker.
+The whole installation process should take less than 5 minutes. You need to restart your computer.
+
+ You then need 2 things, first to add yourself to the docker-users group and increase the memory available to docker.
 
 You then have to add yourself to the docker-user group of ETH to run Docker. Here is a detailed step by step tutorial.
 
 First go to the local users group in the control panel :
 ![alt text](imgs/local_users.png)
 
-Then on the windows click on the Groups folder in the middle panel, open the docker-users group. You  can then add yourself to the user, using you eth login.
+Then on the windows click on the Groups folder in the middle panel, open the docker-users group. You  can then add yourself to the docker-users, using you ETH login.
 
 ### Increasing processing power.
-By default the docker virtual machine only take a small part of your computing power, however especially if you have a workstation, it can be
-
-
-## Setting up docker
-Docker by default is very limited in processing power, therefore to speed up the processing you should increase the possible memory and cores which are available to docker.
-
+By default the docker virtual machine only take a small part of your computing power, however especially if you have a workstation. To do so right click on the docker icon at the right of your task bar
+ ![alt text](imgs/icon_docker.png)
+And then allocate as much memory as you want in the Advanced repository.
 
 ## Running the docker
 
-Now that Docker is installed you are ready to go, you can process your data using the run command.
-
+Now that Docker is installed you are ready to go, you can process your data using the run
 
  To do you need to specify two repository, one which contains
 your .mzML file (.mzML is the standard format used in the hyphenated MS world, you can convert your file in .mzML using the MSconvert Proteowizard softare), and one empty repository which will store the data. If the processing stop or fail for any reasons external to the software (updating code) don't erase this folder, calculations can restart.

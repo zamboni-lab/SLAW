@@ -3,9 +3,9 @@ peakpicking:
   description: This step includes all the necessary sub steps to pass from an individual .mzML file to a processed peaktable. The data are processed using the ADAP algorithm implemented in MZmine.
   centroidization:
     description: This step is the passge of the raw centroided data to the new non cnetorided data.
-    noise_level:
+    noise_level_ms1:
       priority: HIGH
-      description: Integer. An absolute noise threshold to be used. Any points in a RAW file below this file will be discarded. This should not be too high, as low intensity part can still occurs at the border of a peak,
+      description: Integer. An absolute noise threshold to be used on MS1. Any points in a RAW file below this file will be discarded. This should not be too high, as low intensity part can still occurs at the border of a peak,
       value: 10000
   traces_construction:
     description: Detection of consecutive mass points with similar masses in different acquisitions.
@@ -47,6 +47,14 @@ peakpicking:
       priority: LOW
       description: Float. The maximum width the considered wavelet.
       value: 0.05
+    ms2_mz_tol:
+      priority: LOW
+      description: Float. The tolerance in mz for MS-MS pairing.
+      value: 0.1
+    ms2_rt_tol:
+      priority: LOW
+      description: Float. The tolerance in rt for MS-MS pairing in minutes.
+      value: 0.1
 grouping:
   description: Alignment of peaktables of different samples and building of a common data matrix. This step is done using a personnalized package for retention time correction.
   ppm:

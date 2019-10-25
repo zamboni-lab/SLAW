@@ -64,7 +64,7 @@ class MZMineBuilder(inputBuilder):
         pxml = self.output.getDir(common.references.OUT["ADAP"]["XML"])
         candidates = self.output.getFile(common.references.OUT["ADAP"]["CANDIDATES"])
         peaktables = self.output.getDir(common.references.OUT["ADAP"]["PEAKTABLES"])
-                msms = self.output.getDir(common.references.OUT["ADAP"]["MSMS"])
+        msms = self.output.getDir(common.references.OUT["ADAP"]["MSMS"])
         prscript = common.tools.find_rscript()
         tjson = self.output.getFile(common.references.OUT["ADAP"]["JSON"])
         scriptMZmine = os.path.join(prscript, "wrapper_MZmine_peak_picking_xml.R")

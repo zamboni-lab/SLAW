@@ -1,5 +1,5 @@
 ALGORITHMS_TABLE = {
-    "ADAP": ["MZmine", "adap.json", "/pylcmsprocessing/data/batch_adap_msms_2_51.xml"],
+    "ADAP": ["MZmine", "adap.json", "/pylcmsprocessing/data/batch_adap_2_50_buggued.xml"],
     "SAVGOL": ["MZmine", "savgol.json", "/pylcmsprocessing/data/batch_savgol.xml"],
     "FeatureFinderMetabo": ["openMS", "openms.json", None]
 }

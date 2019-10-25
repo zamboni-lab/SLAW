@@ -53,16 +53,25 @@ class UI:
         PATH_XML = os.path.join("data",cr.ALGORITHMS_TABLE["ADAP"][2])
         tree = ET.parse(PATH_XML)
         root = tree.getroot()
-        root[1][2][0][0].text=str(raw_yaml['peakpicking']['centroidization']['noise_level']['value'])
+
+        ###Centroidization noise level
+        root[1][2][0][0].text=str(raw_yaml['peakpicking']['centroidization']['noise_level_ms1']['value'])
+
+        ###Mass traces construction
         root[2][3].text=str(raw_yaml['peakpicking']['traces_construction']['min_scan']['value'])
         root[2][6][1].text=str(raw_yaml['peakpicking']['traces_construction']['ppm']['value'])
         root[2][6][0].text=str(raw_yaml['peakpicking']['traces_construction']['dmz']['value'])
+
+        ###Peak deconvolution
         root[3][2][5][0].text=str(raw_yaml['peakpicking']['peaks_deconvolution']['SN']['value'])
         root[3][2][5][2].text=str(raw_yaml['peakpicking']['peaks_deconvolution']['noise_level']['value'])
         root[3][2][5][4][0].text=str(raw_yaml['peakpicking']['peaks_deconvolution']['peak_width_min']['value'])
         root[3][2][5][4][1].text=str(raw_yaml['peakpicking']['peaks_deconvolution']['peak_width_max']['value'])
         root[3][2][5][5][0].text=str(raw_yaml['peakpicking']['peaks_deconvolution']['rt_wavelet_min']['value'])
         root[3][2][5][5][0].text=str(raw_yaml['peakpicking']['peaks_deconvolution']['rt_wavelet_max']['value'])
+        root[3][4].text=str(raw_yaml['peakpicking']['peaks_deconvolution']['ms2_mz_tol']['value'])
+        root[3][5].text=str(raw_yaml['peakpicking']['peaks_deconvolution']['ms2_rt_tol']['value'])
+
         ###We write the XML file somewhere
         tree.write(path_xml)
 

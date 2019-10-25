@@ -33,36 +33,6 @@
         <parameter name="Mass list name">masses</parameter>
         <parameter name="Output netCDF filename (optional)" selected="false"/>
     </batchstep>
-    <batchstep method="net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.MassDetectionModule">
-        <parameter name="Raw data files" type="BATCH_LAST_FILES"/>
-        <parameter name="Scans">
-            <ms_level>2</ms_level>
-            <scan_definition/>
-        </parameter>
-        <parameter name="Mass detector" selected="Centroid">
-            <module name="Centroid">
-                <parameter name="Noise level">2000.0</parameter>
-            </module>
-            <module name="Exact mass">
-                <parameter name="Noise level"/>
-            </module>
-            <module name="Local maxima">
-                <parameter name="Noise level"/>
-            </module>
-            <module name="Recursive threshold">
-                <parameter name="Noise level"/>
-                <parameter name="Min m/z peak width"/>
-                <parameter name="Max m/z peak width"/>
-            </module>
-            <module name="Wavelet transform">
-                <parameter name="Noise level"/>
-                <parameter name="Scale level"/>
-                <parameter name="Wavelet window size (%)"/>
-            </module>
-        </parameter>
-        <parameter name="Mass list name">masses</parameter>
-        <parameter name="Output netCDF filename (optional)" selected="false"/>
-    </batchstep>
     <batchstep method="net.sf.mzmine.modules.masslistmethods.ADAPchromatogrambuilder.ADAPChromatogramBuilderModule">
         <parameter name="Raw data files" type="BATCH_LAST_FILES"/>
         <parameter name="Scans">

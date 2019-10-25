@@ -9,6 +9,9 @@ if [ -z "${OUTPUT}" ]; then
  export OUTPUT='/output'
 fi
 
+##Linux command to get available ram evnetuall
+
+
 #If the output is one sauer1 we try to mount the disk
 if [[ "$OUTPUT" == /sauer1*  ]] || [[ "$INPUT" == /sauer1*  ]] ;
 then
