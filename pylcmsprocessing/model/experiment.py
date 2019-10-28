@@ -226,6 +226,13 @@ class Experiment:
         self.close_db()
 
     ###We jsut initalize the peaktable
+        # peakpicking = tids,
+        # sample = rep(num_rawfile, nrow(vfiles)),
+        # input = vfiles[, 1],
+        # hash_input = vfiles$hash,
+        # output_peaktable = outfiles,
+        # output_msms = outmsms,
+
     def build_processing(self):
         self.open_db()
         c = self.conn.cursor()
@@ -236,7 +243,8 @@ class Experiment:
           sample INTEGER,
           input TEXT NOT NULL,
           hash TEXT NOT NULL,
-          output TEXT NOT NULL,
+          output_ms TEXT NOT NULL,
+          output_ms2 TEXT NOT NULL,
           step INTEGER NOT NULL,
           CONSTRAINT fk_peakpicking
           FOREIGN KEY (peakpicking)
@@ -373,7 +381,7 @@ class Experiment:
         path_temp = self.output.getFile(cr.TEMP["CONVERSION"])
         self.open_db()
         c = self.conn.cursor()
-        c.execute("SELECT output FROM processing")
+        c.execute("SELECT output_ms FROM processing")
         processings = c.fetchall()
         p_conversion = os.path.join(ct.find_rscript(), "wrapper_MZmine_peak_table_conversion.R ")
         to_convert = [x[0] + "\n" for x in processings if not is_converted(x[0])]
@@ -403,7 +411,7 @@ class Experiment:
         dir_datamatrix = self.output.getDir(cr.OUT["DATAMATRIX"])
         for pp in all_peakpicking:
             ###name of file
-            flists = c.execute("SELECT output FROM processing WHERE peakpicking = " + str(pp[0]))
+            flists = c.execute("SELECT output_ms FROM processing WHERE peakpicking = " + str(pp[0]))
             flists = [f[0] for f in flists]
 
             ###getting samples

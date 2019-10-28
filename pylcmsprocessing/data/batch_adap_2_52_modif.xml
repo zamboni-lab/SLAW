@@ -188,7 +188,6 @@
         <parameter name="Filename">
             <current_file>C:\Users\dalexis\Documents\python\lcmsprocessing\tests\output\msms_t2.mgf</current_file>
             <last_file>C:\Users\dalexis\Documents\python\lcmsprocessing\tests\output\msms_t2.mgf</last_file>
-            <last_file>C:\Users\dalexis\Documents\python\lcmsprocessing\tests\output\msms_773f69976918ba15c3b53a2b2e613b16.mgf</last_file>
         </parameter>
         <parameter name="Mass list">masses</parameter>
         <parameter name="Merge MS/MS (experimental)" selected="true">

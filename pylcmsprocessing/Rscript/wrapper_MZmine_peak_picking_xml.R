@@ -110,8 +110,9 @@ singleXMLgeneration <-
         peakpicking = tids,
         sample = rep(num_rawfile, nrow(vfiles)),
         input = vfiles[, 1],
-        hash_input = vfiles[,3],
-        output = outfiles,
+        hash_input = vfiles$hash,
+        output_peaktable = outfiles,
+        output_msms = outmsms,
         stringsAsFactors = FALSE
       )
     return(ppstemp)

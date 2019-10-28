@@ -95,9 +95,10 @@ class MZMineBuilder(inputBuilder):
             ###If the algorithm does not exist we skip
             ###We try to insert it
             try:
-                ctuple = (pid, 1, int(row[1]), row[2], row[3], row[4], row[5],row[6], 1)
+                print(row)
+                ctuple = (pid, 1, int(row[1]), row[2], row[3], row[4], row[5], 1)
                 pid += 1
-                c.execute("""INSERT INTO processing VALUES (?,?,?,?,?,?,?,?,?)""", ctuple)
+                c.execute("""INSERT INTO processing VALUES (?,?,?,?,?,?,?,?)""", ctuple)
                 counter_to_process += 1
             except sqlite3.IntegrityError as e:
                 counter_processed += 1

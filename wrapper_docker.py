@@ -15,7 +15,7 @@ if __name__=="__main__":
 ##Two thing to check the number of CPUs and the ocnsumed meory eventually.
 
     ###We determine the amount of memory allocated to each process
-    avail_memory = (psutil.virtual_memory()[1] >> 20) -1000
+    avail_memory = (psutil.virtual_memory()[1] >> 20)
 
     ###We allocate the memory to each process
     num_cpus = multiprocessing.cpu_count()-1
@@ -32,16 +32,16 @@ if __name__=="__main__":
     ncores = avail_memory//memory_by_core
 
     ###Now we check if this number is bigger than the number of thread
-    if ncores >= num_cpus:
-        ncores = num_cpus
-        memory_by_core = avail_memory/ncores
-
-    percent_mem = math.floor((avail_memory+1000)*100/memory_by_core)
+    if ncores <= num_cpus:
+        num_cpus = ncores
+        memory_by_core = avail_memory/num_cpus
+    print(" MMCORE:"+str(memory_by_core)+" PMEM:"+str(percent_mem)+" NCPUS"+str(num_cpus)+"AVAIL")
+    percent_mem = math.floor(avail_memory*100/memory_by_core)
     ###We set the JAVA option for the peak picking evnetually
     os.environ["JAVA_OPTS"] = "-XX:InitialRAMPercentage="+str(percent_mem)+" -XX:MinRAMPercentage="+str(percent_mem)+" -XX:MaxRAMPercentage="+str(percent_mem)
 
     ##We output information
-    print("Memory available: "+str(avail_memory)+" with "+str(num_cpus)+" cores used.")
+    print("Memory available: "+str(avail_memory)+" with "+str(num_cpus)+" cores used allocated percent_mem:"+str(percent_mem))
     MANDATORY_ARGS = ["INPUT","OUTPUT","USERNAME"]
 
     if not all(env in os.environ for env in MANDATORY_ARGS):
