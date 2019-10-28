@@ -32,3 +32,8 @@ if [ "$(ls -A $OUTPUT)" ]; then
 fi
 
 python3 wrapper_docker.py
+if test -f "/log.txt"; then
+  cp "/log.txt" "$OUTPUT/log.txt"
+fi
+
+###We copyt the directory to a local directory

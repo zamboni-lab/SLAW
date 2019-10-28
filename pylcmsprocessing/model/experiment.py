@@ -330,7 +330,7 @@ class Experiment:
         self.close_db()
         return softwares
 
-    def run(self, pmzmine, batch_size=40, silent=True):
+    def run(self, pmzmine, batch_size=40, silent=True, log = None):
         num_workers = self.get_workers()
         runner = pr.ParallelRunner(num_workers)
         softwares = self.find_software_from_peakpicking()
@@ -353,7 +353,7 @@ class Experiment:
                 clis = [x.command_line_processing(hide=False) for x in peakpickings if x.need_computing()]
                 ####We run the jobs actually
                 if len(clis) > 0:
-                    runner.run(clis, silent=silent)
+                    runner.run(clis, silent=silent, log = log)
 
                 names_output = [x.get_output() + "\n" for x in peakpickings]
 
@@ -400,7 +400,7 @@ class Experiment:
 
         ###At the moment there is a single grouping method
 
-    def group(self, max_workers=2, silent=False, intensity="height",mztol=0.007,rttol=0.02):
+    def group(self, max_workers=2, silent=False, intensity="height",mztol=0.007,rttol=0.02, log=None):
         num_workers = self.get_workers()
         runner = pr.ParallelRunner(min(num_workers, max_workers))
         ####We create all the grouper eventually
@@ -436,7 +436,7 @@ class Experiment:
             groupers = groupers[0:countgroup]
             clis = [g.command_line() for g in groupers]
             if len(clis) > 0:
-                runner.run(clis, silent=silent)
+                runner.run(clis, silent=silent, log=log)
         self.close_db()
         print("Grouping finished")
 
@@ -546,15 +546,20 @@ class Experiment:
         self.close_db()
         print("Annotation finished")
 
-    ###Renaming the files eventually.
-    def rename(self)
-
-    ###Clean all the artefact of processing and change the names of the peaktables.
-    def clean(self):
-        ###We clena the files
-        to_rm= [cr.TEMP["GROUPING"],cr.TEMP["IONANNOTATION"]["FULL"],cr.TEMP["IONANNOTATION"]["MAIN"],
-        cr.TEMP["CONVERSION"],cr.OUT["JSON"],cr.OUT["CANDIDATES"]]
-        path_input = self.output.getPath(self,path)
-        for waste in to_rm:
-            if os.path.exists(waste):
-                os.remove(waste)
+    # ###Renaming the files eventually.
+    # def rename(self):
+    #     self.open_db()
+    #     c = self.conn.cursor()
+    #     c.execute("SELECT peaktable FROM peakpicking")
+    #     all_peakpicking = c.fetchall()
+    #     self.close_db()
+    #
+    # ###Clean all the artefact of processing and change the names of the peaktables.
+    # def clean(self):
+    #     ###We clena the files
+    #     to_rm= [cr.TEMP["GROUPING"],cr.TEMP["IONANNOTATION"]["FULL"],cr.TEMP["IONANNOTATION"]["MAIN"],
+    #     cr.TEMP["CONVERSION"],cr.OUT["JSON"],cr.OUT["CANDIDATES"]]
+    #     path_input = self.output.getPath(self,path)
+    #     for waste in to_rm:
+    #         if os.path.exists(waste):
+    #             os.remove(waste)

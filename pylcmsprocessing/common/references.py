@@ -8,6 +8,7 @@ SUMMARY_DIR = "summary_parameters"
 SUMMARY_COMBINATIONS = "summary_combinations"
 
 OUT={"DB":"processing.sqlite",
+    "LOG":"log.txt",
     "ADAP":
     {
         "SUMMARY":"ADAP/ADAP_parameters.csv",

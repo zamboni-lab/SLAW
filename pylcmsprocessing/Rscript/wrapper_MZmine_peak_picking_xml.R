@@ -71,7 +71,7 @@ singleXMLgeneration <-
            num_rawfile,
            prefix,
            mxml,
-           outp, tids) {
+           out_peaktable,out_msms, tids) {
     suppressMessages(library(MZmineXMLManipulator))
     suppressMessages(library(tools))
 
@@ -81,8 +81,8 @@ singleXMLgeneration <-
 
 
     PREF_SAMPLE <- paste(prefix,num_rawfile,sep = "_")
-    PREF_OUTPUT_PEAKTABLE <- file.path(outp, paste("peaktable_", num_rawfile, sep = ""))
-    PREF_OUTPUT_MSMS <- file.path(outp, paste("msms_", num_rawfile, sep = ""))
+    PREF_OUTPUT_PEAKTABLE <- file.path(out_peaktable, paste("peaktable_", num_rawfile, sep = ""))
+    PREF_OUTPUT_MSMS <- file.path(out_msms, paste("msms_", num_rawfile, sep = ""))
 
     vfiles <-
       exportingAllCombinationsOfXML(mxml,
@@ -114,7 +114,8 @@ allsampseq <-
     MoreArgs = list(
       mxml = mxml,
       prefix = prefix_xml,
-      outp = path_peaktables,
+      out_peaktable = path_peaktables,
+      out_msms = path_msms,
       tids= 1
     ),
     SIMPLIFY = FALSE,
@@ -125,3 +126,6 @@ allsampseq <-
 btab <- do.call(rbind, allsampseq)
 ###We have all the hashes in btab$hash_input
 vav <- write.table(btab,file=path_candidates,sep=";",row.names=FALSE)
+
+
+###If the msms are empty we directly remove them
