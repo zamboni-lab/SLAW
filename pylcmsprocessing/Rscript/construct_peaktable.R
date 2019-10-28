@@ -178,7 +178,7 @@ makeDataMatrix <- function(samples,sampnames,path_output_dm,path_output_index,fu
 
   suppressMessages(mat <- funGroup(pt, rep(1,length(samples)), bw = bw, minFraction = 0.0, minSamples = 1,
                           binSize = mztol, maxFeatures = 20, sleep = 0))
-  message("Alignement done!")
+  message("Alignment finished!")
   ###We complete the data matrix using the pt table.
   maxSample <- length(samples)
   ###We build all the intensity table

@@ -28,8 +28,10 @@ class OutputDirectory:
             os.makedirs(os.path.dirname(val))
         return val
 
+    def getPath(self,path):
+        val = self.convertPath(path)
+        return val
+
     def exists(self,path):
         path = self.convertPath(path)
         return os.path.exists(path)
-
-

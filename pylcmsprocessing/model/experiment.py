@@ -345,7 +345,6 @@ class Experiment:
         while True:
             rows = c.fetchmany(batch_size)
             if not rows: break
-
             peakpickings = [mp.PeakPickingMZmine(row, pmzmine) for row in rows]
             need_processing = [x.need_computing() for x in peakpickings]
 
@@ -366,7 +365,11 @@ class Experiment:
                 summary.writelines(names_output)
                 #
                 pjoin = os.path.join(ct.find_rscript(), "wrapper_MZmine_peak_table_conversion.R ")
-                #
+
+                ###We remove all the peaktables in the output repostiory which are not the good one
+
+
+
                 # ###Calling the script on all the processed path
                 cline = "Rscript " + pjoin + " " + path_temp + " " + str(self.get_workers(open=False))
                 subprocess.call(cline, shell=True)
@@ -542,3 +545,16 @@ class Experiment:
                 runner.run(clis, silent=True)
         self.close_db()
         print("Annotation finished")
+
+    ###Renaming the files eventually.
+    def rename(self)
+
+    ###Clean all the artefact of processing and change the names of the peaktables.
+    def clean(self):
+        ###We clena the files
+        to_rm= [cr.TEMP["GROUPING"],cr.TEMP["IONANNOTATION"]["FULL"],cr.TEMP["IONANNOTATION"]["MAIN"],
+        cr.TEMP["CONVERSION"],cr.OUT["JSON"],cr.OUT["CANDIDATES"]]
+        path_input = self.output.getPath(self,path)
+        for waste in to_rm:
+            if os.path.exists(waste):
+                os.remove(waste)

@@ -35,12 +35,11 @@ if __name__=="__main__":
     if ncores <= num_cpus:
         num_cpus = ncores
         memory_by_core = avail_memory/num_cpus
-    print(" MMCORE:"+str(memory_by_core)+" PMEM:"+str(percent_mem)+" NCPUS"+str(num_cpus)+"AVAIL")
-    percent_mem = math.floor(avail_memory*100/memory_by_core)
+    percent_mem = math.floor(memory_by_core*100/avail_memory)
     ###We set the JAVA option for the peak picking evnetually
     os.environ["JAVA_OPTS"] = "-XX:InitialRAMPercentage="+str(percent_mem)+" -XX:MinRAMPercentage="+str(percent_mem)+" -XX:MaxRAMPercentage="+str(percent_mem)
-
-    ##We output information
+    
+    ##We output System information
     print("Memory available: "+str(avail_memory)+" with "+str(num_cpus)+" cores used allocated percent_mem:"+str(percent_mem))
     MANDATORY_ARGS = ["INPUT","OUTPUT","USERNAME"]
 
@@ -90,7 +89,7 @@ if __name__=="__main__":
 
         exp.initialise_database(num_cpus,OUTPUT_DIR,vui.polarity,INPUT,["ADAP"], 1)
         exp.building_inputs_single_processing(PATH_XML)
-        exp.run("/MZmine-2.52-Linux",num_cpus)
+        exp.run("/MZmine-2.52-Linux",int(num_cpus))
         exp.correct_conversion()
         exp.group(max_workers=1,mztol=float(raw_yaml["grouping"]["dmz"]["value"]),
             rttol=float(raw_yaml["grouping"]["drt"]["value"]),
