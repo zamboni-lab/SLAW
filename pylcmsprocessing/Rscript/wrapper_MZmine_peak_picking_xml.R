@@ -27,16 +27,29 @@ path_msms <- args[6]
 path_json <- args[7]
 
 message("Json in ",path_json)
+if(FALSE){
 db <- dbConnect(RSQLite:::SQLite(),dbpath)
-
+}
 ##The num worker is read form the databse
 
+samplist <- NULL
+##TO DEBUBG
+if(FALSE){
 num_workers <- as.numeric(dbGetQuery(db, "SELECT max_jobs FROM common")[, 1])
+}else{
+  num_workers <- 1
+}
+
 
 ####We get the path form all the sample
+samplist <-NULL
+if(FALSE){
 samplist <- dbGetQuery(db, "SELECT path FROM samples")[, 1]
-
 dbDisconnect(db)
+}else{
+  samplist <- c("UUU/UUU.mzML","AAA/AAA.mzML")
+}
+
 
 get_os <- function() {
   if (.Platform$OS.type == "windows") {
@@ -82,7 +95,7 @@ singleXMLgeneration <-
     PREF_SAMPLE <- paste(prefix,num_rawfile,sep = "_")
     PREF_OUTPUT_PEAKTABLE <- file.path(outp, paste("peaktable_", num_rawfile, sep = ""))
     PREF_OUTPUT_MSMS <- file.path(outp, paste("msms_", num_rawfile, sep = ""))
-    
+
     vfiles <-
       exportingAllCombinationsOfXML(mxml,
                                     prefix_xml_files = PREF_SAMPLE,
