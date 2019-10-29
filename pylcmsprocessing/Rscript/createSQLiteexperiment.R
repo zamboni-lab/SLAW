@@ -1,12 +1,6 @@
-if(!require("optparse"))
-  install.packages("optparse")
-if (!require("DBI"))
-  install.packages("DBI")
-if (!require("RSQLite"))
-  install.packages("RSQLite")
 suppressMessages(library(optparse,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE))
-suppressMessages(library(RSQLite,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE))
 suppressMessages(library(DBI,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE))
+suppressMessages(library(RSQLite,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE))
 suppressMessages(library(tools,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE))
 
 

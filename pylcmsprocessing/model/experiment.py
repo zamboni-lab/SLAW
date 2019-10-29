@@ -579,5 +579,6 @@ class Experiment:
         to_rm= [cr.TEMP["GROUPING"],cr.TEMP["IONANNOTATION"]["FULL"],cr.TEMP["IONANNOTATION"]["MAIN"],
         cr.TEMP["CONVERSION"],cr.OUT["ADAP"]["JSON"],cr.OUT["ADAP"]["CANDIDATES"]]
         for waste in to_rm:
-            if os.path.exists(waste):
-                os.remove(waste)
+            pwaste = self.output.getPath(self,waste)
+            if os.path.exists(pwaste):
+                os.remove(pwaste)
