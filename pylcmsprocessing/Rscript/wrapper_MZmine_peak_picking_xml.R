@@ -26,7 +26,6 @@ path_msms <- args[6]
 
 path_json <- args[7]
 
-message("Json in ",path_json)
 db <- dbConnect(RSQLite:::SQLite(),dbpath)
 
 ##The num worker is read form the databse

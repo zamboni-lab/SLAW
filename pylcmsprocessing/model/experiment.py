@@ -579,6 +579,8 @@ class Experiment:
         to_rm= [cr.TEMP["GROUPING"],cr.TEMP["IONANNOTATION"]["FULL"],cr.TEMP["IONANNOTATION"]["MAIN"],
         cr.TEMP["CONVERSION"],cr.OUT["ADAP"]["JSON"],cr.OUT["ADAP"]["CANDIDATES"]]
         for waste in to_rm:
-            pwaste = self.output.getPath(self,waste)
-            if os.path.exists(pwaste):
+            pwaste = self.output.getPath(waste)
+            if os.path.isdir(pwaste):
+                shutil.rmtree(pwaste, ignore_errors=True)
+            elif os.path.exists(pwaste):
                 os.remove(pwaste)
