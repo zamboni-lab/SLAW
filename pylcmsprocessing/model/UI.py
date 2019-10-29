@@ -42,7 +42,6 @@ class UI:
             #We write the yaml in the output directory
             with open(self.path_yaml, 'w') as outfile:
                 yaml.dump(raw_yaml,outfile, default_flow_style=False)
-            print("Yaml file written in "+self.path_yaml+" please complete it before running any paramters sets. Some generic parameters set exists at the moment it can be anything else.")
 
     def generate_MZmine_XML(self,path_xml=None):
         if path_xml is None:

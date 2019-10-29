@@ -55,5 +55,4 @@ class IonAnnotater:
                  str(self.num_cores),common.references.DATA["IONANNOTATION"]["XCMS_MODEL"],ohv.getFile(cr.TEMP["IONANNOTATION"]["FULL"]),
                  ohv.getFile(cr.TEMP["IONANNOTATION"]["MAIN"]),self.polarity,str(self.ppm),str(self.dmz),
                           str(self.num_files),str(self.min_filter)])
-        print(cline)
         return cline

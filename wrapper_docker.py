@@ -42,7 +42,7 @@ if __name__=="__main__":
     os.environ["JAVA_OPTS"] = "-XX:InitialRAMPercentage="+str(percent_mem)+" -XX:MinRAMPercentage="+str(percent_mem)+" -XX:MaxRAMPercentage="+str(percent_mem)
 
     ##We output System information
-    print("Memory available: "+str(avail_memory)+" with "+str(num_cpus)+" cores used allocated percent_mem:"+str(percent_mem))
+    print("Total memory available: "+str(avail_memory)+" and "+str( multiprocessing.cpu_count())+" cores. The workflow will use "+str(memory_by_core)+ " Mb by cores")
     MANDATORY_ARGS = ["INPUT","OUTPUT","USERNAME"]
 
     if not all(env in os.environ for env in MANDATORY_ARGS):
@@ -74,7 +74,7 @@ if __name__=="__main__":
     if not os.path.exists(vui.path_yaml):
         setup_params = True
         vui.generate_yaml_files()
-        print("A parameters.txt file has been generated in the specified output directory, please complete it and rerun the docker")
+        print("A parameters.txt file has been generated in the "+OUTPUT_DIR+" directory, please complete it and rerun the docker")
     else:
         #In very case we generate an adate MZmine XML file.
         vui.generate_MZmine_XML(path_xml=PATH_XML)

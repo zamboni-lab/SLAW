@@ -2,7 +2,6 @@ import multiprocessing as mp
 import subprocess
 
 def run_cl(cl):
-    print(cl)
     subprocess.call(cl,shell=True)
 
 

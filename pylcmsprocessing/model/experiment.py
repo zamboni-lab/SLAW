@@ -355,28 +355,19 @@ class Experiment:
                 ####We run the jobs actually
                 if len(clis) > 0:
                     runner.run(clis, silent=silent, log = log)
-
                 names_output = [x.get_output() + "\n" for x in peakpickings]
-
                 name_temp = cr.TEMP["CONVERSION"]
                 path_temp = self.output.getFile(name_temp)
-
                 summary = open(path_temp, "w+")
-
                 summary.writelines(names_output)
                 #
                 pjoin = os.path.join(ct.find_rscript(), "wrapper_MZmine_peak_table_conversion.R ")
-
-                ###We remove all the peaktables in the output repostiory which are not the good one
-
-
-
                 # ###Calling the script on all the processed path
                 cline = "Rscript " + pjoin + " " + path_temp + " " + str(self.get_workers(open=False))
                 subprocess.call(cline, shell=True)
                 need_processing = [not os.path.exists(row[5]) for row in rows]
             else:
-                print("no processing")
+                print("No more processing to do")
         print("Peak picking finished.")
         self.close_db()
 
@@ -404,32 +395,37 @@ class Experiment:
         ###We rename the peaktable to get more meaningful names.
         self.open_db()
         c = self.conn.cursor()
-        c.execute("SELECT id,output_ms FROM processing")
+        c.execute("SELECT id,output_ms,output_ms2 FROM processing")
         all_peaktable = c.fetchall()
         c.execute("SELECT path FROM samples")
         all_samples = c.fetchall()
+
         dirname = self.output.getDir(cr.OUT["ADAP"]["PEAKTABLES"])
+        dirname_msms = self.output.getDir(cr.OUT["ADAP"]["MSMS"])
         ###Now we jsut rename all the files
-        for ip in range(1,len(all_peaktable)):
-            new_name = os.path.join(dirname,os.path.basename(all_samples[ip][0]))
+        for ip in range(0,len(all_peaktable)):
+            new_name = os.path.join(dirname,os.path.splitext(os.path.basename(all_samples[ip][0]))[0]+".csv")
             old_name = all_peaktable[ip][1]
             os.rename(old_name,new_name)
             query = self.update_query_construction("processing", "id", str(all_peaktable[ip][0]), "output_ms", new_name)
             c.execute(query)
-        self.close_db()
         msms_output = self.output.getDir(cr.OUT["ADAP"]["MSMS"])
-        ##We remve the empty msms files
-        for ffile in os.listdir(msms_output):
-            full_name = os.path.join(msms_output,ffile)
-            if ffile.endswith("_quant.csv"):
-                os.remove(os.path.join(msms_output,ffile))
-            elif os.path.getsize(full_name)==0:
-                os.remove(os.path.join(msms_output,ffile))
 
+        ##We remve the empty msms files and rename the new ones
+        for ip in range(0,len(all_peaktable)):
+            full_name = all_peaktable[ip][2]
+            if os.path.getsize(full_name)==0:
+                os.remove(full_name)
+            else:
+                new_name = os.path.join(dirname_msms,os.path.splitext(os.path.basename(all_samples[ip][0]))[0]+".mgf")
+                os.rename(full_name,new_name)
+                query = self.update_query_construction("processing", "id", str(all_peaktable[ip][0]), "output_ms2", new_name)
+                c.execute(query)
 
-
-
-
+            ####We remove the quantification table.
+            name_quant = os.path.splitext(full_name)[0]+"_quant.csv"
+            os.remove(name_quant)
+        self.close_db()
 
     ###At the moment there is a single grouping method
     def group(self, max_workers=2, silent=False, intensity="height",mztol=0.007,rttol=0.02, log=None):
@@ -578,20 +574,10 @@ class Experiment:
         self.close_db()
         print("Annotation finished")
 
-    # ###Renaming the files eventually.
-    # def rename(self):
-    #     self.open_db()
-    #     c = self.conn.cursor()
-    #     c.execute("SELECT peaktable FROM peakpicking")
-    #     all_peakpicking = c.fetchall()
-    #     self.close_db()
-    #
-    # ###Clean all the artefact of processing and change the names of the peaktables.
     def clean(self):
         ###We clena the files
         to_rm= [cr.TEMP["GROUPING"],cr.TEMP["IONANNOTATION"]["FULL"],cr.TEMP["IONANNOTATION"]["MAIN"],
-        cr.TEMP["CONVERSION"],cr.OUT["JSON"],cr.OUT["CANDIDATES"]]
-        path_input = self.output.getPath(self,path)
+        cr.TEMP["CONVERSION"],cr.OUT["ADAP"]["JSON"],cr.OUT["ADAP"]["CANDIDATES"]]
         for waste in to_rm:
             if os.path.exists(waste):
                 os.remove(waste)

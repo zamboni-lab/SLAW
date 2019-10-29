@@ -212,7 +212,6 @@ makeDataMatrix <- function(samples,sampnames,path_output_dm,path_output_index,fu
   mean_SN <- sapply(mat$peakIndex,function(x,pt){
     mean(pt[x,"SN"],na.rm=TRUE)
   },pt=pt,simplify=FALSE)
-  message("Diagnosis calculated!")
 
   ####Building the datamatrix using all the available information
   cnames <- c("mz","rt","mz_min","mz_max","rt_min","rt_max",'mean_peakwidth',
@@ -223,7 +222,6 @@ makeDataMatrix <- function(samples,sampnames,path_output_dm,path_output_index,fu
 
   ###Writing the datamatrx
   write.table(dmm,file = path_output_dm,sep=",",row.names = FALSE)
-  message("Matrix built!")
 
   ###Writing the indices
   ff <- file(path_output_index,"w")
@@ -238,4 +236,4 @@ vfiles <- read.table(FNAMES,sep=",",header=FALSE,stringsAsFactors = FALSE)
 
 tres <- makeDataMatrix(vfiles[,1],vfiles[,2],
                        PATH_DATAMATRIX,PATH_IDX,funGroup=groupPeaksDensity,int = VAL_INTENSITY,bw = bw, mztol=binsize)
-message("Finished grouping")
+message("Alignment done")

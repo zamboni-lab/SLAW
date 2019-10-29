@@ -573,14 +573,8 @@ groupFeatures <- function(dm,val_int, raw_files, adducts,main_adducts,ionization
   return(list(dm_simple,dm_full))
 }
 
-
-####Actual processin gin the pipeline.
-
+####Actual processing in the pipeline.
 args <- commandArgs(trailingOnly = TRUE)
-
-###for testing purpose
-
-
 PATH_DATAMATRIX <- args[1]
 PATH_DB <- args[2]
 PATH_OUTPUT_FULL <- args[3]
@@ -607,8 +601,6 @@ num_detect <- num_detect>=FILTER_NUMS
 
 message("Retained ",sum(num_detect)," signals on ",nrow(dm))
 dm <- dm[num_detect,,drop=FALSE]
-
-
 
 ###Reading the raw files
 dbb <- dbConnect(RSQLite:::SQLite(),PATH_DB)
