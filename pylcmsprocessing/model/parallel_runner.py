@@ -24,7 +24,7 @@ class ParallelRunner:
             DEVNULL = open(os.devnull, 'wb')
         supp_str=""
         if log is not None:
-            supp_str = " > "+log
+            supp_str = " > "+log+" 2>&1"
 
         with mp.Pool(self.max_jobs) as pool:
             results = pool.starmap(run_cl, [(cl+supp_str,) for cl in command_lines])

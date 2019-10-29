@@ -36,4 +36,6 @@ if test -f "/log.txt"; then
   cp "/log.txt" "$OUTPUT/log.txt"
 fi
 
-###We copyt the directory to a local directory
+if test -f "/processing_db.sqlite"; then
+  cp "/processing_db.sqlite" "$OUTPUT/processing_db.sqlite"
+fi

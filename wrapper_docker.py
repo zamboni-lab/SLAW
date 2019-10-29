@@ -93,6 +93,7 @@ if __name__=="__main__":
         exp.building_inputs_single_processing(PATH_XML)
         exp.run("/MZmine-2.52-Linux",int(num_cpus),log = "/log.txt")
         exp.correct_conversion()
+        exp.post_processing_peakpicking()
         exp.group(max_workers=1,mztol=float(raw_yaml["grouping"]["dmz"]["value"]),
             rttol=float(raw_yaml["grouping"]["drt"]["value"]),
             intensity=str(raw_yaml["grouping"]["extracted_quantity"]["value"]))
@@ -102,3 +103,4 @@ if __name__=="__main__":
         exp.annotate_ions(int(raw_yaml["ion_annotation"]["num_files"]["value"]),float(raw_yaml["ion_annotation"]["ppm"]["value"]),
             float(raw_yaml["ion_annotation"]["dmz"]["value"]),min_filter=raw_yaml["ion_annotation"]["min_filter"]["value"],
                     adducts=adducts_str,main_adducts=main_adducts_str, max_workers=num_cpus)
+        exp.clean()

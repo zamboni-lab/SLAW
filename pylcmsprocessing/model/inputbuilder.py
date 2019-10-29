@@ -95,7 +95,6 @@ class MZMineBuilder(inputBuilder):
             ###If the algorithm does not exist we skip
             ###We try to insert it
             try:
-                print(row)
                 ctuple = (pid, 1, int(row[1]), row[2], row[3], row[4], row[5], 1)
                 pid += 1
                 c.execute("""INSERT INTO processing VALUES (?,?,?,?,?,?,?,?)""", ctuple)

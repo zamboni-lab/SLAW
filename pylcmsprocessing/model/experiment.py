@@ -1,6 +1,7 @@
 import sqlite3
 import subprocess
 import os
+import glob
 import common.references as cr
 import common.tools as ct
 import model.output_handler as oh
@@ -376,7 +377,7 @@ class Experiment:
                 need_processing = [not os.path.exists(row[5]) for row in rows]
             else:
                 print("no processing")
-        print("Peak picking finished")
+        print("Peak picking finished.")
         self.close_db()
 
     ###Try to correct he MZmine ocrrection in case processing was interrupted
@@ -398,8 +399,39 @@ class Experiment:
             print("nothing to correct")
         self.close_db()
 
-        ###At the moment there is a single grouping method
+    ###This step is always done before grouping
+    def post_processing_peakpicking(self):
+        ###We rename the peaktable to get more meaningful names.
+        self.open_db()
+        c = self.conn.cursor()
+        c.execute("SELECT id,output_ms FROM processing")
+        all_peaktable = c.fetchall()
+        c.execute("SELECT path FROM samples")
+        all_samples = c.fetchall()
+        dirname = self.output.getDir(cr.OUT["ADAP"]["PEAKTABLES"])
+        ###Now we jsut rename all the files
+        for ip in range(1,len(all_peaktable)):
+            new_name = os.path.join(dirname,os.path.basename(all_samples[ip][0]))
+            old_name = all_peaktable[ip][1]
+            os.rename(old_name,new_name)
+            query = self.update_query_construction("processing", "id", str(all_peaktable[ip][0]), "output_ms", new_name)
+            c.execute(query)
+        self.close_db()
+        msms_output = self.output.getDir(cr.OUT["ADAP"]["MSMS"])
+        ##We remve the empty msms files
+        for ffile in os.listdir(msms_output):
+            full_name = os.path.join(msms_output,ffile)
+            if ffile.endswith("_quant.csv"):
+                os.remove(os.path.join(msms_output,ffile))
+            elif os.path.getsize(full_name)==0:
+                os.remove(os.path.join(msms_output,ffile))
 
+
+
+
+
+
+    ###At the moment there is a single grouping method
     def group(self, max_workers=2, silent=False, intensity="height",mztol=0.007,rttol=0.02, log=None):
         num_workers = self.get_workers()
         runner = pr.ParallelRunner(min(num_workers, max_workers))
@@ -555,11 +587,11 @@ class Experiment:
     #     self.close_db()
     #
     # ###Clean all the artefact of processing and change the names of the peaktables.
-    # def clean(self):
-    #     ###We clena the files
-    #     to_rm= [cr.TEMP["GROUPING"],cr.TEMP["IONANNOTATION"]["FULL"],cr.TEMP["IONANNOTATION"]["MAIN"],
-    #     cr.TEMP["CONVERSION"],cr.OUT["JSON"],cr.OUT["CANDIDATES"]]
-    #     path_input = self.output.getPath(self,path)
-    #     for waste in to_rm:
-    #         if os.path.exists(waste):
-    #             os.remove(waste)
+    def clean(self):
+        ###We clena the files
+        to_rm= [cr.TEMP["GROUPING"],cr.TEMP["IONANNOTATION"]["FULL"],cr.TEMP["IONANNOTATION"]["MAIN"],
+        cr.TEMP["CONVERSION"],cr.OUT["JSON"],cr.OUT["CANDIDATES"]]
+        path_input = self.output.getPath(self,path)
+        for waste in to_rm:
+            if os.path.exists(waste):
+                os.remove(waste)
