@@ -15,6 +15,7 @@ import model.evaluating as me
 import model.comparing_evaluation as mce
 import model.annotating_adducts_isotopes as mai
 import pandas as pd
+import shutil
 
 
 def is_converted(csvfile):

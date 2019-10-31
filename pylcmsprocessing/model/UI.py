@@ -61,6 +61,8 @@ class UI:
 
         ###Mass traces construction
         root[3][3].text=str(raw_yaml['peakpicking']['traces_construction']['min_scan']['value'])
+        root[3][4].text=str(raw_yaml['peakpicking']['centroidization']['noise_level_ms1']['value'])
+        root[3][5].text=str(raw_yaml['peakpicking']['centroidization']['noise_level_ms1']['value'])
         root[3][6][1].text=str(raw_yaml['peakpicking']['traces_construction']['ppm']['value'])
         root[3][6][0].text=str(raw_yaml['peakpicking']['traces_construction']['dmz']['value'])
 
