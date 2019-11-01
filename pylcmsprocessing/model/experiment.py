@@ -353,6 +353,7 @@ class Experiment:
             while any(need_processing):
                 ####Peak picking
                 clis = [x.command_line_processing(hide=False) for x in peakpickings if x.need_computing()]
+
                 ####We run the jobs actually
                 if len(clis) > 0:
                     runner.run(clis, silent=silent, log = log)
@@ -367,8 +368,6 @@ class Experiment:
                 cline = "Rscript " + pjoin + " " + path_temp + " " + str(self.get_workers(open=False))
                 subprocess.call(cline, shell=True)
                 need_processing = [not os.path.exists(row[5]) for row in rows]
-            else:
-                print("No more processing to do")
         print("Peak picking finished.")
         self.close_db()
 
