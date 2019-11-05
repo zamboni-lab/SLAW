@@ -72,8 +72,10 @@ def default_adducts_main_negative():
 
 TEMP={"CONVERSION":
       "temp/temp_names.csv",
-      "GROUPING":
-      "temp/temp_grouping",
+      "GROUPING":{
+      "TEMP":"temp/temp_grouping",
+      "BLOCKS":"temp/blocks",
+      "ALIGNMENT":"temp/alignement.rds"},
       "REPLICATES":"temp/replicates",
       "IONANNOTATION":{"FULL":"temp/adducts.csv",
                        "MAIN":"temp/main_adducts.csv"}

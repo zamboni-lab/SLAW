@@ -19,8 +19,11 @@ import shutil
 
 
 def is_converted(csvfile):
-    tpd = pd.read_csv(csvfile, nrows=2, sep=",", header=1)
-    if len(tpd.columns) >= 6:
+    try:
+        tpd = pd.read_csv(csvfile, nrows=0, sep=",", header=1)
+    except pd.io.common.CParserError:
+        tpd = pd.read_csv(csvfile, nrows=1, sep=",", header=0)
+    if "SN" in tpd.columns:
         return False
     return True
 
@@ -440,6 +443,50 @@ class Experiment:
         countgroup = 0
         dir_temp = self.output.getDir(cr.TEMP["GROUPING"])
         dir_datamatrix = self.output.getDir(cr.OUT["DATAMATRIX"])
+        for pp in all_peakpicking:
+            ###name of file
+            flists = c.execute("SELECT output_ms FROM processing WHERE peakpicking = " + str(pp[0]))
+            flists = [f[0] for f in flists]
+
+            ###getting samples
+            nlists = c.execute("SELECT path FROM samples")
+            nlists = [os.path.basename(nn[0]) for nn in nlists]
+
+            ppg = mg.Grouper(pp, dir_temp, dir_datamatrix, flists, nlists, intensity,mztol,rttol)
+            ###We update the peaktable direction of the file
+            poutput_dm = ppg.get_output_datamatrix()
+            poutput_idx = ppg.get_output_index()
+            ppg.make_temp_file()
+            query = self.update_query_construction("peakpicking", "id", str(pp[0]), "peaktable", poutput_dm)
+            c.execute(query)
+            query = self.update_query_construction("peakpicking", "id", str(pp[0]), "index_file", poutput_idx)
+            c.execute(query)
+            groupers[countgroup] = ppg
+            countgroup += 1
+        if countgroup != 0:
+            groupers = groupers[0:countgroup]
+            clis = [g.command_line() for g in groupers]
+            if len(clis) > 0:
+                runner.run(clis, silent=silent, log=log)
+        self.close_db()
+        print("Grouping finished")
+
+
+
+    def group_online(self, max_workers=2, silent=False, intensity="height",
+    ppm = 15,mztol=0.007,rttol=0.02,n_clusters = 10,log=None):
+        num_workers = self.get_workers()
+        runner = pr.ParallelRunner(min(num_workers, max_workers))
+        ####We create all the grouper eventually
+        self.open_db()
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM peakpicking")
+        all_peakpicking = c.fetchall()
+        groupers = [0] * len(all_peakpicking)
+        countgroup = 0
+        dir_temp = self.output.getDir(cr.TEMP["GROUPING"]["TEMP"]["BLOCKS"])
+        dir_datamatrix = self.output.getFile(cr.TEMP["GROUPING"]["ALIGNMENT"])
+        
         for pp in all_peakpicking:
             ###name of file
             flists = c.execute("SELECT output_ms FROM processing WHERE peakpicking = " + str(pp[0]))

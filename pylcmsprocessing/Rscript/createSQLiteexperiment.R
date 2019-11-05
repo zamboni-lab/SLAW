@@ -1,7 +1,7 @@
-suppressMessages(library(optparse,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE))
-suppressMessages(library(DBI,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE))
-suppressMessages(library(RSQLite,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE))
-suppressMessages(library(tools,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE))
+suppressWarnings(suppressMessages(library(optparse,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
+suppressWarnings(suppressMessages(library(DBI,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
+suppressWarnings(suppressMessages(library(RSQLite,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
+suppressWarnings(suppressMessages(library(tools,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
 
 
 ###CONSTANT

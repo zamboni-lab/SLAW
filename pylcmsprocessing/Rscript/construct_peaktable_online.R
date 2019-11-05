@@ -4,20 +4,6 @@ suppressWarnings(suppressMessages(library(RSQLite,warn.conflicts = FALSE,quietly
 suppressWarnings(suppressMessages(library(DBI,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
 suppressWarnings(suppressMessages(library(onlineLCMSaligner,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
 suppressWarnings(suppressMessages(library(jsonlite,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
-# source("raw_density.R")
-
-args <- commandArgs(trailingOnly = TRUE)
-
-FNAMES <-  args[1] #DBNAME <- "C:/Users/dalexis/Documents/data/data_ecoli_neg_philipp/MSexperiment.sqlite"
-PATH_DATAMATRIX <- args[2] #PATH_DATAMATRIX <- "test_datamatrix.csv"
-PATH_IDX <- args[3] #PATH_DATAMATRIX <- "test_output.csv"
-VAL_INTENSITY <- args[4]
-RTTOL <- as.numeric(args[5])
-MZTOL <- as.numeric(args[6])
-
-bw <- RTTOL/2.5
-binsize <- MZTOL
-
 
 
 get_os <- function() {
@@ -32,6 +18,9 @@ get_os <- function() {
   }
 }
 
+
+
+
 groupPeaksDensity <- function (peaks, sampleGroups, bw = 10, minFraction = 0.5, minSamples = 1,
                                binSize = 0.01, maxFeatures = 50, sleep = 0)
 {
@@ -44,7 +33,7 @@ groupPeaksDensity <- function (peaks, sampleGroups, bw = 10, minFraction = 0.5, 
   if (!is.matrix(peaks) & !is.data.frame(peaks)){
     stop("'peaks' has to be a 'matrix' or a 'data.frame'!")
   }
-  
+
   ###Store the current peak assignment
   peak_assign <- rep(NA_real_,nrow(peaks))
   colt <- c("time","rt")
@@ -140,11 +129,11 @@ makeDataMatrix <- function(samples,sampnames,path_output_dm,path_output_index,fu
   suppressWarnings(suppressMessages(library(RSQLite,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
   suppressWarnings(suppressMessages(library(xcms,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
   suppressWarnings(suppressMessages(library(stringr,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
-  
+
   ###Construct peak table from porcessing table
   constructPeakTable <-  function(samples){
     ###We read all the table
-    
+
     ###we tranform processing into a list to be passed to mapply
     vr <- mapply(samples,1:length(samples),FUN=function(x,y,intensity){
       if(!file.exists(x)){
@@ -152,32 +141,32 @@ makeDataMatrix <- function(samples,sampnames,path_output_dm,path_output_index,fu
         return(data.frame(mz=numeric(0),rt=numeric(0),intensity=numeric(0),
                           peakwidth=numeric(0),SN=numeric(0),right_on_left_assymetry=numeric(0)))
       }
-      
+
       #"mz","rt","height","intensity","rt_min","rt_max","mz_min","mz_max","SN","peakwidth","right_on_left_assymetry"
       ####We read all the peak table
       tab <-  read.table(x,sep=",",header=TRUE)
       pint <- match(intensity,colnames(tab))
-      
+
       if(is.na(pint)) message("intensity not found in file : ",x)
       ### The first two columns are always the mz and the rt
       tab <- tab[,c("mz","rt",intensity,"peakwidth","SN","right_on_left_assymetry"),drop=FALSE]
       tab$sample <-  rep(y,nrow(tab))
       return(tab)
     },SIMPLIFY = FALSE,MoreArgs=list("intensity"=int))
-    
+
     ####Making the sample table.
     vr <-  do.call(rbind,vr)
-    
+
     ####We remove all the peaks with NA in mass (may open for some open MS version)
     vr <- vr[!is.na(vr[,"mz"]),]
-    
+
     return(vr)
   }
-  
+
   message("processing ",basename(path_output_dm))
   ###We get the replicate of each sample
   pt <- constructPeakTable(samples)
-  
+
   suppressMessages(mat <- funGroup(pt, rep(1,length(samples)), bw = bw, minFraction = 0.0, minSamples = 1,
                                    binSize = mztol, maxFeatures = 20, sleep = 0))
   message("Alignment finished!")
@@ -189,50 +178,74 @@ makeDataMatrix <- function(samples,sampnames,path_output_dm,path_output_index,fu
     vline[pt[x,"sample"]] <- pt[x,intensity]
     vline
   },pt=pt,maxSample=maxSample,missingValue=NA_real_,intensity=int,simplify=FALSE)
-  
+
   ###We rewrite all the peaktables while storing the informations
   intTable <-  do.call(rbind,intTable)
-  
+
   mean_peakwidth <- sapply(mat$peakIndex,function(x,pt){
     mean(pt[x,"peakwidth"],na.rm=TRUE)
   },pt=pt,simplify=FALSE)
-  
+
   sd_peakwidth <- sapply(mat$peakIndex,function(x,pt){
     sd(pt[x,"peakwidth"],na.rm=TRUE)
   },pt=pt,simplify=FALSE)
-  
-  
+
+
   mean_assymetry <- sapply(mat$peakIndex,function(x,pt){
     median(pt[x,"right_on_left_assymetry"])
   },pt=pt,simplify=FALSE)
-  
+
   sd_assymetry <- sapply(mat$peakIndex,function(x,pt){
     sd(pt[x,"right_on_left_assymetry"])
   },pt=pt,simplify=FALSE)
-  
-  
+
+
   mean_SN <- sapply(mat$peakIndex,function(x,pt){
     mean(pt[x,"SN"],na.rm=TRUE)
   },pt=pt,simplify=FALSE)
-  
+
   ####Building the datamatrix using all the available information
   cnames <- c("mz","rt","mz_min","mz_max","rt_min","rt_max",'mean_peakwidth',
               'sd_peakwidth','median_assymetry','sd_assymetry',"mean_SN",paste("intensity",sampnames,sep="_"))
   dmm <- cbind(mat$featureDefinitions[,c("mzmed","rtmed","mzmin","mzmax","rtmin","rtmax")],
                mean_peakwidth,sd_peakwidth,mean_assymetry,sd_assymetry,mean_SN,intTable)
   colnames(dmm) <- cnames
-  
+
   ###Writing the datamatrx
   write.table(dmm,file = path_output_dm,sep=",",row.names = FALSE)
-  
+
   ###Writing the indices
   ff <- file(path_output_index,"w")
   write_json(mat$peakIndex,path = ff)
   close.connection(ff)
 }
 
+args <- commandArgs(trailingOnly = TRUE)
+
+PATH_PEAKTABLES <- args[1]
+PATH_BLOCKS <- args[2]
+PATH_ALIGNMENT <- args[3]
+PATH_OUT_DATAMATRIX <- args[4] #PATH_DATAMATRIX <- "test_datamatrix.csv"
+PATH_OUT_IDX <- args[5] #PATH_DATAMATRIX <- "test_output.csv"
+VAL_INTENSITY <- args[6]
+RTTOL <- as.numeric(args[7])
+MZTOL <- as.numeric(args[8])
+MZPPM <- as.numeric(args[9])
+NUM_REF <- as.numeric(args[10])
+NUM_CLUSTERS <- as.numeric(args[11])
+
+
 message("Beginning grouping using metric, ",VAL_INTENSITY)
 
+lam <- LCMSAlignerModelFromDirectory(PATH_PEAKTABLES,
+                      path_model=PATH_ALIGNMENT,
+                       output=PATH_BLOCKS,save_interval=15,
+                       num_file=20,num_peaks=NUM_REF,col_int=VAL_INTENSITY,reset = FALSE,allowed_jump=10,
+                       ppm = MZPPM, dmz=MZTOL,rt = RTTOL,n_clusters=NUM_CLUSTERS)
+##
+
+
+bioldDataMatrix()
 
 vfiles <- read.table(FNAMES,sep=",",header=FALSE,stringsAsFactors = FALSE)
 
