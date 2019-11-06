@@ -13,18 +13,12 @@ from pylcmsprocessing.model.experiment import Experiment
 
 if __name__=="__main__":
 ##Two thing to check the number of CPUs and the ocnsumed meory eventually.
-
     ###We determine the amount of memory allocated to each process
     avail_memory = (psutil.virtual_memory()[1] >> 20)
-
     ###We allocate the memory to each process
     num_cpus = multiprocessing.cpu_count()-1
-
     ###Two limits to check, the number of CPUs and the memory consumption eventually.
     #1.5 Go
-
-    ###1.5 Go by default
-
     memory_by_core = 1048*1.2
 
     if "MEMORY" in os.environ:
@@ -85,18 +79,23 @@ if __name__=="__main__":
 
         PATH_DB = "/processing_db.sqlite"
         #Procesinf of the pipeline eventually.
-        exp = Experiment(PATH_DB,reset=True)
+        exp = Experiment(PATH_DB,save_db = os.path.join(OUTPUT_DIR,"processing_db.sqlite"),reset=False)
         ##We check how many file there is
-        INPUT
 
         exp.initialise_database(num_cpus,OUTPUT_DIR,vui.polarity,INPUT,["ADAP"], 1)
         exp.building_inputs_single_processing(PATH_XML)
         exp.run("/MZmine-2.52-Linux",int(num_cpus),log = "/log.txt")
         exp.correct_conversion()
         exp.post_processing_peakpicking()
-        exp.group(max_workers=1,mztol=float(raw_yaml["grouping"]["dmz"]["value"]),
+        exp.group_online(intensity=str(raw_yaml["grouping"]["extracted_quantity"]["value"]),
+            ppm = float(raw_yaml["grouping"]["ppm"]["value"]),
+            mztol=float(raw_yaml["grouping"]["dmz"]["value"]),
             rttol=float(raw_yaml["grouping"]["drt"]["value"]),
-            intensity=str(raw_yaml["grouping"]["extracted_quantity"]["value"]))
+            n_ref = int(raw_yaml["grouping"]["num_references"]["value"]),
+            log="/log.txt")
+        # exp.group(max_workers=1,mztol=float(raw_yaml["grouping"]["dmz"]["value"]),
+        #     rttol=float(raw_yaml["grouping"]["drt"]["value"]),
+        #     intensity=str(raw_yaml["grouping"]["extracted_quantity"]["value"]))
         polarity = raw_yaml["ion_annotation"]["polarity"]["value"]
         main_adducts_str=raw_yaml["ion_annotation"]["main_adducts_"+polarity]["value"]
         adducts_str = raw_yaml["ion_annotation"]["adducts_"+polarity]["value"]

@@ -24,7 +24,7 @@ get_os <- function() {
 }
 
 getIntensityPos <- function(dm){
-  which(startsWith(colnames(dm),"intensity"))
+  which(startsWith(colnames(dm),"int"))
 }
 
 
@@ -63,11 +63,11 @@ convertToCliqueMS <- function(dm,
   tdf <-
     data.frame(
       mz = dm[, "mz"],
-      mzmin = dm[, "mz_min"] - 0.0003,
-      mzmax = dm[, "mz_max"] + 0.0003,
+      mzmin = dm[, "mz"] - 2*dm[, "sd_mz"],
+      mzmax = dm[, "mz"] + 2*dm[, "sd_mz"],
       rt = 60 * (dm[, "rt"]),
-      rtmin = 60 * (dm[, "rt_min"] - dm[,"mean_peakwidth"]/2-0.002),
-      rtmax = 60 * (dm[, "rt_max"] + dm[,"mean_peakwidth"]/2+0.002),
+      rtmin = 60 * (dm[, "rt"] - dm[,"mean_peakwidth"]-0.002),
+      rtmax = 60 * (dm[, "rt"] + dm[,"mean_peakwidth"]+0.002),
       into = intensity,
       intb = intensity,
       maxo = intensity,
@@ -240,16 +240,22 @@ createNetworkMultifiles <-
                      sparse = TRUE)
 
     ###We build a sequnce with each matrix
+    message(paste("seq_cut:",0,length(raw_files),size_batch,collapse="_"))
     seq_cut <- seq(0, length(raw_files), by = size_batch)
     if (seq_cut[length(seq_cut)] != length(raw_files)) {
       seq_cut <- c(seq_cut, length(raw_files) + 1)
     } else{
       seq_cut[length(seq_cut)] <- length(raw_files) + 1
     }
-    message("Processing segment: ")
+    message("Building cosine similarity network: ")
 
+    cpercent <- 0
     for (i in 1:(length(seq_cut) - 1)) {
-      message(i, " ",appendLF = FALSE)
+      if(floor(i*10/(length(seq_cut)-1)) != cpercent){
+        cpercent <- ceiling(i*10/(length(seq_cut)-1))
+        message(cpercent," ",appendLF = FALSE)
+      }
+      message("100\n",appendLF = FALSE)
       ###We compute the network for the selected files.
       ledges <-
         bplapply(
@@ -631,11 +637,6 @@ close(fadd)
 fadd <- file(PATH_MAIN_ADDUCTS,"r")
 main_adducts <- readLines(fadd)
 close(fadd)
-
-
-# annotated_tables <- groupFeatures(dm[sort(sample.int(nrow(dm),size=5000)),], raw_files[1:2], adducts,main_adducts,ionization_mode="positive",
-#                                   mzwin=MZWIN,rtwin=RTWIN,ppm = PPM, dmz = DMZ, size_batch = NUM_CORES,
-#                                   ref_xcms=PATH_MODEL, bbp=bpp)
 
 annotated_tables <- groupFeatures(dm,val_int_var, raw_files, adducts,main_adducts,ionization_mode=POLARITY,
                           ppm = PPM, dmz = DMZ, size_batch = NUM_CORES,

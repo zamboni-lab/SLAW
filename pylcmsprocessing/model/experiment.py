@@ -24,8 +24,8 @@ def is_converted(csvfile):
     except pd.io.common.CParserError:
         tpd = pd.read_csv(csvfile, nrows=1, sep=",", header=0)
     if "SN" in tpd.columns:
-        return False
-    return True
+        return True
+    return False
 
 
 ####We ensure that ther is a single databse connection at the same timnb
@@ -39,20 +39,40 @@ class Experiment:
 
     #####Databases peaks
 
-    def __init__(self, db, reset=False):
+    def __init__(self, db,save_db=None, reset=False):
+
         path_db = os.path.abspath(db)
         if os.path.isfile(path_db):
             if reset:
                 os.remove(path_db)
         self.db = path_db
+        self.path_save_db = None
+        if save_db is not None:
+            self.path_save_db = os.path.abspath(save_db)
         self.parameters = True
         self.peakpicking = []
         self.output = None
         if self.db_exists():
             self.output = oh.OutputDirectory(self.get_outdir())
+        elif self.path_save_db is not None and os.path.isfile(self.path_save_db):
+            self.load_db()
+            self.output = oh.OutputDirectory(self.get_outdir())
+
 
     def db_exists(self):
         return os.path.exists(self.db)
+
+    ##Saving the DB outside the docker eventually
+    ##Write DB outside the docker
+    def save_db(self):
+        if self.path_save_db is not None:
+            shutil.copy(self.db,self.path_save_db)
+
+    ##Copy the DB outside the docker.
+    def load_db(self):
+        if not os.path.isfile(self.db):
+            if os.path.isfile(self.path_save_db):
+                shutil.copy(self.path_save_db,self.db)
 
     def get_workers(self, open=True):
         if open:
@@ -106,8 +126,6 @@ class Experiment:
             c.execute('INSERT INTO common VALUES (?,?,?)', values)
         if len(common) is not 0:
             out_dir = common[0][1]
-
-            print("common: ", common)
 
         ###Creating the output directory
         out_dir = os.path.abspath(out_dir)
@@ -392,6 +410,7 @@ class Experiment:
         else:
             print("nothing to correct")
         self.close_db()
+        self.save_db()
 
     ###This step is always done before grouping
     def post_processing_peakpicking(self):
@@ -417,18 +436,23 @@ class Experiment:
         ##We remve the empty msms files and rename the new ones
         for ip in range(0,len(all_peaktable)):
             full_name = all_peaktable[ip][2]
-            if os.path.getsize(full_name)==0:
-                os.remove(full_name)
-            else:
-                new_name = os.path.join(dirname_msms,os.path.splitext(os.path.basename(all_samples[ip][0]))[0]+".mgf")
-                os.rename(full_name,new_name)
-                query = self.update_query_construction("processing", "id", str(all_peaktable[ip][0]), "output_ms2", new_name)
-                c.execute(query)
+            try:
+                if os.path.getsize(full_name)==0:
+                    os.remove(full_name)
+                else:
+                    new_name = os.path.join(dirname_msms,os.path.splitext(os.path.basename(all_samples[ip][0]))[0]+".mgf")
+                    os.rename(full_name,new_name)
+                    query = self.update_query_construction("processing", "id", str(all_peaktable[ip][0]), "output_ms2", new_name)
+                    c.execute(query)
+            except FileNotFoundError: #File has already been converted.
+                continue
 
             ####We remove the quantification table.
             name_quant = os.path.splitext(full_name)[0]+"_quant.csv"
-            os.remove(name_quant)
+            if os.path.isfile(name_quant):
+                os.remove(name_quant)
         self.close_db()
+        self.save_db()
 
     ###At the moment there is a single grouping method
     def group(self, max_workers=2, silent=False, intensity="height",mztol=0.007,rttol=0.02, log=None):
@@ -469,14 +493,14 @@ class Experiment:
             if len(clis) > 0:
                 runner.run(clis, silent=silent, log=log)
         self.close_db()
+        self.save_db()
         print("Grouping finished")
 
 
-
-    def group_online(self, max_workers=2, silent=False, intensity="height",
-    ppm = 15,mztol=0.007,rttol=0.02,n_clusters = 10,log=None):
+    def group_online(self,intensity="intensity",
+    ppm = 15,mztol=0.007,rttol=0.02,n_ref = 150,log=None):
         num_workers = self.get_workers()
-        runner = pr.ParallelRunner(min(num_workers, max_workers))
+        runner = pr.ParallelRunner(num_workers)
         ####We create all the grouper eventually
         self.open_db()
         c = self.conn.cursor()
@@ -484,9 +508,13 @@ class Experiment:
         all_peakpicking = c.fetchall()
         groupers = [0] * len(all_peakpicking)
         countgroup = 0
-        dir_temp = self.output.getDir(cr.TEMP["GROUPING"]["TEMP"]["BLOCKS"])
-        dir_datamatrix = self.output.getFile(cr.TEMP["GROUPING"]["ALIGNMENT"])
-        
+        #The directory of th epeaktable
+        dir_peaktables = self.output.getDir(cr.OUT["ADAP"]["PEAKTABLES"])
+        dir_blocks = self.output.getDir(cr.TEMP["GROUPING"]["BLOCKS"])
+        dir_alignment = self.output.getFile(cr.TEMP["GROUPING"]["ALIGNMENT"])
+        dir_datamatrix = self.output.getDir(cr.OUT["DATAMATRIX"])
+        path_fig = self.output.getFile(cr.OUT["FIGURES"]["RT_DEV"])
+
         for pp in all_peakpicking:
             ###name of file
             flists = c.execute("SELECT output_ms FROM processing WHERE peakpicking = " + str(pp[0]))
@@ -496,14 +524,11 @@ class Experiment:
             nlists = c.execute("SELECT path FROM samples")
             nlists = [os.path.basename(nn[0]) for nn in nlists]
 
-            ppg = mg.Grouper(pp, dir_temp, dir_datamatrix, flists, nlists, intensity,mztol,rttol)
+            ppg = mg.OnlineGrouper(pp, dir_peaktables,dir_blocks, dir_alignment,
+            dir_datamatrix, intensity, mztol, ppm, rttol, n_ref,num_workers,path_fig)
             ###We update the peaktable direction of the file
             poutput_dm = ppg.get_output_datamatrix()
-            poutput_idx = ppg.get_output_index()
-            ppg.make_temp_file()
             query = self.update_query_construction("peakpicking", "id", str(pp[0]), "peaktable", poutput_dm)
-            c.execute(query)
-            query = self.update_query_construction("peakpicking", "id", str(pp[0]), "index_file", poutput_idx)
             c.execute(query)
             groupers[countgroup] = ppg
             countgroup += 1
@@ -511,8 +536,9 @@ class Experiment:
             groupers = groupers[0:countgroup]
             clis = [g.command_line() for g in groupers]
             if len(clis) > 0:
-                runner.run(clis, silent=silent, log=log)
+                runner.run(clis, log=log)
         self.close_db()
+        self.save_db()
         print("Grouping finished")
 
     def evaluate(self, max_workers=2, silent=False):
@@ -619,6 +645,7 @@ class Experiment:
             if len(clis) > 0:
                 runner.run(clis, silent=True)
         self.close_db()
+        self.save_db()
         print("Annotation finished")
 
     def clean(self):

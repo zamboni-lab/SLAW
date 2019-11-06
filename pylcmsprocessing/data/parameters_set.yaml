@@ -73,6 +73,10 @@ grouping:
     priority: LOW
     description: Float. The minimum m/z tolerance in Da to be considered. Mass tolerance between peaks of different samples to aligned is given by max(ppm x m/z x 1e-6,dmz).
     value: 0.01
+  num_references:
+    priority: LOW
+    description: Integer. The number of references peaks chosen to correct retention time correction.
+    value: 150
 ion_annotation:
     description: Grouping of ions originating form the same metabolite and annotations of adducts and fragments. The detection is done using a modified MScliques the annotation of ion is done using the InterpretMSSpectrum package.
     polarity:
@@ -86,7 +90,7 @@ ion_annotation:
     dmz:
       priority: HIGH
       description: Float. The minimum m/z tolerance in Da to match ions coming for the same metabolites. It is given by max(ppm x m/z x 1e-6,dmz).
-      value: 0.007
+      value: 0.01
     adducts_negative:
       priority: HIGH
       description: Character. A list of adducts to be considered as chemical formula. See the provided examples for syntax.
@@ -110,4 +114,4 @@ ion_annotation:
     num_files:
       priority: HIGH
       description: The number of files used to generate EICs profile for ion annotations. This number should be at most 100
-      value: 100
+      value: 50
