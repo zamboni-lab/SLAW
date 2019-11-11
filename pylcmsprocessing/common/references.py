@@ -67,7 +67,7 @@ def default_adducts_negative():
     return(lines)
 
 def default_adducts_main_negative():
-    lines = [line.rstrip('\n') for line in open(DATA["IONANNOTATION"]["positive"]["MAIN"])]
+    lines = [line.rstrip('\n') for line in open(DATA["IONANNOTATION"]["negative"]["MAIN"])]
     return(lines)
 
 

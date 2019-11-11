@@ -30,8 +30,9 @@ RTTOL <- as.numeric(args[6])
 MZTOL <- as.numeric(args[7])
 MZPPM <- as.numeric(args[8])
 NUM_REF <- as.numeric(args[9])
-NUM_CORES <- as.numeric(args[10])
-OUTFIGURE <- args[11]
+ALPHA_RT <- as.numeric(args[10])
+NUM_CORES <- as.numeric(args[11])
+OUTFIGURE <- args[12]
 
 ###Creating the parallel porcessing objects.
 
@@ -44,14 +45,13 @@ if(get_os()=="win"){
 
 message("Beginning grouping using metric, ",VAL_INTENSITY)
 
-message("pekatables: ",list.files(PATH_PEAKTABLES,full.names=TRUE),collapse="_")
-
+##mz and rt are always stored
 lam <- LCMSAlignerModelFromDirectory(PATH_PEAKTABLES,
                       path_model=PATH_ALIGNMENT,
                        output=PATH_BLOCKS,save_interval=15,
                        num_file=20,num_peaks=NUM_REF,col_int=VAL_INTENSITY,reset = FALSE,allowed_jump=10,
                        ppm = MZPPM, dmz=MZTOL,rt = RTTOL,n_clusters=10,
-                       supp_data=c("mz","rt","rt_cor","peakwidth","SN","right_on_left_assymetry"))
+                       supp_data=c("peakwidth","SN","right_on_left_assymetry"),ransac_l1=ALPHA_RT)
 
 ###We always remove single peaks.
 pdf(OUTFIGURE)

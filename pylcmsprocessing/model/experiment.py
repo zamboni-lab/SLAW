@@ -20,7 +20,7 @@ import shutil
 
 def is_converted(csvfile):
     try:
-        tpd = pd.read_csv(csvfile, nrows=0, sep=",", header=1)
+        tpd = pd.read_csv(csvfile, nrows=0, sep=",", header=0)
     except pd.io.common.CParserError:
         tpd = pd.read_csv(csvfile, nrows=1, sep=",", header=0)
     if "SN" in tpd.columns:
@@ -408,7 +408,7 @@ class Experiment:
             cline = "Rscript " + p_conversion + " " + path_temp + " " + str(self.get_workers(open=False))
             subprocess.call(cline, shell=True)
         else:
-            print("nothing to correct")
+            print("No corrections to do.")
         self.close_db()
         self.save_db()
 
@@ -426,15 +426,16 @@ class Experiment:
         dirname_msms = self.output.getDir(cr.OUT["ADAP"]["MSMS"])
         ###Now we jsut rename all the files
         for ip in range(0,len(all_peaktable)):
+
+            ##Correcting if needed convert he ms files
             new_name = os.path.join(dirname,os.path.splitext(os.path.basename(all_samples[ip][0]))[0]+".csv")
+
+            if os.path.isfile(new_name):
+                continue
             old_name = all_peaktable[ip][1]
             os.rename(old_name,new_name)
             query = self.update_query_construction("processing", "id", str(all_peaktable[ip][0]), "output_ms", new_name)
             c.execute(query)
-        msms_output = self.output.getDir(cr.OUT["ADAP"]["MSMS"])
-
-        ##We remve the empty msms files and rename the new ones
-        for ip in range(0,len(all_peaktable)):
             full_name = all_peaktable[ip][2]
             try:
                 if os.path.getsize(full_name)==0:
@@ -446,11 +447,11 @@ class Experiment:
                     c.execute(query)
             except FileNotFoundError: #File has already been converted.
                 continue
-
-            ####We remove the quantification table.
             name_quant = os.path.splitext(full_name)[0]+"_quant.csv"
             if os.path.isfile(name_quant):
                 os.remove(name_quant)
+
+
         self.close_db()
         self.save_db()
 
@@ -498,7 +499,7 @@ class Experiment:
 
 
     def group_online(self,intensity="intensity",
-    ppm = 15,mztol=0.007,rttol=0.02,n_ref = 150,log=None):
+    ppm = 15,mztol=0.007,rttol=0.02,n_ref = 150,alpha = 0.1,log=None):
         num_workers = self.get_workers()
         runner = pr.ParallelRunner(num_workers)
         ####We create all the grouper eventually
@@ -525,7 +526,8 @@ class Experiment:
             nlists = [os.path.basename(nn[0]) for nn in nlists]
 
             ppg = mg.OnlineGrouper(pp, dir_peaktables,dir_blocks, dir_alignment,
-            dir_datamatrix, intensity, mztol, ppm, rttol, n_ref,num_workers,path_fig)
+            dir_datamatrix, intensity, mztol, ppm, rttol, n_ref, alpha,
+            num_workers,path_fig)
             ###We update the peaktable direction of the file
             poutput_dm = ppg.get_output_datamatrix()
             query = self.update_query_construction("peakpicking", "id", str(pp[0]), "peaktable", poutput_dm)
@@ -650,7 +652,7 @@ class Experiment:
 
     def clean(self):
         ###We clena the files
-        to_rm= [cr.TEMP["GROUPING"],cr.TEMP["IONANNOTATION"]["FULL"],cr.TEMP["IONANNOTATION"]["MAIN"],
+        to_rm= [cr.TEMP["GROUPING"]["TEMP"],cr.TEMP["IONANNOTATION"]["FULL"],cr.TEMP["IONANNOTATION"]["MAIN"],
         cr.TEMP["CONVERSION"],cr.OUT["ADAP"]["JSON"],cr.OUT["ADAP"]["CANDIDATES"]]
         for waste in to_rm:
             pwaste = self.output.getPath(waste)

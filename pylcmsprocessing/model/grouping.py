@@ -44,7 +44,7 @@ class Grouper:
 
 class OnlineGrouper:
     def __init__(self,row,peaktables,
-    blocks,alignment,out,intensity,mztol,ppm,rttol,num_ref,num_workers,outfig):
+    blocks,alignment,out,intensity,mztol,ppm,rttol,alpha,num_ref,num_workers,outfig):
         self.hash = row[3]
         self.peaktables=peaktables
         self.output_data=os.path.join(out,"datamatrix_"+row[3]+".csv")
@@ -54,6 +54,7 @@ class OnlineGrouper:
         self.intensity=intensity
         self.mztol=mztol
         self.ppm = ppm
+        self.alpha=alpha
         self.rttol=rttol
         self.num_ref=num_ref
         self.num_workers=num_workers
@@ -71,4 +72,4 @@ class OnlineGrouper:
         ####We give all the name of the grouping parameters implicated in a single file
         return " ".join(["Rscript",command_line,self.peaktables,self.blocks,self.alignment,
                         self.output_data,self.intensity,str(self.rttol),str(self.mztol),str(self.ppm),
-                        str(self.num_ref),str(self.num_workers),self.figure])
+                        str(self.num_ref),str(self.alpha),str(self.num_workers),self.figure])
