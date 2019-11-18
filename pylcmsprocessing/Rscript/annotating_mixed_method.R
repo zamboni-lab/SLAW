@@ -107,15 +107,18 @@ convertToCliqueMS <- function(dm,
 
 computeNetworkRawfile <-
   function(dm,
+           idx,
            raw_data,
            ref_xcms = "X:/Documents/dev/script/diverse/xcms_raw_with_peaks.RData") {
     suppressMessages(library(cliqueMS, warn.conflicts = FALSE))
     ####convert a datamatrix to a peaktable
     convertToCliqueMS <- function(dm,
+                                  idx,
                                   path_raw,
                                   ref_xcms = "X:/Documents/dev/script/diverse/xcms_raw_with_peaks.RData") {
       suppressMessages(library(MSnbase, warn.conflicts = FALSE))
       suppressMessages(library(xcms, warn.conflicts = FALSE))
+      sel_idx <- which(!is.na(dm[,idx]))
       mzdata <- readRDS(file = ref_xcms)
       intensity <- apply(dm[, 3:ncol(dm)], 1, mean, na.rm = TRUE)
 
@@ -139,19 +142,19 @@ computeNetworkRawfile <-
       rtime <- rtime(mzraw)
       tdf <-
         data.frame(
-          mz = dm[, "mz"],
-          mzmin = dm[, "mz"] - 0.0003,
-          mzmax = dm[, "mz"] + 0.0003,
-          rt = 60 * (dm[, "rt"]),
-          rtmin = 60 * (dm[, "rt"] - 0.002),
-          rtmax = 60 * (dm[, "rt"] + 0.002),
-          into = intensity,
-          intb = intensity,
-          maxo = intensity,
-          sn = rep(10, nrow(dm)),
+          mz = dm[sel_idx, "mz"],
+          mzmin = dm[sel_idx, "mz"] - 0.0003,
+          mzmax = dm[sel_idx, "mz"] + 0.0003,
+          rt = 60 * (dm[sel_idx, "rt"]),
+          rtmin = 60 * (dm[sel_idx, "rt"] - 0.002),
+          rtmax = 60 * (dm[sel_idx, "rt"] + 0.002),
+          into = intensity[sel_idx],
+          intb = intensity[sel_idx],
+          maxo = intensity[sel_idx],
+          sn = rep(10, length(sel_idx)),
           sample =
-            rep(1, nrow(dm)),
-          is_filled = rep(0, nrow(dm))
+            rep(1, length(sel_idx)),
+          is_filled = rep(0, length(sel_idx))
         )
       ###We look for the closest retention time in these data
       rttime <- rtime(mzraw)
@@ -178,7 +181,7 @@ computeNetworkRawfile <-
       mzdata@msFeatureData@.xData <- tenv
       mzdata@featureData@data <- mzraw@featureData@data
       mzdata@processingData@files <- path_raw
-      return(list(mzdata,sel))
+      return(list(mzdata,sel,sel_idx))
     }
     ldata <-
       convertToCliqueMS(
@@ -189,10 +192,9 @@ computeNetworkRawfile <-
 
     mzdata <- ldata[[1]]
     ###We just remove all the EICs value for simplicit
-
-
     ##We only extract EICs for feture which seems to fall in the correct boundaries
     sel <- ldata[[2]]
+    sel_idx <- ldata[[3]]
     anclique <- createanClique(mzdata)
 
     netlist <-
@@ -210,8 +212,8 @@ computeNetworkRawfile <-
     }
     alle <- as_data_frame(netlist, "edges")
     vid <- vertex_attr(netlist, name = "id")
-    alle[, 1] <- sel[vid[alle[, 1]]]
-    alle[, 2] <- sel[vid[alle[, 2]]]
+    alle[, 1] <- sel_idx[sel[vid[alle[, 1]]]]
+    alle[, 2] <- sel_idx[sel[vid[alle[, 2]]]]
     alle <- as.matrix(alle)
     return(alle)
   }
@@ -221,6 +223,7 @@ computeNetworkRawfile <-
 createNetworkMultifiles <-
   function(dm,
            raw_files,
+           match_files,
            size_batch = 10,
            ref_xcms = "X:/Documents/dev/script/diverse/xcms_raw_with_peaks.RData",
            bpp = NULL) {
@@ -252,11 +255,12 @@ createNetworkMultifiles <-
       message(i, " ",appendLF = FALSE)
       ###We compute the network for the selected files.
       ledges <-
-        bplapply(
+        bpmapply(
           as.list(raw_files[seq_cut[i]:(seq_cut[i + 1] - 1)]),
+          match_files[seq_cut[i]:(seq_cut[i + 1] - 1)],
           FUN = computeNetworkRawfile,
-          ref_xcms = ref_xcms,
-          dm = dm,
+          MoreArgs=list(ref_xcms = ref_xcms,
+          dm = dm),
           BPPARAM = bpp
         )
 
@@ -319,10 +323,6 @@ createNetworkMultifiles <-
         rep(1, nrow(dm)),
       is_filled = rep(0, nrow(dm))
     )
-
-    # browser()
-
-
     anclique@network <- gadj
     return(anclique)
   }
@@ -551,13 +551,14 @@ buildDataMatrixSimplified <- function(dm,annot){
 }
 
 
-groupFeatures <- function(dm,val_int, raw_files, adducts,main_adducts,ionization_mode,
+groupFeatures <- function(dm,val_int, raw_files,match_files,adducts,main_adducts,ionization_mode,
                           ppm = 10, dmz = 0.005, size_batch = 10,
                           ref_xcms="X:/Documents/dev/script/diverse/xcms_raw_with_peaks.RData", bbp=NULL){
   if(is.null(bpp)) bpp <- bpparam()
 
   anclique <- createNetworkMultifiles(dm,
              raw_files,
+             match_files,
              size_batch = size_batch,
              ref_xcms = ref_xcms,
              bpp = bpp)
@@ -609,7 +610,6 @@ message("Retained ",sum(num_detect)," signals on ",nrow(dm))
 dm <- dm[num_detect,,drop=FALSE]
 
 
-
 ###Reading the raw files
 dbb <- dbConnect(RSQLite:::SQLite(),PATH_DB)
 raw_files <- dbGetQuery(dbb,"SELECT path FROM samples")[,1]
@@ -641,11 +641,19 @@ main_adducts <- readLines(fadd)
 close(fadd)
 
 
+####We map the sample name of the vector data
+base_sample <- str_split(basename(raw_files),pattern=fixed("\\."),simplify=TRUE)[,1]
+
+##Give the posaition of raw_file on the data matrix
+match_files <- sapply(base_sample,function(x,vref){which(endsWith(vref,suffix=x))},vref=colnames(dm),simplify=TRUE)
+
+
+
 # annotated_tables <- groupFeatures(dm[sort(sample.int(nrow(dm),size=5000)),], raw_files[1:2], adducts,main_adducts,ionization_mode="positive",
 #                                   mzwin=MZWIN,rtwin=RTWIN,ppm = PPM, dmz = DMZ, size_batch = NUM_CORES,
 #                                   ref_xcms=PATH_MODEL, bbp=bpp)
 
-annotated_tables <- groupFeatures(dm,val_int_var, raw_files, adducts,main_adducts,ionization_mode=POLARITY,
+annotated_tables <- groupFeatures(dm,val_int_var, raw_files, match_files, adducts,main_adducts,ionization_mode=POLARITY,
                           ppm = PPM, dmz = DMZ, size_batch = NUM_CORES,
                           ref_xcms=PATH_MODEL, bbp=bpp)
 
