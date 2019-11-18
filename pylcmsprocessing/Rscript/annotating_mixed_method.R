@@ -34,14 +34,14 @@ convertToCliqueMS <- function(dm,
   suppressMessages(library(MSnbase, warn.conflicts = FALSE))
   suppressMessages(library(xcms, warn.conflicts = FALSE))
   mzdata <- readRDS(file = ref_xcms)
-  
+
   getIntensityPos <- function(dm){
     which(startsWith("intensity",colnames(dm)))
   }
-  
+
   pint <- getIntensityPos(dm)
   intensity <- apply(dm[, pint], 1, mean, na.rm = TRUE)
-  
+
   ###We mdoify all the fileds of the available object
   cnames <- c(
     "mz",
@@ -57,7 +57,7 @@ convertToCliqueMS <- function(dm,
     "sample",
     "is_filled"
   )
-  
+
   mzraw <- readMSData(path_raw,mode="onDisk")
   rtime <- rtime(mzraw)
   tdf <-
@@ -76,7 +76,7 @@ convertToCliqueMS <- function(dm,
         rep(1, nrow(dm)),
       is_filled = rep(0, nrow(dm))
     )
-  
+
   ###We look for the closest retention time in these data
   rttime <- rtime(mzraw)
   blim <- c(-1,rttime[2:length(rttime)]-diff(rttime)/2,100000)
@@ -85,17 +85,17 @@ convertToCliqueMS <- function(dm,
   rtmatch_max <- .bincode(tdf[,"rtmax"],breaks = blim,include.lowest = TRUE)
   rtmatch_max <- ifelse(rtmatch_max<length(rttime),rtmatch_max+1,rep(length(rttime),length(rtmatch_max)))
   rtmatch_med <- .bincode(tdf[,"rt"],breaks = blim,include.lowest = TRUE)
-  
+
   # sel <- apply(rtmatch_min,rtmatch_max)
-  
+
   tdf[,"rtmin"] <- rttime[rtmatch_min]
   tdf[,"rtmax"] <- rttime[rtmatch_max]
   tdf[,"rt"] <- rttime[rtmatch_med]
-  
+
   ###only keep feature which have a different rt,rtmin and rtmax
   vdup <- apply(tdf[,c("rtmin","rt","rtmax")],1,anyDuplicated)
   sel <- which(vdup==0)
-  
+
   tenv <- new.env()
   tenv[["chromPeaks"]] <- as.matrix(tdf[sel,])
   mzdata@msFeatureData@.xData <- tenv
@@ -108,7 +108,8 @@ convertToCliqueMS <- function(dm,
 computeNetworkRawfile <-
   function(dm,
            raw_data,
-           ref_xcms = "X:/Documents/dev/script/diverse/xcms_raw_with_peaks.RData") {
+           ref_xcms = "X:/Documents/dev/script/diverse/xcms_raw_with_peaks.RData",
+           cosFilter=0.3) {
     suppressMessages(library(cliqueMS, warn.conflicts = FALSE))
     suppressMessages(library(igraph, warn.conflicts = FALSE))
     ####convert a datamatrix to a peaktable
@@ -118,14 +119,14 @@ computeNetworkRawfile <-
       suppressMessages(library(MSnbase, warn.conflicts = FALSE))
       suppressMessages(library(xcms, warn.conflicts = FALSE))
       mzdata <- readRDS(file = ref_xcms)
-      
+
       getIntensityPos <- function(dm){
         which(startsWith("intensity",colnames(dm)))
       }
-      
+
       pint <- getIntensityPos(dm)
       intensity <- apply(dm[, pint], 1, mean, na.rm = TRUE)
-      
+
       ###We mdoify all the fileds of the available object
       cnames <- c(
         "mz",
@@ -141,14 +142,14 @@ computeNetworkRawfile <-
         "sample",
         "is_filled"
       )
-      
+
       mzraw <- readMSData(path_raw,mode="onDisk")
       rtime <- rtime(mzraw)
       tdf <-
         data.frame(
           mz = dm[, "mz"],
-          mzmin = dm[, "mz"] - 2*dm[, "sd_mz"],
-          mzmax = dm[, "mz"] + 2*dm[, "sd_mz"],
+          mzmin = dm[, "mz"] - dm[, "max_mz"] + dm[, "min_mz"] ,
+          mzmax = dm[, "mz"] - dm[, "min_mz"] + dm[, "max_mz"],
           rt = 60 * (dm[, "rt"]),
           rtmin = 60 * (dm[, "rt"] - dm[,"mean_peakwidth"]-0.002),
           rtmax = 60 * (dm[, "rt"] + dm[,"mean_peakwidth"]+0.002),
@@ -160,7 +161,7 @@ computeNetworkRawfile <-
             rep(1, nrow(dm)),
           is_filled = rep(0, nrow(dm))
         )
-      
+
       ###We look for the closest retention time in these data
       rttime <- rtime(mzraw)
       blim <- c(-1000,rttime[2:length(rttime)]-diff(rttime)/2,100000)
@@ -169,17 +170,17 @@ computeNetworkRawfile <-
       rtmatch_max <- .bincode(tdf[,"rtmax"],breaks = blim,include.lowest = TRUE)
       rtmatch_max <- ifelse(rtmatch_max<length(rttime),rtmatch_max+1,rep(length(rttime),length(rtmatch_max)))
       rtmatch_med <- .bincode(tdf[,"rt"],breaks = blim,include.lowest = TRUE)
-      
+
       # sel <- apply(rtmatch_min,rtmatch_max)
-      
+
       tdf[,"rtmin"] <- rttime[rtmatch_min]
       tdf[,"rtmax"] <- rttime[rtmatch_max]
       tdf[,"rt"] <- rttime[rtmatch_med]
-      
+
       ###only keep feature which have a different rt,rtmin and rtmax
       vdup <- apply(tdf[,c("rtmin","rt","rtmax")],1,anyDuplicated)
       sel <- which(vdup==0)
-      
+
       tenv <- new.env()
       tenv[["chromPeaks"]] <- as.matrix(tdf[sel,])
       mzdata@msFeatureData@.xData <- tenv
@@ -187,32 +188,61 @@ computeNetworkRawfile <-
       mzdata@processingData@files <- path_raw
       return(list(mzdata,sel))
     }
-    
+
     ldata <-
       convertToCliqueMS(
         dm,
         path_raw = raw_data,
         ref_xcms = ref_xcms
       )
-    
+
     mzdata <- ldata[[1]]
     ###We just remove all the EICs value for simplicit
-    
-    
+
+
     ##We only extract EICs for feture which seems to fall in the correct boundaries
     sel <- ldata[[2]]
     anclique <- createanClique(mzdata)
-    
+
+
+    createNetworkWithFilter <- function (mzdata, peaklist, filter = TRUE, mzerror = 5e-06, intdiff = 1e-04,
+              rtdiff = 1e-04, cosFilter = 0.3)
+    {
+      eicmat <- cliqueMS:::defineEIC(mzdata)
+      sparseeic <- as(t(eicmat), "sparseMatrix")
+      cosTotal <- qlcMatrix::cosSparse(sparseeic)
+      if (filter == TRUE) {
+        filterOut <- cliqueMS:::filterFeatures(cosTotal, peaklist, mzerror = mzerror,
+                                    rtdiff = rtdiff, intdiff = intdiff)
+        cosTotal <- filterOut$cosTotal
+        peaklist <- filterOut$peaklist
+        message(paste("Features filtered:", length(filterOut$deleted),
+                      sep = " "))
+      }
+      network <- igraph::graph.adjacency(cosTotal, weighted = TRUE,
+                                         diag = FALSE, mode = "undirected")
+      igraph::V(network)$id = seq_len(nrow(peaklist))
+      nozeroEdges = igraph::E(network)[which(igraph::E(network)$weight >
+                                               cosFilter)]
+      network <- igraph::subgraph.edges(network, nozeroEdges)
+      igraph::E(network)$weight <- round(igraph::E(network)$weight,
+                                         digits = 10)
+      igraph::E(network)$weight[which(igraph::E(network)$weight ==
+                                        1)] <- 0.99999999999
+      return(list(network = network, peaklist = peaklist))
+    }
+
     netlist <-
-      createNetwork(
+      createNetworkWithFilter(
         mzdata,
         anclique@peaklist[sel,],
         filter = FALSE,
         mzerror = 1e-5,
         intdiff = 1e4,
-        rtdiff = 1e-3
+        rtdiff = 1e-3,
+        cosFilter=cosFilter
       )$network
-    
+
     if(length(netlist)==1 & is.na(netlist)){
       return(matrix(nrow=0,ncol=3))
     }
@@ -231,12 +261,13 @@ createNetworkMultifiles <-
            raw_files,
            size_batch = 10,
            ref_xcms = "X:/Documents/dev/script/diverse/xcms_raw_with_peaks.RData",
+           cosFilter = 0.2,
            bpp = NULL) {
-    
+
     size_batch <- min(size_batch,length(raw_files)-1)
     if (is.null(bpp))
       bpp <- bpparam()
-    
+
     ###The sparse matrix which will be used ot create the network.
     countMat <- Matrix(0,
                        nrow = nrow(dm),
@@ -246,16 +277,16 @@ createNetworkMultifiles <-
                      nrow = nrow(dm),
                      ncol = nrow(dm),
                      sparse = TRUE)
-    
+
     ###We build a sequnce with each matrix
-    seq_cut <- seq(0, length(raw_files), by = size_batch)
+    seq_cut <- seq(1, length(raw_files), by = size_batch)
     if (seq_cut[length(seq_cut)] != length(raw_files)) {
       seq_cut <- c(seq_cut, length(raw_files) + 1)
     } else{
       seq_cut[length(seq_cut)] <- length(raw_files) + 1
     }
     message("Building cosine similarity network: \n0 ",appendLF = FALSE)
-    
+
     cpercent <- 0
     for (i in 1:(length(seq_cut) - 1)) {
       if(floor(i*10/(length(seq_cut)-1)) != cpercent){
@@ -264,15 +295,26 @@ createNetworkMultifiles <-
       }
       ###We compute the network for the selected files.
       ledges <-
-        bplapply(
+        bptry(bplapply(
           as.list(raw_files[seq_cut[i]:(seq_cut[i + 1] - 1)]),
           FUN = computeNetworkRawfile,
           ref_xcms = ref_xcms,
           dm = dm,
+          cosFilter = cosFilter,
           BPPARAM = bpp
-        )
-      
-      
+        ))
+
+      print(ledges)
+
+      # vff <- computeNetworkRawfile(raw_files[1],ref_xcms=ref_xcms,dm=dm)
+
+        ##Cahcing errors
+        if(!is.null(attr(ledges,"result"))){
+          ledges <- attr(ledges,"result")
+          ledges <- ledges[sapply(ledges,function(x){!"bperror" %in% class(x)})]
+        }
+
+
       ###We add the edges to the main network
       for (j in seq_along(ledges)) {
         alle <- ledges[[j]]
@@ -291,14 +333,14 @@ createNetworkMultifiles <-
     }
     message("100\n",appendLF = FALSE)
     message("Done")
-    
+
     ##We get the first useless elemnts
     sel_val <- rowSums(cosMat)!=0
     # sel_val <- apply(cosMat, 1, function(x) {
     #   any(x != 0)
     # })
     cosMat <- cosMat[sel_val, sel_val]
-    
+
     gadj <-
       graph_from_adjacency_matrix(adjmatrix = cosMat,
                                   mode = "undirected",
@@ -311,9 +353,9 @@ createNetworkMultifiles <-
         path_raw = raw_files[[1]],
         ref_xcms = ref_xcms
       )
-    
+
     mzdata <- ldata[[1]]
-    
+
     intensity <- apply(dm,1,function(x){mean(x[3:length(x)],na.rm=TRUE)})
     anclique <- createanClique(mzdata)
     anclique@peaklist <- data.frame(
@@ -331,9 +373,9 @@ createNetworkMultifiles <-
         rep(1, nrow(dm)),
       is_filled = rep(0, nrow(dm))
     )
-    
-    
-    
+
+
+
     anclique@network <- gadj
     return(anclique)
   }
@@ -344,14 +386,14 @@ annotateCliques <- function(cliques, adducts, main_adducts,
                             ionization_mode,val_int, bpp = NULL) {
   if (is.null(bpp))
     bpp <- bpparam()
-  
+
   vfeat <-
     bplapply(
       cliques@cliques,FUN = annotateCliqueInterpretMSspectrum,
       dm = cliques@peaklist,adducts=adducts,main_adducts=main_adducts,
       ionization_mode=ionization_mode,val_int = val_int,BPPARAM = bpp
     )
-  
+
   totfeat <- 1
   for (i in seq_along(vfeat)) {
     seq_idx <-
@@ -359,7 +401,7 @@ annotateCliques <- function(cliques, adducts, main_adducts,
     vfeat[[i]] <- do.call(rbind, vfeat[[i]])
     vfeat[[i]] <- cbind(vfeat[[i]], seq_idx)
     totfeat <- totfeat + nrow(vfeat[[i]])
-    
+
   }
   ###We merge all the data matrix
   vfeat <- do.call(rbind, vfeat)
@@ -444,12 +486,12 @@ annotateCliqueInterpretMSspectrum <-
       sel_adducts <- which(!is.na(annots[, "adduct"]))
       if (length(sel_adducts) <= 0)
         break
-      
+
       if(length(sel_adducts)==1){
         annots$label[sel_adducts] <- def_ion
         annots$adduct[sel_adducts] <- def_ion
       }
-      
+
       sel_iso <- annots$isogr[sel_adducts]
       sel_iso <- sel_iso[!is.na(sel_iso)]
 
@@ -576,14 +618,14 @@ buildDataMatrixSimplified <- function(dm,annot){
 
 
 groupFeatures <- function(dm,val_int, raw_files, adducts,main_adducts,ionization_mode,
-                          ppm = 10, dmz = 0.005, size_batch = 10,
+                          ppm = 10, dmz = 0.005, size_batch = 10,cosFilter = 0.5,
                           ref_xcms="X:/Documents/dev/script/diverse/xcms_raw_with_peaks.RData", bbp=NULL){
   if(is.null(bpp)) bpp <- bpparam()
 
   anclique <- createNetworkMultifiles(dm,
              raw_files,
              size_batch = size_batch,
-             ref_xcms = ref_xcms,
+             ref_xcms = ref_xcms,cosFilter = cosFilter,
              bpp = bpp)
   ###we compute the cliques
   anclique <- computeCliques(anclique, 1e-5, TRUE)
@@ -612,9 +654,9 @@ PPM <-  as.numeric(args[10])
 DMZ <-  as.numeric(args[11])
 FILTER_NUMS <- max(1,as.numeric(args[13]))
 
-
 ###We peak the FILE_USED most intense files.
-FILES_USED <- as.numeric(args[12])
+FILES_USED <- min(as.numeric(args[12]),10)
+
 
 
 ###reading data matrices
@@ -623,10 +665,16 @@ dm <- read.table(PATH_DATAMATRIX,header=TRUE,sep=",")
 posIntensities <- getIntensityPos(dm)
 num_detect <- apply(dm[,posIntensities,drop=FALSE],1,function(x){sum(!is.na(x))})
 
-num_detect <- num_detect>=FILTER_NUMS
+vdetect <- num_detect>=FILTER_NUMS
+###We only keep
+while(sum(vdetect)>70000){
+  FILTER_NUMS <- FILTER_NUMS+1
+  vdetect <- num_detect>=FILTER_NUMS
+}
 
-message("Retained ",sum(num_detect)," signals on ",nrow(dm))
-dm <- dm[num_detect,,drop=FALSE]
+message("Retained ",sum(vdetect)," signals on ",nrow(dm))
+dm <- dm[vdetect,,drop=FALSE]
+
 
 ###Reading the raw files
 dbb <- dbConnect(RSQLite:::SQLite(),PATH_DB)
@@ -638,14 +686,13 @@ val_int <- apply(dm[,posIntensities],2,sum,na.rm=TRUE)
 sel_files <- order(val_int,decreasing = TRUE)[1:min(FILES_USED,length(val_int))]
 raw_files <- raw_files[sel_files]
 
-
 val_int_var <- apply(dm[,posIntensities],1,mean,na.rm=TRUE)
 ###Setting up the parallel processing
 bpp <- NULL
 if(get_os()=="win"){
   bpp <- SnowParam(workers = NUM_CORES)
 }else{
-  bpp <- MulticoreParam(workers = NUM_CORES)
+  bpp <- MulticoreParam(workers = min(NUM_CORES,4))
 }
 # bpp <- SerialParam()
 
@@ -659,7 +706,7 @@ main_adducts <- readLines(fadd)
 close(fadd)
 
 annotated_tables <- groupFeatures(dm,val_int_var, raw_files, adducts,main_adducts,ionization_mode=POLARITY,
-                          ppm = PPM, dmz = DMZ, size_batch = NUM_CORES,
+                          ppm = PPM, dmz = DMZ, size_batch = NUM_CORES,cosFilter = 0.5,
                           ref_xcms=PATH_MODEL, bbp=bpp)
 
 write.table(annotated_tables[[1]],file = PATH_OUTPUT_SIMPLE,sep=";",row.names = FALSE)

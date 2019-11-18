@@ -44,7 +44,7 @@ class Grouper:
 
 class OnlineGrouper:
     def __init__(self,row,peaktables,
-    blocks,alignment,out,intensity,mztol,ppm,rttol,alpha,num_ref,num_workers,outfig):
+    blocks,alignment,out,intensity,mztol,ppm,rttol,num_ref,alpha,num_workers,outfig):
         self.hash = row[3]
         self.peaktables=peaktables
         self.output_data=os.path.join(out,"datamatrix_"+row[3]+".csv")

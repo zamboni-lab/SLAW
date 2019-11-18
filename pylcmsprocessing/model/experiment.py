@@ -507,6 +507,7 @@ class Experiment:
         c = self.conn.cursor()
         c.execute("SELECT * FROM peakpicking")
         all_peakpicking = c.fetchall()
+        self.close_db()
         groupers = [0] * len(all_peakpicking)
         countgroup = 0
         #The directory of th epeaktable
@@ -518,7 +519,10 @@ class Experiment:
 
         for pp in all_peakpicking:
             ###name of file
+            self.open_db()
+            c = self.conn.cursor()
             flists = c.execute("SELECT output_ms FROM processing WHERE peakpicking = " + str(pp[0]))
+
             flists = [f[0] for f in flists]
 
             ###getting samples
@@ -532,14 +536,16 @@ class Experiment:
             poutput_dm = ppg.get_output_datamatrix()
             query = self.update_query_construction("peakpicking", "id", str(pp[0]), "peaktable", poutput_dm)
             c.execute(query)
+            self.close_db()
             groupers[countgroup] = ppg
             countgroup += 1
         if countgroup != 0:
             groupers = groupers[0:countgroup]
             clis = [g.command_line() for g in groupers]
+            # print(clis[0])
             if len(clis) > 0:
                 runner.run(clis, log=log)
-        self.close_db()
+        #self.close_db()
         self.save_db()
         print("Grouping finished")
 
