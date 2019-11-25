@@ -52,7 +52,7 @@ lam <- LCMSAlignerModelFromDirectory(PATH_PEAKTABLES,
                        num_file=20,num_peaks=NUM_REF,col_int=VAL_INTENSITY,reset = FALSE,
                        ppm = MZPPM, dmz=MZTOL,rt = RTTOL,rt_dens=RTTOL/2,n_clusters=10,
                        supp_data=c("peakwidth","SN","right_on_left_assymetry"),ransac_l1=ALPHA_RT,
-                      max_cor=RTTOL*3)
+                      max_cor=RTTOL*3,clustering=FALSE)
 
 ###We always remove single peaks.
 pdf(OUTFIGURE)
@@ -60,7 +60,7 @@ plotDevRt(lam,int_threshold=0.15)
 dev.off()
 
 ###We always filter the peaks present a a single time.
-if(!file.exist(PATH_OUT_DATAMATRIX)){
+if(!file.exists(PATH_OUT_DATAMATRIX)){
   r_datamatrix <- buildDataMatrix(lam,subvariable=which(lam@peaks$num>=2),summary_vars=c("mz","rt","rt_cor","peakwidth","SN","right_on_left_assymetry"))
   write.table(r_datamatrix,file = PATH_OUT_DATAMATRIX,sep=",",row.names = FALSE)
 message("Alignment done")
