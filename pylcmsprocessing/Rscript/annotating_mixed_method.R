@@ -1000,12 +1000,12 @@ num_detect <-
 
 vdetect <- num_detect >= FILTER_NUMS
 ###We only keep the fitting ammount of features.
-while (sum(vdetect) > 40000) {
+while (sum(vdetect) > 100000) {
   FILTER_NUMS <- FILTER_NUMS + 1
   vdetect <- num_detect >= FILTER_NUMS
 }
-
-message("Retained ", sum(vdetect), " signals on ", nrow(dm))
+# 
+# message("Retained ", sum(vdetect), " signals on ", nrow(dm))
 dm <- dm[vdetect, , drop = FALSE]
 
 ###Reading the raw files
