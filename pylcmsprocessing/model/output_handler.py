@@ -13,6 +13,7 @@ class OutputDirectory:
             return os.path.normpath(path)
         else :
             return os.path.normpath(os.path.abspath(os.path.join(self.dir, path)))
+            
     def getRoot(self):
         return(self.dir)
 
@@ -28,8 +29,10 @@ class OutputDirectory:
             os.makedirs(os.path.dirname(val))
         return val
 
+    def getPath(self,path):
+        val = self.convertPath(path)
+        return val
+
     def exists(self,path):
         path = self.convertPath(path)
         return os.path.exists(path)
-
-

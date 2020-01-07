@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?><batch>
+    <batchstep method="net.sf.mzmine.modules.rawdatamethods.rawdataimport.RawDataImportModule">
+        <parameter name="Raw data file names">
+            <file>U:\users\Alexis\data\qexactive_alaa\LipidMixes_BEH_August_2019\to_export\BEH30mm_2min_1ul\mzML\BEH30_2min_LipidMix_DDA.mzML</file>
+        </parameter>
+    </batchstep>
+    <batchstep method="net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.MassDetectionModule">
+        <parameter name="Raw data files" type="BATCH_LAST_FILES"/>
+        <parameter name="Scans">
+            <ms_level>1</ms_level>
+        </parameter>
+        <parameter name="Mass detector" selected="Centroid">
+            <module name="Centroid">
+                <parameter name="Noise level">1.0</parameter>
+            </module>
+            <module name="Exact mass">
+                <parameter name="Noise level"/>
+            </module>
+            <module name="Local maxima">
+                <parameter name="Noise level"/>
+            </module>
+            <module name="Recursive threshold">
+                <parameter name="Noise level"/>
+                <parameter name="Min m/z peak width"/>
+                <parameter name="Max m/z peak width"/>
+            </module>
+            <module name="Wavelet transform">
+                <parameter name="Noise level"/>
+                <parameter name="Scale level"/>
+                <parameter name="Wavelet window size (%)"/>
+            </module>
+        </parameter>
+        <parameter name="Mass list name">masses</parameter>
+        <parameter name="Output netCDF filename (optional)" selected="false"/>
+    </batchstep>
+    <batchstep method="net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.MassDetectionModule">
+        <parameter name="Raw data files" type="BATCH_LAST_FILES"/>
+        <parameter name="Scans">
+            <ms_level>2</ms_level>
+            <scan_definition>*</scan_definition>
+        </parameter>
+        <parameter name="Mass detector" selected="Centroid">
+            <module name="Centroid">
+                <parameter name="Noise level">1000.0</parameter>
+            </module>
+            <module name="Exact mass">
+                <parameter name="Noise level"/>
+            </module>
+            <module name="Local maxima">
+                <parameter name="Noise level"/>
+            </module>
+            <module name="Recursive threshold">
+                <parameter name="Noise level"/>
+                <parameter name="Min m/z peak width"/>
+                <parameter name="Max m/z peak width"/>
+            </module>
+            <module name="Wavelet transform">
+                <parameter name="Noise level"/>
+                <parameter name="Scale level"/>
+                <parameter name="Wavelet window size (%)"/>
+            </module>
+        </parameter>
+        <parameter name="Mass list name">masses</parameter>
+        <parameter name="Output netCDF filename (optional)" selected="false"/>
+    </batchstep>
+    <batchstep method="net.sf.mzmine.modules.masslistmethods.ADAPchromatogrambuilder.ADAPChromatogramBuilderModule">
+        <parameter name="Raw data files" type="BATCH_LAST_FILES"/>
+        <parameter name="Scans">
+            <ms_level>1</ms_level>
+        </parameter>
+        <parameter name="Mass list">masses</parameter>
+        <parameter name="Min group size in # of scans">5</parameter>
+        <parameter name="Group intensity threshold">50000.0</parameter>
+        <parameter name="Min highest intensity">50000.0</parameter>
+        <parameter name="m/z tolerance">
+            <absolutetolerance>0.005</absolutetolerance>
+            <ppmtolerance>15.0</ppmtolerance>
+        </parameter>
+        <parameter name="Suffix">chromatograms</parameter>
+    </batchstep>
+    <batchstep method="net.sf.mzmine.modules.peaklistmethods.peakpicking.deconvolution.DeconvolutionModule">
+        <parameter name="Feature lists" type="BATCH_LAST_PEAKLISTS"/>
+        <parameter name="Suffix">deconvoluted</parameter>
+        <parameter name="Algorithm" selected="Wavelets (ADAP)">
+            <module name="Baseline cut-off">
+                <parameter name="Min peak height"/>
+                <parameter name="Peak duration range (min)">
+                    <min>0.0</min>
+                    <max>10.0</max>
+                </parameter>
+                <parameter name="Baseline level"/>
+            </module>
+            <module name="Noise amplitude">
+                <parameter name="Min peak height"/>
+                <parameter name="Peak duration range (min)">
+                    <min>0.0</min>
+                    <max>10.0</max>
+                </parameter>
+                <parameter name="Amplitude of noise"/>
+            </module>
+            <module name="Savitzky-Golay">
+                <parameter name="Min peak height"/>
+                <parameter name="Peak duration range (min)">
+                    <min>0.0</min>
+                    <max>10.0</max>
+                </parameter>
+                <parameter name="Derivative threshold level"/>
+            </module>
+            <module name="Local minimum search">
+                <parameter name="Chromatographic threshold"/>
+                <parameter name="Search minimum in RT range (min)"/>
+                <parameter name="Minimum relative height"/>
+                <parameter name="Minimum absolute height"/>
+                <parameter name="Min ratio of peak top/edge"/>
+                <parameter name="Peak duration range (min)">
+                    <min>0.0</min>
+                    <max>10.0</max>
+                </parameter>
+            </module>
+            <module name="Wavelets (XCMS)">
+                <parameter name="S/N threshold">10.0</parameter>
+                <parameter name="Wavelet scales">
+                    <min>0.25</min>
+                    <max>5.0</max>
+                </parameter>
+                <parameter name="Peak duration range">
+                    <min>0.0</min>
+                    <max>10.0</max>
+                </parameter>
+                <parameter name="Peak integration method">Use smoothed data</parameter>
+                <parameter name="R engine">RCaller</parameter>
+            </module>
+            <module name="Wavelets (ADAP)">
+                <parameter name="S/N threshold">10.0</parameter>
+                <parameter name="S/N estimator" selected="Intensity window SN">
+                    <module name="Intensity window SN"/>
+                    <module name="Wavelet Coeff. SN">
+                        <parameter name="Peak width mult.">3.0</parameter>
+                        <parameter name="abs(wavelet coeffs.)">true</parameter>
+                    </module>
+                </parameter>
+                <parameter name="min feature height">10.0</parameter>
+                <parameter name="coefficient/area threshold">110.0</parameter>
+                <parameter name="Peak duration range">
+                    <min>0.01</min>
+                    <max>0.2</max>
+                </parameter>
+                <parameter name="RT wavelet range">
+                    <min>0.0</min>
+                    <max>0.01</max>
+                </parameter>
+            </module>
+        </parameter>
+        <parameter measure="MEDIAN" name="m/z center calculation" weighting="NONE">CenterFunction</parameter>
+        <parameter name="m/z range for MS2 scan pairing (Da)" selected="true">0.05</parameter>
+        <parameter name="RT range for MS2 scan pairing (min)" selected="true">0.1</parameter>
+        <parameter name="Remove original feature list">false</parameter>
+    </batchstep>
+    <batchstep method="net.sf.mzmine.modules.peaklistmethods.io.csvexport.CSVExportModule">
+        <parameter name="Feature lists" type="BATCH_LAST_PEAKLISTS"/>
+        <parameter name="Filename">
+            <current_file>C:\Users\dalexis\Documents\python\lcmsprocessing\tests\output\peaks_773f69976918ba15c3b53a2b2e613b16.csv</current_file>
+        </parameter>
+        <parameter name="Field separator">,</parameter>
+        <parameter name="Export common elements">
+            <item>Export row ID</item>
+            <item>Export row m/z</item>
+            <item>Export row retention time</item>
+        </parameter>
+        <parameter name="Export data file elements">
+            <item>Peak m/z</item>
+            <item>Peak RT</item>
+            <item>Peak RT start</item>
+            <item>Peak RT end</item>
+            <item>Peak height</item>
+            <item>Peak area</item>
+            <item>Peak charge</item>
+            <item>Peak FWHM</item>
+            <item>Peak m/z min</item>
+            <item>Peak m/z max</item>
+        </parameter>
+        <parameter name="Export quantitation results and other information">true</parameter>
+        <parameter name="Identification separator">,</parameter>
+        <parameter name="Filter rows">ALL</parameter>
+    </batchstep>
+    <batchstep method="net.sf.mzmine.modules.peaklistmethods.io.gnpsexport.GNPSExportAndSubmitModule">
+        <parameter name="Feature lists" type="BATCH_LAST_PEAKLISTS"/>
+        <parameter name="Filename">
+            <current_file>C:\Users\dalexis\Documents\python\lcmsprocessing\tests\output\msms_t2.mgf</current_file>
+            <last_file>C:\Users\dalexis\Documents\python\lcmsprocessing\tests\output\msms_t2.mgf</last_file>
+        </parameter>
+        <parameter name="Mass list">masses</parameter>
+        <parameter name="Merge MS/MS (experimental)" selected="true">
+            <parameter name="Select spectra to merge">across samples</parameter>
+            <parameter name="m/z merge mode">weighted average (remove outliers)</parameter>
+            <parameter name="intensity merge mode">sum intensities</parameter>
+            <parameter name="Expected mass deviation">
+                <absolutetolerance>0.001</absolutetolerance>
+                <ppmtolerance>5.0</ppmtolerance>
+            </parameter>
+            <parameter name="Cosine threshold (%)">0.7</parameter>
+            <parameter name="Peak count threshold (%)">0.2</parameter>
+            <parameter name="Isolation window offset (m/z)">0.0</parameter>
+            <parameter name="Isolation window width (m/z)">0.5</parameter>
+        </parameter>
+        <parameter name="Filter rows">ALL</parameter>
+        <parameter name="Submit to GNPS" selected="false">
+            <parameter name="Meta data file" selected="false"/>
+            <parameter name="Presets">HIGHRES</parameter>
+            <parameter name="Job title"/>
+            <parameter name="Email"/>
+            <parameter name="Username"/>
+            <parameter name="Password (unencrypted)"/>
+            <parameter name="Open website">true</parameter>
+        </parameter>
+        <parameter name="Open folder">false</parameter>
+    </batchstep>
+</batch>

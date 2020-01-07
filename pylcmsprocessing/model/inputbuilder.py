@@ -46,13 +46,14 @@ class MZMineBuilder(inputBuilder):
         xml = self.output.getDir(common.references.OUT["ADAP"]["XML"])
         candidates = self.output.getFile(common.references.OUT["ADAP"]["CANDIDATES"])
         peaktables = self.output.getDir(common.references.OUT["ADAP"]["PEAKTABLES"])
+        msms = self.output.getDir(common.references.OUT["ADAP"]["MSMS"])
         prscript = common.tools.find_rscript()
 
         scriptMZmine = os.path.join(prscript, "wrapper_MZmine_peak_picking.R")
 
         commandline = " ".join(
             [scriptMZmine, self.db, self.json, self.xml, xml, self.summary, summary_templates, xml_templates,
-             candidates, peaktables, str(self.id)])
+             candidates, peaktables, msms, str(self.id)])
 
         print("Computing MZmine parameters")
         subprocess.call("Rscript " + commandline, shell=True)
@@ -63,10 +64,11 @@ class MZMineBuilder(inputBuilder):
         pxml = self.output.getDir(common.references.OUT["ADAP"]["XML"])
         candidates = self.output.getFile(common.references.OUT["ADAP"]["CANDIDATES"])
         peaktables = self.output.getDir(common.references.OUT["ADAP"]["PEAKTABLES"])
+        msms = self.output.getDir(common.references.OUT["ADAP"]["MSMS"])
         prscript = common.tools.find_rscript()
         tjson = self.output.getFile(common.references.OUT["ADAP"]["JSON"])
         scriptMZmine = os.path.join(prscript, "wrapper_MZmine_peak_picking_xml.R")
-        commandline = " ".join([scriptMZmine, self.db, xml_file, pxml, candidates, peaktables, tjson])
+        commandline = " ".join([scriptMZmine, self.db, xml_file, pxml, candidates, peaktables, msms, tjson])
 
         print("Computing MZmine parameters")
         subprocess.call("Rscript " + commandline, shell=True)
@@ -81,7 +83,7 @@ class MZMineBuilder(inputBuilder):
         except sqlite3.IntegrityError as e:
             pass
 
-
+        ###We read the candidates table output by the R script.
         path_candidates = self.output.getFile(common.references.OUT["ADAP"]["CANDIDATES"])
         candidates = pd.read_csv(path_candidates,sep=";")
 
@@ -93,10 +95,9 @@ class MZMineBuilder(inputBuilder):
             ###If the algorithm does not exist we skip
             ###We try to insert it
             try:
-                # print("_",row[0],"_",len(row))
-                ctuple = (pid, 1, int(row[1]), row[2], row[3], row[4], 1)
+                ctuple = (pid, 1, int(row[1]), row[2], row[3], row[4], row[5], 1)
                 pid += 1
-                c.execute("""INSERT INTO processing VALUES (?,?,?,?,?,?,?)""", ctuple)
+                c.execute("""INSERT INTO processing VALUES (?,?,?,?,?,?,?,?)""", ctuple)
                 counter_to_process += 1
             except sqlite3.IntegrityError as e:
                 counter_processed += 1

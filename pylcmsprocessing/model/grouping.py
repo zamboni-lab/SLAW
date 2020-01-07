@@ -41,3 +41,35 @@ class Grouper:
         ####We give all the name of the grouping parameters implicated in a single file
         return " ".join(["Rscript",command_line,self.path_files,self.output_data,
                          self.output_idx,self.intensity,str(self.rttol),str(self.mztol)])
+
+class OnlineGrouper:
+    def __init__(self,row,peaktables,
+    blocks,alignment,out,intensity,mztol,ppm,rttol,num_ref,alpha,num_workers,outfig):
+        self.hash = row[3]
+        self.peaktables=peaktables
+        self.output_data=os.path.join(out,"datamatrix_"+row[3]+".csv")
+        #self.output_idx=os.path.join(out,"index_"+self.hash+".txt")
+        self.blocks=blocks
+        self.alignment=alignment
+        self.intensity=intensity
+        self.mztol=mztol
+        self.ppm = ppm
+        self.alpha=alpha
+        self.rttol=rttol
+        self.num_ref=num_ref
+        self.num_workers=num_workers
+        self.figure=outfig
+
+    def need_computing(self):
+        return not os.path.exists(self.output_data)
+
+    def get_output_datamatrix(self):
+        return self.output_data
+
+    def command_line(self):
+        pscript = ct.find_rscript()
+        command_line = os.path.join(pscript,"construct_peaktable_online.R")
+        ####We give all the name of the grouping parameters implicated in a single file
+        return " ".join(["Rscript",command_line,self.peaktables,self.blocks,self.alignment,
+                        self.output_data,self.intensity,str(self.rttol),str(self.mztol),str(self.ppm),
+                        str(self.num_ref),str(self.alpha),str(self.num_workers),self.figure])

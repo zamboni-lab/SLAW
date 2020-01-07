@@ -1,13 +1,7 @@
-if(!require("optparse"))
-  install.packages("optparse")
-if (!require("DBI"))
-  install.packages("DBI")
-if (!require("RSQLite"))
-  install.packages("RSQLite")
-suppressMessages(library(optparse))
-suppressMessages(library(RSQLite))
-suppressMessages(library(DBI))
-suppressMessages(library(tools))
+suppressWarnings(suppressMessages(library(optparse,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
+suppressWarnings(suppressMessages(library(DBI,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
+suppressWarnings(suppressMessages(library(RSQLite,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
+suppressWarnings(suppressMessages(library(tools,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
 
 
 ###CONSTANT
@@ -15,7 +9,6 @@ DBSAMPLES <-  "samples" ###Containing peak and path
 DBPROCESSINGSAMPLE <-  "processing" ###Containing peak and path
 DBPEAKSPICKING <- "peakpicking"
 DBNAME <-    "MSexperiment" ###
-
 
 
 option_list = list(
@@ -153,76 +146,6 @@ dd <- dbExecute(db,paste("CREATE TABLE ",DBSAMPLES," (
 dd <- dbAppendTable(conn = db,
              sample_tab,
              name = DBSAMPLES)
-
-
-#
-# ###Empty peak picking
-#
-# dbExecute(db,paste("CREATE TABLE ",DBPEAKSPICKING," (
-#           id INTEGER PRIMARY KEY,
-#           parameter TEXT NOT NULL,
-#           software TEXT NOT NULL,
-#           peaktable TEXT NOT NULL,
-#           hash_peaktable TEXT NOT NULL,
-#           evaluation TEXT NOT NULL,
-#           hash_evaluation TEXT NOT NULL
-# )",sep=""))
-#
-# peak_picking <- data.frame(
-#   id = integer(0),
-#   parameter = character(0),
-#   software = character(0),
-#   peaktable = character(0),
-#   hash_peaktable = character(0),
-#   evaluation = character(0),
-#   hash_evaluation = character(0),
-#   stringsAsFactors = FALSE
-# )
-#
-# dbAppendTable(
-#   conn = db,
-#   name = DBPEAKSPICKING,
-#   value = peak_picking
-# )
-#
-# dbExecute(db,paste("CREATE TABLE ",DBPROCESSINGSAMPLE," (
-#           id INTEGER PRIMARY KEY,
-#           peakpicking INTEGER,
-#           sample INTEGER,
-#           input TEXT NOT NULL,
-#           hash_input TEXT NOT NULL,
-#           output TEXT NOT NULL,
-#           hash_output TEXT NOT NULL,
-#           step INTEGER NOT NULL,
-#           CONSTRAINT fk_peakpicking
-#           FOREIGN KEY (peakpicking)
-#           REFERENCES ",DBPEAKSPICKING,"(id)
-#           CONSTRAINT sample
-#           FOREIGN KEY (sample)
-#           REFERENCES ",DBSAMPLES,"(id)
-# )",sep=""))
-#
-#
-#
-# ###we initialize the realtionship database
-# peaks_picking_sample <-  data.frame(
-#   id = integer(0),
-#   peakpicking = integer(0),
-#   sample = integer(0),
-#   input = character(0),
-#   hash_input = character(0),
-#   output = character(0),
-#   hash_output = character(0),
-#   step = integer(0),
-#   stringsAsFactors = FALSE
-# )
-# dbAppendTable(
-#   conn = db,
-#   name = DBPROCESSINGSAMPLE,
-#   value = peaks_picking_sample
-# )
-#
-# message("Succesfully created the database in ", db@dbname, "\n")
 
 ####We close the database in every case.
 dbDisconnect(db)

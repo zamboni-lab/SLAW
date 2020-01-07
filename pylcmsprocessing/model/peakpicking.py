@@ -56,6 +56,7 @@ class PeakPickingMZmine(PeakPicking):
 
         software_part =os.path.join(software_part,script_launch)
 
+        return software_part+" "+self.input
         return software_part+" "+self.input+redirect
 
     def get_output(self):

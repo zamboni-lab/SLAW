@@ -1,6 +1,7 @@
 import sqlite3
 import subprocess
 import os
+import glob
 import common.references as cr
 import common.tools as ct
 import model.output_handler as oh
@@ -14,13 +15,17 @@ import model.evaluating as me
 import model.comparing_evaluation as mce
 import model.annotating_adducts_isotopes as mai
 import pandas as pd
+import shutil
 
 
 def is_converted(csvfile):
-    tpd = pd.read_csv(csvfile, nrows=2, sep=",", header=1)
-    if len(tpd.columns) >= 6:
-        return False
-    return True
+    try:
+        tpd = pd.read_csv(csvfile, nrows=0, sep=",", header=0)
+    except pd.io.common.CParserError:
+        tpd = pd.read_csv(csvfile, nrows=1, sep=",", header=0)
+    if "SN" in tpd.columns:
+        return True
+    return False
 
 
 ####We ensure that ther is a single databse connection at the same timnb
@@ -34,20 +39,40 @@ class Experiment:
 
     #####Databases peaks
 
-    def __init__(self, db, reset=False):
+    def __init__(self, db,save_db=None, reset=False):
+
         path_db = os.path.abspath(db)
         if os.path.isfile(path_db):
             if reset:
                 os.remove(path_db)
         self.db = path_db
+        self.path_save_db = None
+        if save_db is not None:
+            self.path_save_db = os.path.abspath(save_db)
         self.parameters = True
         self.peakpicking = []
         self.output = None
         if self.db_exists():
             self.output = oh.OutputDirectory(self.get_outdir())
+        elif self.path_save_db is not None and os.path.isfile(self.path_save_db):
+            self.load_db()
+            self.output = oh.OutputDirectory(self.get_outdir())
+
 
     def db_exists(self):
         return os.path.exists(self.db)
+
+    ##Saving the DB outside the docker eventually
+    ##Write DB outside the docker
+    def save_db(self):
+        if self.path_save_db is not None:
+            shutil.copy(self.db,self.path_save_db)
+
+    ##Copy the DB outside the docker.
+    def load_db(self):
+        if not os.path.isfile(self.db):
+            if os.path.isfile(self.path_save_db):
+                shutil.copy(self.path_save_db,self.db)
 
     def get_workers(self, open=True):
         if open:
@@ -101,8 +126,6 @@ class Experiment:
             c.execute('INSERT INTO common VALUES (?,?,?)', values)
         if len(common) is not 0:
             out_dir = common[0][1]
-
-            print("common: ", common)
 
         ###Creating the output directory
         out_dir = os.path.abspath(out_dir)
@@ -226,6 +249,13 @@ class Experiment:
         self.close_db()
 
     ###We jsut initalize the peaktable
+        # peakpicking = tids,
+        # sample = rep(num_rawfile, nrow(vfiles)),
+        # input = vfiles[, 1],
+        # hash_input = vfiles$hash,
+        # output_peaktable = outfiles,
+        # output_msms = outmsms,
+
     def build_processing(self):
         self.open_db()
         c = self.conn.cursor()
@@ -236,7 +266,8 @@ class Experiment:
           sample INTEGER,
           input TEXT NOT NULL,
           hash TEXT NOT NULL,
-          output TEXT NOT NULL,
+          output_ms TEXT NOT NULL,
+          output_ms2 TEXT NOT NULL,
           step INTEGER NOT NULL,
           CONSTRAINT fk_peakpicking
           FOREIGN KEY (peakpicking)
@@ -322,7 +353,7 @@ class Experiment:
         self.close_db()
         return softwares
 
-    def run(self, pmzmine, batch_size=40, silent=True):
+    def run(self, pmzmine, batch_size=40, silent=True, log = None):
         num_workers = self.get_workers()
         runner = pr.ParallelRunner(num_workers)
         softwares = self.find_software_from_peakpicking()
@@ -337,35 +368,28 @@ class Experiment:
         while True:
             rows = c.fetchmany(batch_size)
             if not rows: break
-
             peakpickings = [mp.PeakPickingMZmine(row, pmzmine) for row in rows]
             need_processing = [x.need_computing() for x in peakpickings]
 
             while any(need_processing):
                 ####Peak picking
                 clis = [x.command_line_processing(hide=False) for x in peakpickings if x.need_computing()]
+
                 ####We run the jobs actually
                 if len(clis) > 0:
-                    runner.run(clis, silent=silent)
-
+                    runner.run(clis, silent=silent, log = log)
                 names_output = [x.get_output() + "\n" for x in peakpickings]
-
                 name_temp = cr.TEMP["CONVERSION"]
                 path_temp = self.output.getFile(name_temp)
-
                 summary = open(path_temp, "w+")
-
                 summary.writelines(names_output)
                 #
                 pjoin = os.path.join(ct.find_rscript(), "wrapper_MZmine_peak_table_conversion.R ")
-                #
                 # ###Calling the script on all the processed path
                 cline = "Rscript " + pjoin + " " + path_temp + " " + str(self.get_workers(open=False))
                 subprocess.call(cline, shell=True)
                 need_processing = [not os.path.exists(row[5]) for row in rows]
-            else:
-                print("no processing")
-        print("Peak picking finished")
+        print("Peak picking finished.")
         self.close_db()
 
     ###Try to correct he MZmine ocrrection in case processing was interrupted
@@ -373,7 +397,7 @@ class Experiment:
         path_temp = self.output.getFile(cr.TEMP["CONVERSION"])
         self.open_db()
         c = self.conn.cursor()
-        c.execute("SELECT output FROM processing")
+        c.execute("SELECT output_ms FROM processing")
         processings = c.fetchall()
         p_conversion = os.path.join(ct.find_rscript(), "wrapper_MZmine_peak_table_conversion.R ")
         to_convert = [x[0] + "\n" for x in processings if not is_converted(x[0])]
@@ -384,12 +408,55 @@ class Experiment:
             cline = "Rscript " + p_conversion + " " + path_temp + " " + str(self.get_workers(open=False))
             subprocess.call(cline, shell=True)
         else:
-            print("nothing to correct")
+            print("No corrections to do.")
         self.close_db()
+        self.save_db()
 
-        ###At the moment there is a single grouping method
+    ###This step is always done before grouping
+    def post_processing_peakpicking(self):
+        ###We rename the peaktable to get more meaningful names.
+        self.open_db()
+        c = self.conn.cursor()
+        c.execute("SELECT id,output_ms,output_ms2 FROM processing")
+        all_peaktable = c.fetchall()
+        c.execute("SELECT path FROM samples")
+        all_samples = c.fetchall()
 
-    def group(self, max_workers=2, silent=False, intensity="height",mztol=0.007,rttol=0.02):
+        dirname = self.output.getDir(cr.OUT["ADAP"]["PEAKTABLES"])
+        dirname_msms = self.output.getDir(cr.OUT["ADAP"]["MSMS"])
+        ###Now we jsut rename all the files
+        for ip in range(0,len(all_peaktable)):
+
+            ##Correcting if needed convert he ms files
+            new_name = os.path.join(dirname,os.path.splitext(os.path.basename(all_samples[ip][0]))[0]+".csv")
+
+            if os.path.isfile(new_name):
+                continue
+            old_name = all_peaktable[ip][1]
+            os.rename(old_name,new_name)
+            query = self.update_query_construction("processing", "id", str(all_peaktable[ip][0]), "output_ms", new_name)
+            c.execute(query)
+            full_name = all_peaktable[ip][2]
+            try:
+                if os.path.getsize(full_name)==0:
+                    os.remove(full_name)
+                else:
+                    new_name = os.path.join(dirname_msms,os.path.splitext(os.path.basename(all_samples[ip][0]))[0]+".mgf")
+                    os.rename(full_name,new_name)
+                    query = self.update_query_construction("processing", "id", str(all_peaktable[ip][0]), "output_ms2", new_name)
+                    c.execute(query)
+            except FileNotFoundError: #File has already been converted.
+                continue
+            name_quant = os.path.splitext(full_name)[0]+"_quant.csv"
+            if os.path.isfile(name_quant):
+                os.remove(name_quant)
+
+
+        self.close_db()
+        self.save_db()
+
+    ###At the moment there is a single grouping method
+    def group(self, max_workers=2, silent=False, intensity="height",mztol=0.007,rttol=0.02, log=None):
         num_workers = self.get_workers()
         runner = pr.ParallelRunner(min(num_workers, max_workers))
         ####We create all the grouper eventually
@@ -403,7 +470,7 @@ class Experiment:
         dir_datamatrix = self.output.getDir(cr.OUT["DATAMATRIX"])
         for pp in all_peakpicking:
             ###name of file
-            flists = c.execute("SELECT output FROM processing WHERE peakpicking = " + str(pp[0]))
+            flists = c.execute("SELECT output_ms FROM processing WHERE peakpicking = " + str(pp[0]))
             flists = [f[0] for f in flists]
 
             ###getting samples
@@ -425,8 +492,61 @@ class Experiment:
             groupers = groupers[0:countgroup]
             clis = [g.command_line() for g in groupers]
             if len(clis) > 0:
-                runner.run(clis, silent=silent)
+                runner.run(clis, silent=silent, log=log)
         self.close_db()
+        self.save_db()
+        print("Grouping finished")
+
+
+    def group_online(self,intensity="intensity",
+    ppm = 15,mztol=0.007,rttol=0.02,n_ref = 150,alpha = 0.1,log=None):
+        num_workers = self.get_workers()
+        runner = pr.ParallelRunner(num_workers)
+        ####We create all the grouper eventually
+        self.open_db()
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM peakpicking")
+        all_peakpicking = c.fetchall()
+        self.close_db()
+        groupers = [0] * len(all_peakpicking)
+        countgroup = 0
+        #The directory of th epeaktable
+        dir_peaktables = self.output.getDir(cr.OUT["ADAP"]["PEAKTABLES"])
+        dir_blocks = self.output.getDir(cr.TEMP["GROUPING"]["BLOCKS"])
+        dir_alignment = self.output.getFile(cr.TEMP["GROUPING"]["ALIGNMENT"])
+        dir_datamatrix = self.output.getDir(cr.OUT["DATAMATRIX"])
+        path_fig = self.output.getFile(cr.OUT["FIGURES"]["RT_DEV"])
+
+        for pp in all_peakpicking:
+            ###name of file
+            self.open_db()
+            c = self.conn.cursor()
+            flists = c.execute("SELECT output_ms FROM processing WHERE peakpicking = " + str(pp[0]))
+
+            flists = [f[0] for f in flists]
+
+            ###getting samples
+            nlists = c.execute("SELECT path FROM samples")
+            nlists = [os.path.basename(nn[0]) for nn in nlists]
+
+            ppg = mg.OnlineGrouper(pp, dir_peaktables,dir_blocks, dir_alignment,
+            dir_datamatrix, intensity, mztol, ppm, rttol, n_ref, alpha,
+            num_workers,path_fig)
+            ###We update the peaktable direction of the file
+            poutput_dm = ppg.get_output_datamatrix()
+            query = self.update_query_construction("peakpicking", "id", str(pp[0]), "peaktable", poutput_dm)
+            c.execute(query)
+            self.close_db()
+            groupers[countgroup] = ppg
+            countgroup += 1
+        if countgroup != 0:
+            groupers = groupers[0:countgroup]
+            clis = [g.command_line() for g in groupers]
+            # print(clis[0])
+            if len(clis) > 0:
+                runner.run(clis, log=log)
+        #self.close_db()
+        self.save_db()
         print("Grouping finished")
 
     def evaluate(self, max_workers=2, silent=False):
@@ -533,4 +653,16 @@ class Experiment:
             if len(clis) > 0:
                 runner.run(clis, silent=True)
         self.close_db()
+        self.save_db()
         print("Annotation finished")
+
+    def clean(self):
+        ###We clena the files
+        to_rm= [cr.TEMP["GROUPING"]["TEMP"],cr.TEMP["IONANNOTATION"]["FULL"],cr.TEMP["IONANNOTATION"]["MAIN"],
+        cr.TEMP["CONVERSION"],cr.OUT["ADAP"]["JSON"],cr.OUT["ADAP"]["CANDIDATES"]]
+        for waste in to_rm:
+            pwaste = self.output.getPath(waste)
+            if os.path.isdir(pwaste):
+                shutil.rmtree(pwaste, ignore_errors=True)
+            elif os.path.exists(pwaste):
+                os.remove(pwaste)

@@ -31,11 +31,9 @@ if(get_os()=="win"){
 
 ####Name of the file to convert
 fnames <- readLines(infiles)
-message("In script file ",infiles)
-message(paste(fnames,length(fnames),collapse="_"))
+
 ###The output name of the file is the same as the first one.
 convPeakTableFromPath <-  function(pt){
-  message("Converting",pt)
   library(MZmineXMLManipulator,quietly=TRUE,warn.conflicts = FALSE)
   library(stringr,quietly=TRUE,warn.conflicts = FALSE)
 
@@ -48,8 +46,4 @@ convPeakTableFromPath <-  function(pt){
   write.table(peaktable,file = pt,row.names = FALSE,sep = ",")
   return(NULL)
 }
-message("FILES ",paste(fnames,collapse="_"))
 bres <- bplapply(X=fnames,FUN=convPeakTableFromPath,BPPARAM = bpp)
-
-
-####We just give the hash of the table

@@ -1,16 +1,14 @@
 ALGORITHMS_TABLE = {
-    "ADAP": ["MZmine", "adap.json", "/pylcmsprocessing/data/batch_adap_2_50_buggued.xml"],
+    "ADAP": ["MZmine", "adap.json", "/pylcmsprocessing/data/batch_adap_2_52.xml"],
     "SAVGOL": ["MZmine", "savgol.json", "/pylcmsprocessing/data/batch_savgol.xml"],
     "FeatureFinderMetabo": ["openMS", "openms.json", None]
 }
 
-
 SUMMARY_DIR = "summary_parameters"
 SUMMARY_COMBINATIONS = "summary_combinations"
 
-
-
 OUT={"DB":"processing.sqlite",
+    "LOG":"log.txt",
     "ADAP":
     {
         "SUMMARY":"ADAP/ADAP_parameters.csv",
@@ -21,6 +19,7 @@ OUT={"DB":"processing.sqlite",
         "XML_MODEL": "xml_params_mzmine.xml",
         "CANDIDATES": "ADAP/candidates.csv",
         "PEAKTABLES": "ADAP/peaktables",
+        "MSMS": "ADAP/msms"
      },"CENTWAVE":
           {"SUMMARY":"ADAP/ADAP_parameters.csv",
     "SUMMARY_TEMPLATES": "ADAP/summary_templates.csv",
@@ -28,8 +27,9 @@ OUT={"DB":"processing.sqlite",
     "XML": "ADAP/xml",
     "XML_TEMPLATES":"ADAP/xml_templates",
     "CANDIDATES": "ADAP/candidates.csv",
-    "PEAKTABLES": "ADAP/peaktables",
+    "PEAKTABLES": "ADAP/peaktables"
      },
+    "FIGURES":{"RT_DEV":"figures/rt_dev.pdf"},
      "DATAMATRIX": "datamatrices",
      "ANNOTATION":"annotated_peaktable_",
      "EVALUATION": "evaluations",
@@ -67,14 +67,16 @@ def default_adducts_negative():
     return(lines)
 
 def default_adducts_main_negative():
-    lines = [line.rstrip('\n') for line in open(DATA["IONANNOTATION"]["positive"]["MAIN"])]
+    lines = [line.rstrip('\n') for line in open(DATA["IONANNOTATION"]["negative"]["MAIN"])]
     return(lines)
 
 
 TEMP={"CONVERSION":
       "temp/temp_names.csv",
-      "GROUPING":
-      "temp/temp_grouping",
+      "GROUPING":{
+      "TEMP":"temp/temp_grouping",
+      "BLOCKS":"temp/blocks",
+      "ALIGNMENT":"temp/alignement.rds"},
       "REPLICATES":"temp/replicates",
       "IONANNOTATION":{"FULL":"temp/adducts.csv",
                        "MAIN":"temp/main_adducts.csv"}

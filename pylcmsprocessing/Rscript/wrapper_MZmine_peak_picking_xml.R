@@ -22,21 +22,21 @@ path_candidates <- args[4]
 
 path_peaktables <- args[5]
 
-path_json <- args[6]
+path_msms <- args[6]
 
-message("Json in ",path_json)
-# message("\n Json done")
+path_json <- args[7]
 
 db <- dbConnect(RSQLite:::SQLite(),dbpath)
 
 ##The num worker is read form the databse
-
 num_workers <- as.numeric(dbGetQuery(db, "SELECT max_jobs FROM common")[, 1])
 
 ####We get the path form all the sample
-samplist <- dbGetQuery(db, "SELECT path FROM samples")[, 1]
+samplist <-NULL
 
+samplist <- dbGetQuery(db, "SELECT path FROM samples")[, 1]
 dbDisconnect(db)
+
 
 get_os <- function() {
   if (.Platform$OS.type == "windows") {
@@ -70,7 +70,7 @@ singleXMLgeneration <-
            num_rawfile,
            prefix,
            mxml,
-           outp, tids) {
+           out_peaktable,out_msms, tids) {
     suppressMessages(library(MZmineXMLManipulator))
     suppressMessages(library(tools))
 
@@ -80,14 +80,15 @@ singleXMLgeneration <-
 
 
     PREF_SAMPLE <- paste(prefix,num_rawfile,sep = "_")
-    PREF_OUTPUT <- file.path(outp, paste("peaktable_", num_rawfile, sep = ""))
-
+    PREF_OUTPUT_PEAKTABLE <- file.path(out_peaktable, paste("peaktable_", num_rawfile, sep = ""))
+    PREF_OUTPUT_MSMS <- file.path(out_msms, paste("msms_", num_rawfile, sep = ""))
 
     vfiles <-
       exportingAllCombinationsOfXML(mxml,
                                     prefix_xml_files = PREF_SAMPLE,
-                                    prefix_output = PREF_OUTPUT, verbose = FALSE)
+                                    prefix_output = c(PREF_OUTPUT_PEAKTABLE,PREF_OUTPUT_MSMS), verbose = FALSE)
     outfiles <- vfiles[, 2]
+    outmsms <- vfiles[,3]
 
     ###We rename all the files
 
@@ -96,8 +97,9 @@ singleXMLgeneration <-
         peakpicking = tids,
         sample = rep(num_rawfile, nrow(vfiles)),
         input = vfiles[, 1],
-        hash_input = vfiles[,3],
-        output = outfiles,
+        hash_input = vfiles$hash,
+        output_peaktable = outfiles,
+        output_msms = outmsms,
         stringsAsFactors = FALSE
       )
     return(ppstemp)
@@ -111,7 +113,8 @@ allsampseq <-
     MoreArgs = list(
       mxml = mxml,
       prefix = prefix_xml,
-      outp = path_peaktables,
+      out_peaktable = path_peaktables,
+      out_msms = path_msms,
       tids= 1
     ),
     SIMPLIFY = FALSE,
@@ -122,3 +125,6 @@ allsampseq <-
 btab <- do.call(rbind, allsampseq)
 ###We have all the hashes in btab$hash_input
 vav <- write.table(btab,file=path_candidates,sep=";",row.names=FALSE)
+
+
+###If the msms are empty we directly remove them
