@@ -49,10 +49,11 @@ class IonAnnotater:
 
     def command_line(self,ohv):
         pscript = ct.find_rscript()
+        pmatching = os.path.join(pscript,"cliques_matching.cpp")
         command_line = os.path.join(pscript,"annotating_mixed_method.R")
         ####We give all the name of the grouping parameters implicated in a single file
         cline = " ".join(["Rscript",command_line,self.path_datamatrix,self.path_db,self.output_dm_full,self.output_dm_reduced,
                  str(self.num_cores),common.references.DATA["IONANNOTATION"]["XCMS_MODEL"],ohv.getFile(cr.TEMP["IONANNOTATION"]["FULL"]),
                  ohv.getFile(cr.TEMP["IONANNOTATION"]["MAIN"]),self.polarity,str(self.ppm),str(self.dmz),
-                          str(self.num_files),str(self.min_filter)])
+                          str(self.num_files),str(self.min_filter),pmatching])
         return cline
