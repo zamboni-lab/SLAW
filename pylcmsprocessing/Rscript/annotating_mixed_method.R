@@ -476,7 +476,14 @@ annotateCliques <- function(cliques,
                             bpp = NULL) {
   if (is.null(bpp))
     bpp <- bpparam()
-  
+  for(ip in seq_along(cliques)){
+    annotateCliqueInterpretMSspectrum(cliques[[ip]],
+    dm = peaklist,
+    adducts = adducts,
+    main_adducts = main_adducts,
+    ionization_mode = ionization_mode,
+    val_int = val_int)
+  }
   vfeat <-
     bplapply(
       cliques,
@@ -577,7 +584,7 @@ annotateCliqueInterpretMSspectrum <-
         num_feat <- num_feat + 1
         break
       }
-      
+      if(any(sel_idx>length(current_val))|any(is.na(current_val))) browser()
       annots <-
         findMAIN(
           current_val[sel_idx, , drop = FALSE],
@@ -700,7 +707,8 @@ convertFeatures <- function(resAnnot, polarity = "negative") {
 
 
 ###The full data matrix annotated.
-buildDataMatrixFull <- function(dm, annot, path_output) {
+buildDataMatrixFull <- function(dm, annot, path_output,
+                                num_line = 15000) {
   ###We write by batch to avoid memory oerloads.
   cnames <-
     c("mz",
@@ -709,13 +717,13 @@ buildDataMatrixFull <- function(dm, annot, path_output) {
       "annotations",
       "neutral_mass",
       cnames[3:ncol(dm)])
-  f <- open(path_output, "a")
+  f <- file(path_output, "a")
   
-  seq_line <- seq(1, nrow(dm), by = num_line)
-  if (seq_line[length(seq_line)] != nrow(dm)) {
-    seq_line <- c(seq_line, nrow(dm))
+  seq_line <- seq(1, length(annot), by = num_line)
+  if (seq_line[length(seq_line)] != length(annot)) {
+    seq_line <- c(seq_line, length(annot))
   } else{
-    seq_line[length(seq_line)] <- nrow(dm) + 1
+    seq_line[length(seq_line)] <- length(annot) + 1
   }
   message("Building full data-matrix in ",
           length(seq_line) - 1,
@@ -749,7 +757,7 @@ buildDataMatrixFull <- function(dm, annot, path_output) {
     write_col <- FALSE
   }
   ###Write the full dtaa matrix to files sequentially.
-  return(vannot)
+  close(f)
 }
 
 
@@ -759,7 +767,7 @@ buildDataMatrixSimplified <-
            annot,
            path_output,
            vsep = ";",
-           num_line = 20000) {
+           num_line = 15000) {
     ###We write by batch to avoid memory oerloads.
     cnames <-
       c("mz",
@@ -768,14 +776,14 @@ buildDataMatrixSimplified <-
         "annotations",
         "neutral_mass",
         cnames[3:ncol(dm)])
-    f <- open(path_output, "a")
+    f <- file(path_output, "a")
     
     
-    seq_line <- seq(1, nrow(dm), by = num_line)
-    if (seq_line[length(seq_line)] != nrow(dm)) {
-      seq_line <- c(seq_line, nrow(dm))
+    seq_line <- seq(1, length(annot), by = num_line)
+    if (seq_line[length(seq_line)] != length(annot)) {
+      seq_line <- c(seq_line, length(annot))
     } else{
-      seq_line[length(seq_line)] <- nrow(dm) + 1
+      seq_line[length(seq_line)] <- length(annot) + 1
     }
     message("Building simplified data-matrix in ",
             length(seq_line) - 1,
@@ -818,6 +826,7 @@ buildDataMatrixSimplified <-
       )
       write_col <- FALSE
     }
+    close(f)
   }
 
 
@@ -862,11 +871,12 @@ groupFeatures <-
     size <- rep(0, nrow(dm))
     ###The first id needs to be -1
     current_id <- -1
-    print(cut_rts)
+    # print(cut_rts)
     ##We update all the cliques.
-
+    message("Found ",length(cut_rts)-1," slices. Processing slice:")
     for (i in seq(1, length(cut_rts) - 2)) {
-      message("Variables:",cut_rts[i],"-",cut_rts[i+2],"current cliques size is ",length(cliques))
+      message(i," ",appendLF=FALSE)
+      # message("Variables:",cut_rts[i],"-",cut_rts[i+2],"current cliques size is ",length(cliques))
       sel_idx <- ort[cut_rts[i]:cut_rts[i + 2]]
       anclique <- createNetworkMultifiles(
         dm[sel_idx, , drop = FALSE],
@@ -888,8 +898,13 @@ groupFeatures <-
         anclique@cliques[[ic]] <- sel_idx[anclique@cliques[[ic]]]
       }
       message("Merging cliques")
+      # ocliques <- cliques
       cliques <-
         mergeCliques(cliques, anclique@cliques, assignments, size, current_id)
+      # ocr <- range(sapply(cliques,function(x,dm){sd(dm[x,2])},dm=dm),na.rm = TRUE)[2]
+      # orr <- range(sapply(ocliques,function(x,dm){sd(dm[x,2])},dm=dm),na.rm = TRUE)[2]
+      # if(ocr>0.1) browser()
+      
     }
     
     ###We convert the cliques ID back to the unsorted point
@@ -934,7 +949,6 @@ groupFeatures <-
                               val_int,
                               bpp = bpp)
     
-    ###w
     ####We add the annotation for all the peaks
     annot <- convertFeatures(res_df, polarity = ionization_mode)
     return(annot)
@@ -1028,6 +1042,8 @@ close(fadd)
 ###
 fadd <- file(PATH_MAIN_ADDUCTS, "r")
 main_adducts <- readLines(fadd)
+main_adducts <- main_adducts[sapply(main_adducts,startsWith,prefix="[M")]
+###The double molecule are removed
 close(fadd)
 
 ####We map the sample name of the vector data
@@ -1062,6 +1078,8 @@ annot <-
     path_matching = PATH_MATCHING,
     bbp = bpp
   )
+
+
 
 ###If the file already exists at this step we erase it
 if(file.exists(PATH_OUTPUT_SIMPLE)) file.remove(PATH_OUTPUT_SIMPLE)

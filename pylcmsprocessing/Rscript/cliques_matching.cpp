@@ -87,7 +87,7 @@ List mergeCliques(List cliques,List new_cliques,IntegerVector assignment,Integer
         idx_list.emplace(a,cliques_counter);
         cliques_counter++;
       }
-      res_cpp[idx_list[a]].push_back(i);
+      res_cpp[idx_list[a]].push_back(i+1);
     }
     //We add the element to the clique
   }
