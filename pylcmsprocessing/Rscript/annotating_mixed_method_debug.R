@@ -957,177 +957,177 @@ groupFeatures <-
     message("Converting features.")
     return(annot)
   }
-
-####Actual processing in the pipeline.
-args <- commandArgs(trailingOnly = TRUE)
-# args <- c("U:/users/Alexis/data/all_2mins/res_neg_2/datamatrices/datamatrix_84b6673cb2b08293f0365e15464a88ed.csv",
-#           "U:/users/Alexis/data/all_2mins/res_neg_2/processing_db.sqlite",
-#           "/U:/users/Alexis/data/all_2mins/res_neg_2/datamatrices/annotated_peaktable_84b6673cb2b08293f0365e15464a88ed_full.csv",
-#           "U:/users/Alexis/data/all_2mins/res_neg_2/datamatrices/annotated_peaktable_84b6673cb2b08293f0365e15464a88ed_reduced.csv",
-#           "5",
-#           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/xcms_raw_model.RData",
-#           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_neg.txt",
-#           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_main_neg.txt",
-#           "negative",
-#           "15.0",
-#           "0.007",
-#           "50",
-#           "2",
-#           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/Rscript/cliques_matching.cpp")
-
-
-
-print(args)
-# args <- c("U:/users/Alexis/examples_lcms_workflow/output/datamatrices/datamatrix_3063282bcc8e77018d0b6912579a4115.csv",
-#           "U:/users/Alexis/examples_lcms_workflow/output/processing_db.sqlite",
-#           "E:/out_full_d.csv",
-#           "E:/out_simple_d.csv",
-#           "5",
-#           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/xcms_raw_model.RData",
-#           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_pos.txt",
-#           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_main_pos.txt",
-#           "positive",
-#           "15",
-#           "0.01",
-#           "50",
-#           "2",
-#           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/Rscript/cliques_matching.cpp")
-
-PATH_DATAMATRIX <- args[1]
-PATH_DB <- args[2]
-PATH_OUTPUT_FULL <- args[3]
-PATH_OUTPUT_SIMPLE <- args[4]
-NUM_CORES <- ceiling(as.numeric(args[5]) / 2)
-PATH_MODEL <- args[6]
-PATH_ADDUCTS <- args[7]
-PATH_MAIN_ADDUCTS <- args[8]
-POLARITY <- args[9]
-PPM <-  as.numeric(args[10])
-DMZ <-  as.numeric(args[11])
-###We peak the FILE_USED most intense files.
-FILES_USED <- min(as.numeric(args[12]), 40)
-FILTER_NUMS <- max(1, as.numeric(args[13]))
-PATH_MATCHING <- args[14]
-NUM_BY_BATCH <- 5000
-if (length(args) == 15) {
-  NUM_BY_BATCH <- as.numeric(args[15])
-}
-#
-
-###Debuggiong the test on karin data
-# PATH_DATAMATRIX <- "U:/users/Alexis/data/data_karin/mml_v2/neg/res_thin/datamatrices/datamatrix_b01904e0a545f19857549535352af3b9.csv"
-# PATH_DB <- "U:/users/Alexis/data/data_karin/mml_v2/neg/res/processing_db.sqlite"
-# PATH_OUTPUT_FULL <- "E:/out_full.csv"
-# PATH_OUTPUT_SIMPLE <- "E:/out_simple.csv"
-# NUM_CORES <- as.numeric(4)
-# PATH_MODEL <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/xcms_raw_model.RData"
-# PATH_ADDUCTS <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_neg.txt"
-# PATH_MAIN_ADDUCTS <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_main_neg.txt"
-# POLARITY <- "negative"
-# PPM <-  as.numeric(20)
-# DMZ <-  as.numeric(0.02)
-# FILTER_NUMS <- max(1,as.numeric(2))
-# FILES_USED <- 4
-# PATH_MATCHING <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/Rscript/cliques_matching.cpp"
-# NUM_BY_BATCH <- 20000
-
-
-##Debugging standard workflow
-
-##reading data matrices
-dm <- read.table(PATH_DATAMATRIX, header = TRUE, sep = ",")
-
-posIntensities <- getIntensityPos(dm)
-num_detect <-
-  apply(dm[, posIntensities, drop = FALSE], 1, function(x) {
-    sum(!is.na(x))
-  })
-
-vdetect <- num_detect >= FILTER_NUMS
-###We only keep the fitting ammount of features.
-while (sum(vdetect) > 200000) {
-  FILTER_NUMS <- FILTER_NUMS + 1
-  vdetect <- num_detect >= FILTER_NUMS
-}
-
-# message("Retained ", sum(vdetect), " signals on ", nrow(dm))
-dm <- dm[vdetect, , drop = FALSE]
-
-
-###Reading the raw files
-dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
-raw_files <- dbGetQuery(dbb, "SELECT path FROM samples")[, 1]
-dbDisconnect(dbb)
-# raw_files <- str_replace(raw_files,pattern = "/sauer1",replacement = "U:")
-
-
-####Selecting the msot intense files
-val_int <- apply(dm[, posIntensities], 2, sum, na.rm = TRUE)
-sel_files <-
-  order(val_int, decreasing = TRUE)[1:min(FILES_USED, length(val_int))]
-raw_files <- raw_files[sel_files]
-
-val_int_var <- apply(dm[, posIntensities], 1, mean, na.rm = TRUE)
-###Setting up the parallel processing
-bpp <- NULL
-if (get_os() == "win") {
-  bpp <- SnowParam(workers = NUM_CORES)
-} else{
-  bpp <- MulticoreParam(workers = min(NUM_CORES, 4))
-}
-bpp <- SerialParam()
-
-fadd <- file(PATH_ADDUCTS, "r")
-adducts <- readLines(fadd)
-close(fadd)
-
-###
-fadd <- file(PATH_MAIN_ADDUCTS, "r")
-main_adducts <- readLines(fadd)
-main_adducts <- main_adducts[sapply(main_adducts,startsWith,prefix="[M")]
-###The double molecule are removed
-close(fadd)
-
-####We map the sample name of the vector data
-base_sample <-
-  str_split(basename(raw_files),
-            pattern = fixed("\\."),
-            simplify = TRUE)[, 1]
-
-##Give the posaition of raw_file on the data matrix
-cnames <- colnames(dm)
-cnames <- str_sub(cnames, 5, -5)
-vav <- adist(base_sample, cnames)
-match_files <- apply(vav, 1, which.min)
-
-# match_files <- sapply(base_sample,function(x,vref){which(endsWith(vref,suffix=x))},vref=colnames(dm),simplify=TRUE)
-
-
-###If the software is crashing we divied the number of feature by 2 eventually 
-print(head(raw_files))
-annot <-
-  groupFeatures(
-    dm[, c("mz", "rt","min_mz","max_mz","min_rt","max_rt","mean_peakwidth",colnames(dm)[posIntensities[sel_files]])],
-    val_int_var,
-    raw_files,
-    match_files,
-    adducts,
-    main_adducts,
-    ionization_mode = POLARITY,
-    ppm = PPM,
-    dmz = DMZ,
-    size_batch = NUM_CORES,
-    cut_size = NUM_BY_BATCH,
-    cosFilter = 0.6,
-    ref_xcms = PATH_MODEL,
-    path_matching = PATH_MATCHING,
-    bbp = bpp
-  )
-
-
-
-###If the file already exists at this step we erase it
-if(file.exists(PATH_OUTPUT_SIMPLE)) file.remove(PATH_OUTPUT_SIMPLE)
-dm_full <- buildDataMatrixSimplified(dm, annot, PATH_OUTPUT_SIMPLE)
-if(file.exists(PATH_OUTPUT_FULL)) file.remove(PATH_OUTPUT_FULL)
-dm_full <- buildDataMatrixFull(dm, annot, PATH_OUTPUT_FULL)
+# 
+# ####Actual processing in the pipeline.
+# args <- commandArgs(trailingOnly = TRUE)
+# # args <- c("U:/users/Alexis/data/all_2mins/res_neg_2/datamatrices/datamatrix_84b6673cb2b08293f0365e15464a88ed.csv",
+# #           "U:/users/Alexis/data/all_2mins/res_neg_2/processing_db.sqlite",
+# #           "/U:/users/Alexis/data/all_2mins/res_neg_2/datamatrices/annotated_peaktable_84b6673cb2b08293f0365e15464a88ed_full.csv",
+# #           "U:/users/Alexis/data/all_2mins/res_neg_2/datamatrices/annotated_peaktable_84b6673cb2b08293f0365e15464a88ed_reduced.csv",
+# #           "5",
+# #           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/xcms_raw_model.RData",
+# #           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_neg.txt",
+# #           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_main_neg.txt",
+# #           "negative",
+# #           "15.0",
+# #           "0.007",
+# #           "50",
+# #           "2",
+# #           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/Rscript/cliques_matching.cpp")
+# 
+# 
+# 
+# print(args)
+# # args <- c("U:/users/Alexis/examples_lcms_workflow/output/datamatrices/datamatrix_3063282bcc8e77018d0b6912579a4115.csv",
+# #           "U:/users/Alexis/examples_lcms_workflow/output/processing_db.sqlite",
+# #           "E:/out_full_d.csv",
+# #           "E:/out_simple_d.csv",
+# #           "5",
+# #           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/xcms_raw_model.RData",
+# #           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_pos.txt",
+# #           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_main_pos.txt",
+# #           "positive",
+# #           "15",
+# #           "0.01",
+# #           "50",
+# #           "2",
+# #           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/Rscript/cliques_matching.cpp")
+# 
+# PATH_DATAMATRIX <- args[1]
+# PATH_DB <- args[2]
+# PATH_OUTPUT_FULL <- args[3]
+# PATH_OUTPUT_SIMPLE <- args[4]
+# NUM_CORES <- ceiling(as.numeric(args[5]) / 2)
+# PATH_MODEL <- args[6]
+# PATH_ADDUCTS <- args[7]
+# PATH_MAIN_ADDUCTS <- args[8]
+# POLARITY <- args[9]
+# PPM <-  as.numeric(args[10])
+# DMZ <-  as.numeric(args[11])
+# ###We peak the FILE_USED most intense files.
+# FILES_USED <- min(as.numeric(args[12]), 40)
+# FILTER_NUMS <- max(1, as.numeric(args[13]))
+# PATH_MATCHING <- args[14]
+# NUM_BY_BATCH <- 5000
+# if (length(args) == 15) {
+#   NUM_BY_BATCH <- as.numeric(args[15])
+# }
+# #
+# 
+# ###Debuggiong the test on karin data
+# # PATH_DATAMATRIX <- "U:/users/Alexis/data/data_karin/mml_v2/neg/res_thin/datamatrices/datamatrix_b01904e0a545f19857549535352af3b9.csv"
+# # PATH_DB <- "U:/users/Alexis/data/data_karin/mml_v2/neg/res/processing_db.sqlite"
+# # PATH_OUTPUT_FULL <- "E:/out_full.csv"
+# # PATH_OUTPUT_SIMPLE <- "E:/out_simple.csv"
+# # NUM_CORES <- as.numeric(4)
+# # PATH_MODEL <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/xcms_raw_model.RData"
+# # PATH_ADDUCTS <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_neg.txt"
+# # PATH_MAIN_ADDUCTS <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_main_neg.txt"
+# # POLARITY <- "negative"
+# # PPM <-  as.numeric(20)
+# # DMZ <-  as.numeric(0.02)
+# # FILTER_NUMS <- max(1,as.numeric(2))
+# # FILES_USED <- 4
+# # PATH_MATCHING <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/Rscript/cliques_matching.cpp"
+# # NUM_BY_BATCH <- 20000
+# 
+# 
+# ##Debugging standard workflow
+# 
+# ##reading data matrices
+# dm <- read.table(PATH_DATAMATRIX, header = TRUE, sep = ",")
+# 
+# posIntensities <- getIntensityPos(dm)
+# num_detect <-
+#   apply(dm[, posIntensities, drop = FALSE], 1, function(x) {
+#     sum(!is.na(x))
+#   })
+# 
+# vdetect <- num_detect >= FILTER_NUMS
+# ###We only keep the fitting ammount of features.
+# while (sum(vdetect) > 200000) {
+#   FILTER_NUMS <- FILTER_NUMS + 1
+#   vdetect <- num_detect >= FILTER_NUMS
+# }
+# 
+# # message("Retained ", sum(vdetect), " signals on ", nrow(dm))
+# dm <- dm[vdetect, , drop = FALSE]
+# 
+# 
+# ###Reading the raw files
+# dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
+# raw_files <- dbGetQuery(dbb, "SELECT path FROM samples")[, 1]
+# dbDisconnect(dbb)
+# # raw_files <- str_replace(raw_files,pattern = "/sauer1",replacement = "U:")
+# 
+# 
+# ####Selecting the msot intense files
+# val_int <- apply(dm[, posIntensities], 2, sum, na.rm = TRUE)
+# sel_files <-
+#   order(val_int, decreasing = TRUE)[1:min(FILES_USED, length(val_int))]
+# raw_files <- raw_files[sel_files]
+# 
+# val_int_var <- apply(dm[, posIntensities], 1, mean, na.rm = TRUE)
+# ###Setting up the parallel processing
+# bpp <- NULL
+# if (get_os() == "win") {
+#   bpp <- SnowParam(workers = NUM_CORES)
+# } else{
+#   bpp <- MulticoreParam(workers = min(NUM_CORES, 4))
+# }
+# bpp <- SerialParam()
+# 
+# fadd <- file(PATH_ADDUCTS, "r")
+# adducts <- readLines(fadd)
+# close(fadd)
+# 
+# ###
+# fadd <- file(PATH_MAIN_ADDUCTS, "r")
+# main_adducts <- readLines(fadd)
+# main_adducts <- main_adducts[sapply(main_adducts,startsWith,prefix="[M")]
+# ###The double molecule are removed
+# close(fadd)
+# 
+# ####We map the sample name of the vector data
+# base_sample <-
+#   str_split(basename(raw_files),
+#             pattern = fixed("\\."),
+#             simplify = TRUE)[, 1]
+# 
+# ##Give the posaition of raw_file on the data matrix
+# cnames <- colnames(dm)
+# cnames <- str_sub(cnames, 5, -5)
+# vav <- adist(base_sample, cnames)
+# match_files <- apply(vav, 1, which.min)
+# 
+# # match_files <- sapply(base_sample,function(x,vref){which(endsWith(vref,suffix=x))},vref=colnames(dm),simplify=TRUE)
+# 
+# 
+# ###If the software is crashing we divied the number of feature by 2 eventually 
+# print(head(raw_files))
+# annot <-
+#   groupFeatures(
+#     dm[, c("mz", "rt","min_mz","max_mz","min_rt","max_rt","mean_peakwidth",colnames(dm)[posIntensities[sel_files]])],
+#     val_int_var,
+#     raw_files,
+#     match_files,
+#     adducts,
+#     main_adducts,
+#     ionization_mode = POLARITY,
+#     ppm = PPM,
+#     dmz = DMZ,
+#     size_batch = NUM_CORES,
+#     cut_size = NUM_BY_BATCH,
+#     cosFilter = 0.6,
+#     ref_xcms = PATH_MODEL,
+#     path_matching = PATH_MATCHING,
+#     bbp = bpp
+#   )
+# 
+# 
+# 
+# ###If the file already exists at this step we erase it
+# if(file.exists(PATH_OUTPUT_SIMPLE)) file.remove(PATH_OUTPUT_SIMPLE)
+# dm_full <- buildDataMatrixSimplified(dm, annot, PATH_OUTPUT_SIMPLE)
+# if(file.exists(PATH_OUTPUT_FULL)) file.remove(PATH_OUTPUT_FULL)
+# dm_full <- buildDataMatrixFull(dm, annot, PATH_OUTPUT_FULL)
