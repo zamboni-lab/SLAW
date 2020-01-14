@@ -94,17 +94,21 @@ if __name__=="__main__":
         ##We read the yaml file
         with open(vui.path_yaml, 'r') as stream:
             raw_yaml = yaml.safe_load(stream)
-
-        PATH_DB = "/processing_db.sqlite"
+        PATH_DB = "/temp_processing_db.sqlite"
+        LOG = "/log.txt"
+        if "CLUSTER" in os.environ:
+            PATH_DB = os.path.join(OUTPUT_DIR,"temp_processing_db.sqlite")
+            LOG = os.path.join(OUTPUT_DIR,"log.txt")
         #Procesinf of the pipeline eventually.
         path_save_db = os.path.join(OUTPUT_DIR,"processing_db.sqlite")
         if os.path.isfile(path_save_db):
             shutil.copyfile(path_save_db,PATH_DB)
 
         exp = Experiment(PATH_DB,save_db = path_save_db,reset=False)
+        print(PATH_DB+"exists:"+str(os.path.isfile(PATH_DB)))
         exp.initialise_database(num_cpus,OUTPUT_DIR,vui.polarity,INPUT,["ADAP"], 1)
         exp.building_inputs_single_processing(PATH_XML)
-        exp.run("/MZmine-2.52-Linux",int(num_cpus),log = "/log.txt")
+        exp.run("/MZmine-2.52-Linux",int(num_cpus),log = LOG)
         exp.correct_conversion()
         exp.post_processing_peakpicking()
         exp.group_online(intensity=str(raw_yaml["grouping"]["extracted_quantity"]["value"]),

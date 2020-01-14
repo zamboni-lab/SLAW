@@ -37,5 +37,5 @@ if test -f "/log.txt"; then
 fi
 
 if test -f "/processing_db.sqlite"; then
-  cp "/processing_db.sqlite" "$OUTPUT/processing_db.sqlite"
+  cp "/db/processing_db.sqlite" "$OUTPUT/processing_db.sqlite"
 fi

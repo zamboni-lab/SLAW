@@ -16,5 +16,7 @@ COPY MZmine-2.52-Linux /MZmine-2.52-Linux
 COPY wrapper_docker.py /wrapper_docker.py
 COPY onlineLCMSaligner /onlineLCMSaligner
 RUN pip3 install --no-cache-dir psutil
+RUN pip3 uninstall -y numpy
+RUN pip3 install numpy==1.17
 RUN R -e "library(devtools);remove.packages('onlineLCMSaligner');install('/onlineLCMSaligner')"
 ENTRYPOINT bash run_workflow.sh

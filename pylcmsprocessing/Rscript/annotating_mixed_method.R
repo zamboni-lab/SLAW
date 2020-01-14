@@ -360,13 +360,8 @@ createNetworkMultifiles <-
     }
     message("Building cosine similarity network: \n0 ", appendLF = FALSE)
 
-    cpercent <- 0
 
     for (i in 1:(length(seq_cut) - 1)) {
-      if (floor(i * 10 / (length(seq_cut) - 1)) != cpercent) {
-        cpercent <- ceiling(i * 100 / (length(seq_cut) - 1))
-        message(cpercent, " ", appendLF = FALSE)
-      }
       ###We compute the network for the selected files.
 
       ledges <-
@@ -382,23 +377,21 @@ createNetworkMultifiles <-
             BPPARAM = bpp
           #bptry( )
         )
-      
-      # print(ledges)
-      # message("All exist:",all(sapply(raw_files,file.exists)))
-      # print(raw_files)
-      
+      message("ledges",format(object.size(ledges),"Mb"))
+
+
       found_errors <- sapply(ledges, function(x) {
         "remote_perror" %in% class(x)
       })
       ##Cahcing errors
-      if (sum(found_errors)>=1){ 
+      if (sum(found_errors)>=1){
         # browser()
         ledges <- attr(ledges, "result")
 
         # print(which(found_errors))
         ledges <-
           ledges[!found_errors]
-        
+
         if(length(found_errors)>1){
           print(sapply(ledges[found_errors],function(x,rr){attr(x,"traceback")},simplify = FALSE))
         }
@@ -417,10 +410,9 @@ createNetworkMultifiles <-
           (countMat[alle[, 1:2]] + 1)
         cosMat[alle[, c(2, 1)]] <- cosMat[alle[, c(1, 2)]]
         countMat[alle[, c(1, 2)]] <- countMat[alle[, c(1, 2)]] + 1
+        message("cosMat",format(object.size(cosMat),"Mb"))
       }
     }
-    if(cpercent!=100)
-    message("100", appendLF = FALSE)
     message("\nDone")
 
     ##We get the first useless elemnts
@@ -437,6 +429,7 @@ createNetworkMultifiles <-
                                   weighted = TRUE)
     gadj <-
       set_vertex_attr(gadj, name = "id", value = which(sel_val))
+    message("gadj",format(object.size(gadj),"Mb"))
     ldata <-
       convertToCliqueMS(dm,
                         path_raw = raw_files[[1]],
@@ -1005,7 +998,7 @@ POLARITY <- args[9]
 PPM <-  as.numeric(args[10])
 DMZ <-  as.numeric(args[11])
 ###We peak the FILE_USED most intense files.
-FILES_USED <- min(as.numeric(args[12]), 40)
+FILES_USED <- min(as.numeric(args[12]), 25)
 FILTER_NUMS <- max(1, as.numeric(args[13]))
 PATH_MATCHING <- args[14]
 NUM_BY_BATCH <- 5000
@@ -1075,7 +1068,7 @@ if (get_os() == "win") {
 } else{
   bpp <- MulticoreParam(workers = min(NUM_CORES, 4))
 }
-bpp <- SerialParam()
+# bpp <- SerialParam()
 
 fadd <- file(PATH_ADDUCTS, "r")
 adducts <- readLines(fadd)
@@ -1103,7 +1096,7 @@ match_files <- apply(vav, 1, which.min)
 # match_files <- sapply(base_sample,function(x,vref){which(endsWith(vref,suffix=x))},vref=colnames(dm),simplify=TRUE)
 
 
-###If the software is crashing we divied the number of feature by 2 eventually 
+###If the software is crashing we divied the number of feature by 2 eventually
 print(head(raw_files))
 annot <-
   groupFeatures(
