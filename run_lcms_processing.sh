@@ -19,10 +19,10 @@ then
   ##In this case we mount sauer 1
   if [[ -z "${PASSWORD}" ]]; then
     #If the password is defined we mount it
-    echo "mount //nas22.ethz.ch/biol_imsb_sauer_1 sauer1 -nobrl -rw -o domain=d.ethz.ch,username=$USERNAME,vers=3.0"
+    # echo "mount //nas22.ethz.ch/biol_imsb_sauer_1 sauer1 -nobrl -rw -o domain=d.ethz.ch,username=$USERNAME,vers=3.0"
     mount //nas22.ethz.ch/biol_imsb_sauer_1 sauer1 -nobrl -rw -o domain=d.ethz.ch,username=$USERNAME,vers=3.0
   else
-    echo "mount //nas22.ethz.ch/biol_imsb_sauer_1 sauer1 -nobrl -rw -o domain=d.ethz.ch,username=$USERNAME,vers=3.0,password=$PASSWORD"
+    # echo "mount //nas22.ethz.ch/biol_imsb_sauer_1 sauer1 -nobrl -rw -o domain=d.ethz.ch,username=$USERNAME,vers=3.0,password=$PASSWORD"
     mount //nas22.ethz.ch/biol_imsb_sauer_1 sauer1 -nobrl -rw -o domain=d.ethz.ch,username=$USERNAME,vers=3.0,password=$PASSWORD
   fi
 fi
@@ -37,5 +37,5 @@ if test -f "/log.txt"; then
 fi
 
 if test -f "/processing_db.sqlite"; then
-  cp "/processing_db.sqlite" "$OUTPUT/processing_db.sqlite"
+  cp "/db/processing_db.sqlite" "$OUTPUT/processing_db.sqlite"
 fi

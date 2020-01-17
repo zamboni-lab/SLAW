@@ -20,7 +20,6 @@ List mergeCliques(List cliques,List new_cliques,IntegerVector assignment,Integer
   int max_clique = maxCliques[0];
 //We convert all the lcique to set because it is easier.
 
-  int percent = 0;
   //We build a percentage of progress
   for(int i=0;i<new_cliques.size();i++){
 
@@ -28,12 +27,7 @@ List mergeCliques(List cliques,List new_cliques,IntegerVector assignment,Integer
     if(cc.size()<=1){
       continue;
     }
-    int cval = (i*10)/new_cliques.size();
     
-    if(cval!=percent){
-      percent = cval;
-      Rcout << percent*10 << " ";
-    }
     bool to_change = true;
     for(auto it = cc.begin();it != cc.end(); it++){
       if(size[*it-1]>cc.size()){

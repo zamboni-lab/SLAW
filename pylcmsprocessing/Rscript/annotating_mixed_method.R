@@ -42,11 +42,11 @@ convertToCliqueMS <- function(dm,
   } else{
     sel_idx <- which(!is.na(dm[, idx]))
   }
-  
+
   if (length(sel_idx) > maxPeaks &
       (!missing(idx)))
     sel_idx <- sort(sample(sel_idx, maxPeaks))
-  
+
   getIntensityPos <- function(dm) {
     which(startsWith("int", colnames(dm)))
   }
@@ -58,8 +58,8 @@ convertToCliqueMS <- function(dm,
   } else{
     intensity <- dm[sel_idx, idx]
   }
-  
-  
+
+
   ###We mdoify all the fileds of the available object
   cnames <- c(
     "mz",
@@ -97,7 +97,7 @@ convertToCliqueMS <- function(dm,
         rep(1, length(sel_idx)),
       is_filled = rep(0, length(sel_idx))
     )
-  
+
   ###We look for the closest retention time in these data
   rttime <- rtime(mzraw)
   blim <- c(-1000, rttime[2:length(rttime)] - diff(rttime) / 2, 100000)
@@ -113,17 +113,17 @@ convertToCliqueMS <- function(dm,
            rep(length(rttime), length(rtmatch_max)))
   rtmatch_med <-
     .bincode(tdf[, "rt"], breaks = blim, include.lowest = TRUE)
-  
+
   # sel <- apply(rtmatch_min,rtmatch_max)
-  
+
   tdf[, "rtmin"] <- rttime[rtmatch_min]
   tdf[, "rtmax"] <- rttime[rtmatch_max]
   tdf[, "rt"] <- rttime[rtmatch_med]
-  
+
   ###only keep feature which have a different rt,rtmin and rtmax
   vdup <- apply(tdf[, c("rtmin", "rt", "rtmax")], 1, anyDuplicated)
   sel <- which(vdup == 0)
-  
+
   tenv <- new.env()
   tenv[["chromPeaks"]] <- as.matrix(tdf[sel, ])
   mzdata@msFeatureData@.xData <- tenv
@@ -158,10 +158,9 @@ computeNetworkRawfile <-
       } else{
         sel_idx <- which(!is.na(dm[, idx]))
       }
-
       # if needed add the maxPeks argument ot the function
       #if(length(sel_idx)>maxPeaks&(!missing(idx))) sel_idx <- sort(sample(sel_idx,maxPeaks))
-      
+
       getIntensityPos <- function(dm) {
         which(startsWith("int", colnames(dm)))
       }
@@ -173,8 +172,8 @@ computeNetworkRawfile <-
       } else{
         intensity <- dm[sel_idx, idx]
       }
-      
-      
+
+
       cnames <- c(
         "mz",
         "mzmin",
@@ -189,7 +188,7 @@ computeNetworkRawfile <-
         "sample",
         "is_filled"
       )
-      
+
       ###We create a fake xcmsSet object.
       mzraw <- readMSData(path_raw, mode = "onDisk")
       rtime <- rtime(mzraw)
@@ -213,7 +212,7 @@ computeNetworkRawfile <-
             rep(1, length(sel_idx)),
           is_filled = rep(0, length(sel_idx))
         )
-      
+
       ###We look for the closest retention time in these data
       rttime <- rtime(mzraw)
       blim <-
@@ -230,17 +229,17 @@ computeNetworkRawfile <-
                rep(length(rttime), length(rtmatch_max)))
       rtmatch_med <-
         .bincode(tdf[, "rt"], breaks = blim, include.lowest = TRUE)
-      
+
       # sel <- apply(rtmatch_min,rtmatch_max)
-      
+
       tdf[, "rtmin"] <- rttime[rtmatch_min]
       tdf[, "rtmax"] <- rttime[rtmatch_max]
       tdf[, "rt"] <- rttime[rtmatch_med]
-      
+
       ###only keep feature which have a different rt,rtmin and rtmax
       vdup <- apply(tdf[, c("rtmin", "rt", "rtmax")], 1, anyDuplicated)
       sel <- which(vdup == 0)
-      
+
       tenv <- new.env()
       tenv[["chromPeaks"]] <- as.matrix(tdf[sel, ])
       mzdata@msFeatureData@.xData <- tenv
@@ -248,21 +247,22 @@ computeNetworkRawfile <-
       mzdata@processingData@files <- path_raw
       return(list(mzdata, sel, sel_idx))
     }
-    
     ldata <-
       convertToCliqueMS(dm,
                         idx = idx,
                         path_raw = raw_data,
                         ref_xcms = ref_xcms)
-    
+
     mzdata <- ldata[[1]]
     ###We just remove all the EICs value for simplicit
+
+
     ##We only extract EICs for feture which seems to fall in the correct boundaries
     sel <- ldata[[2]]
     sel_idx <- ldata[[3]]
     anclique <- createanClique(mzdata)
-    
-    
+
+
     createNetworkWithFilter <-
       function (mzdata,
                 peaklist,
@@ -272,7 +272,9 @@ computeNetworkRawfile <-
                 rtdiff = 1e-04,
                 cosFilter = 0.3)
       {
+        sink("/dev/null")
         eicmat <- cliqueMS:::defineEIC(mzdata)
+        sink(file = NULL)
         sparseeic <- as(t(eicmat), "sparseMatrix")
         cosTotal <- qlcMatrix::cosSparse(sparseeic)
         if (filter == TRUE) {
@@ -286,8 +288,8 @@ computeNetworkRawfile <-
             )
           cosTotal <- filterOut$cosTotal
           peaklist <- filterOut$peaklist
-          message(paste("Features filtered:", length(filterOut$deleted),
-                        sep = " "))
+          # message(paste("Features filtered:", length(filterOut$deleted),
+          #               sep = " "))
         }
         network <- igraph::graph.adjacency(cosTotal,
                                            weighted = TRUE,
@@ -303,19 +305,18 @@ computeNetworkRawfile <-
                                           1)] <- 0.99999999999
         return(list(network = network, peaklist = peaklist))
       }
-    
     netlist <-
       createNetworkWithFilter(
         mzdata,
         anclique@peaklist[sel, ],
-        filter = FALSE,
+        filter = TRUE,
         mzerror = 1e-5,
         intdiff = 1e4,
         rtdiff = 1e-3,
         cosFilter = cosFilter
       )$network
-    
-    if (length(netlist) == 1 & is.na(netlist)) {
+
+    if (length(netlist) == 1 && is.na(netlist)) {
       return(matrix(nrow = 0, ncol = 3))
     }
     alle <- as_data_frame(netlist, "edges")
@@ -323,7 +324,6 @@ computeNetworkRawfile <-
     alle[, 1] <- sel_idx[sel[vid[alle[, 1]]]]
     alle[, 2] <- sel_idx[sel[vid[alle[, 2]]]]
     alle <- as.matrix(alle)
-    #message("Done for file", raw_data)
     return(alle)
   }
 
@@ -335,12 +335,12 @@ createNetworkMultifiles <-
            match_files,
            size_batch = 5,
            ref_xcms = "X:/Documents/dev/script/diverse/xcms_raw_with_peaks.RData",
-           cosFilter = 0.2,
+           cosFilter = 0.4,
            bpp = NULL) {
     size_batch <- min(size_batch, length(raw_files) - 1)
     if (is.null(bpp))
       bpp <- bpparam()
-    
+
     ###The sparse matrix which will be used ot create the network.
     countMat <- Matrix(0,
                        nrow = nrow(dm),
@@ -350,7 +350,7 @@ createNetworkMultifiles <-
                      nrow = nrow(dm),
                      ncol = nrow(dm),
                      sparse = TRUE)
-    
+
     ###We build a sequnce with each matrix
     seq_cut <- seq(1, length(raw_files), by = size_batch)
     if (seq_cut[length(seq_cut)] != length(raw_files)) {
@@ -358,19 +358,13 @@ createNetworkMultifiles <-
     } else{
       seq_cut[length(seq_cut)] <- length(raw_files) + 1
     }
-    message("Building cosine similarity network: \n0 ", appendLF = FALSE)
-    
-    cpercent <- 0
-    
+    message("Building cosine similarity network", appendLF = FALSE)
+
+
     for (i in 1:(length(seq_cut) - 1)) {
-      if (floor(i * 10 / (length(seq_cut) - 1)) != cpercent) {
-        cpercent <- ceiling(i * 100 / (length(seq_cut) - 1))
-        message(cpercent, " ", appendLF = FALSE)
-      }
       ###We compute the network for the selected files.
-      
+
       ledges <-
-        bptry(
           bpmapply(
             seq_cut[i]:(seq_cut[i + 1] - 1),
             as.list(raw_files[seq_cut[i]:(seq_cut[i + 1] - 1)]),
@@ -381,28 +375,32 @@ createNetworkMultifiles <-
               cosFilter = cosFilter
             ),
             BPPARAM = bpp
-          )
+          #bptry( )
         )
-      
-      
-      
-      # print(ledges)
-      
-      # vff <- computeNetworkRawfile(cosFilter=cosFilter,match_files[1],raw_files[1],ref_xcms=ref_xcms,dm=dm)
-      
+      # message("ledges",format(object.size(ledges),"Mb"))
+
+
+      found_errors <- sapply(ledges, function(x) {
+        "remote_perror" %in% class(x)
+      })
       ##Cahcing errors
-      if (!is.null(attr(ledges, "result"))) {
+      if (sum(found_errors)>=1){
+        # browser()
         ledges <- attr(ledges, "result")
+
+        # print(which(found_errors))
         ledges <-
-          ledges[!sapply(ledges, function(x) {
-            "bperror" %in% class(x)
-          })]
+          ledges[!found_errors]
+
+        # if(length(found_errors)>1){
+        #   print(sapply(ledges[found_errors],function(x,rr){attr(x,"traceback")},simplify = FALSE))
+        # }
       }
-      
-      
       ###We add the edges to the main network
       for (j in seq_along(ledges)) {
         alle <- ledges[[j]]
+        # message("Added ",nrow(alle),"edges")
+        if (is.null(alle)) next
         if (nrow(alle) == 0)
           next
         alle <- as.matrix(alle)
@@ -412,32 +410,33 @@ createNetworkMultifiles <-
           (countMat[alle[, 1:2]] + 1)
         cosMat[alle[, c(2, 1)]] <- cosMat[alle[, c(1, 2)]]
         countMat[alle[, c(1, 2)]] <- countMat[alle[, c(1, 2)]] + 1
+        # message("cosMat",format(object.size(cosMat),"Mb"))
       }
     }
-    if(cpercent!=10)
-    message("100", appendLF = FALSE)
     message("\nDone")
-    
+
     ##We get the first useless elemnts
     sel_val <- rowSums(cosMat) != 0
+    # message(sum(sel_val),"signals with features.")
     # sel_val <- apply(cosMat, 1, function(x) {
     #   any(x != 0)
     # })
     cosMat <- cosMat[sel_val, sel_val]
-    
+
     gadj <-
       graph_from_adjacency_matrix(adjmatrix = cosMat,
                                   mode = "undirected",
                                   weighted = TRUE)
     gadj <-
       set_vertex_attr(gadj, name = "id", value = which(sel_val))
+    # message("gadj",format(object.size(gadj),"Mb"))
     ldata <-
       convertToCliqueMS(dm,
                         path_raw = raw_files[[1]],
                         ref_xcms = ref_xcms)
-    
+
     mzdata <- ldata[[1]]
-    
+
     intensity <-
       apply(dm, 1, function(x) {
         mean(x[3:length(x)], na.rm = TRUE)
@@ -458,6 +457,8 @@ createNetworkMultifiles <-
         rep(1, nrow(dm)),
       is_filled = rep(0, nrow(dm))
     )
+
+
 
     anclique@network <- gadj
     return(anclique)
@@ -493,7 +494,7 @@ annotateCliques <- function(cliques,
       val_int = val_int,
       BPPARAM = bpp
     )
-  
+
   totfeat <- 1
   for (i in seq_along(vfeat)) {
     seq_idx <-
@@ -501,7 +502,7 @@ annotateCliques <- function(cliques,
     vfeat[[i]] <- do.call(rbind, vfeat[[i]])
     vfeat[[i]] <- cbind(vfeat[[i]], seq_idx)
     totfeat <- totfeat + nrow(vfeat[[i]])
-    
+
   }
   ###We merge all the data matrix
   vfeat <- do.call(rbind, vfeat)
@@ -558,13 +559,13 @@ annotateCliqueInterpretMSspectrum <-
     }
     sel_clust_idx <- clique
     sel_idx <- seq_along(sel_clust_idx)
-    
+
     current_val <- cbind(dm[sel_clust_idx, 1], val_int[sel_clust_idx])
     colnames(current_val) <- c("mz", "int")
-    
+
     all_features <- vector(mode = "list", length = 10)
     num_feat <- 1
-    
+
     while (TRUE) {
       ###We find all the annotated adducts.
       if (length(sel_idx) == 1) {
@@ -584,7 +585,7 @@ annotateCliqueInterpretMSspectrum <-
       }
       if(any(sel_idx>length(current_val))|any(is.na(current_val))) browser()
       annots <-
-        findMAIN(
+        suppressWarnings(findMAIN(
           current_val[sel_idx, , drop = FALSE],
           ionmode = ionization_mode,
           rules = adducts,
@@ -592,23 +593,23 @@ annotateCliqueInterpretMSspectrum <-
           mzabs = dmz,
           ppm = ppm,
           mainpkthr = 0.2
-        )[[1]]
+        ))[[1]]
       # cat("OUTMAIN")
       sel_adducts <- which(!is.na(annots[, "adduct"]))
       if (length(sel_adducts) <= 0)
         break
-      
+
       if (length(sel_adducts) == 1) {
         annots$label[sel_adducts] <- def_ion
         annots$adduct[sel_adducts] <- def_ion
       }
-      
+
       sel_iso <- annots$isogr[sel_adducts]
       sel_iso <- sel_iso[!is.na(sel_iso)]
-      
+
       sel_iso <- which(annots$isogr %in% sel_iso)
       sel_feat <- union(sel_adducts, sel_iso)
-      
+
       all_features[[num_feat]] <-
         cbind(sel_clust_idx[sel_idx[sel_feat]], annots[sel_feat, ])
       colnames(all_features[[num_feat]]) <-
@@ -624,7 +625,7 @@ annotateCliqueInterpretMSspectrum <-
       num_feat <- num_feat + 1
       ##We remove the selected features.
       sel_idx <- sel_idx[-sel_feat]
-      
+
     }
     all_features <- all_features[1:(num_feat - 1)]
     return(all_features)
@@ -654,7 +655,7 @@ convertFeatures <- function(resAnnot, polarity = "negative") {
     } else{
       p_unique <- match(vannot, xannot[, "isogr"])
     }
-    
+
     sel_adducts <- xannot[, "label"]
     vvv <- which(!is.na(xannot[, "adduct"]))
     pmax <- vvv[which.max(xannot[vvv, "intb"])]
@@ -687,7 +688,7 @@ convertFeatures <- function(resAnnot, polarity = "negative") {
       }
       if (is.na(ref_label))
         ref_label <- def_label
-      
+
       ###We update the label of all the peaks
       labelC13 <-
         paste(ref_label, c("", paste("+", 1:(
@@ -716,7 +717,7 @@ buildDataMatrixFull <- function(dm, annot, path_output,
       "neutral_mass",
       cnames[3:ncol(dm)])
   f <- file(path_output, "a")
-  
+
   seq_line <- seq(1, length(annot), by = num_line)
   if (seq_line[length(seq_line)] != length(annot)) {
     seq_line <- c(seq_line, length(annot))
@@ -727,7 +728,7 @@ buildDataMatrixFull <- function(dm, annot, path_output,
           length(seq_line) - 1,
           " batches.")
   write_col <- TRUE
-  
+
   for (i in 1:(length(seq_line) - 1)) {
     sel_idx <- seq_line[i]:(seq_line[i + 1] - 1)
     vannot <- sapply(annot[sel_idx], function(an, dm, cnames) {
@@ -755,7 +756,7 @@ buildDataMatrixFull <- function(dm, annot, path_output,
     write_col <- FALSE
   }
   ###Write the full dtaa matrix to files sequentially.
-  close(f)
+  invisible(close(f))
 }
 
 
@@ -774,8 +775,8 @@ buildDataMatrixSimplified <-
         "neutral_mass",
         cnames[3:ncol(dm)])
     f <- file(path_output, "a")
-    
-    
+
+
     seq_line <- seq(1, length(annot), by = num_line)
     if (seq_line[length(seq_line)] != length(annot)) {
       seq_line <- c(seq_line, length(annot))
@@ -823,7 +824,7 @@ buildDataMatrixSimplified <-
       )
       write_col <- FALSE
     }
-    close(f)
+    invisible(close(f))
   }
 
 
@@ -845,23 +846,24 @@ groupFeatures <-
            bbp = NULL) {
     if (is.null(bpp))
       bpp <- bpparam()
-    
+
     #We have to source the matchign function.
     sourceCpp(path_matching)
-    
+
     ###We sort dm by retnetion time
     ort <- order(dm[, "rt"], decreasing = FALSE)
-    
-    
+
+
     ###We plit the files evnetually.
     number_features <- nrow(dm)
     cut_rts <- seq(1, number_features, by = cut_size/2)
-    if (cut_rts[cut_rts] != number_features) {
+    if (cut_rts[length(cut_rts)] != number_features) {
       cut_rts <- c(cut_rts, number_features + 1)
     } else{
-      cut_rts[cut_rts] <- cut_rts[cut_rts] + 1
+      cut_rts[length(cut_rts)] <- cut_rts[length(cut_rts)] + 1
     }
-    
+    if(length(cut_rts)==2) cut_rts <- c(cut_rts,cut_rts[length(cut_rts)])
+
     ###WE update the cliaues vector at every step
     cliques <- vector(mode = "list", length = 10000)
     assignments <- rep(NA_integer_, nrow(dm))
@@ -870,9 +872,9 @@ groupFeatures <-
     current_id <- -1
     # print(cut_rts)
     ##We update all the cliques.
-    message("Found ",length(cut_rts)-1," slices. Processing slice:")
+    message("Annotations task divided in ",length(cut_rts)-2," batches.")
     for (i in seq(1, length(cut_rts) - 2)) {
-      message(i," ",appendLF=FALSE)
+      message("Processing batch ",i)
       # message("Variables:",cut_rts[i],"-",cut_rts[i+2],"current cliques size is ",length(cliques))
       sel_idx <- ort[cut_rts[i]:cut_rts[i + 2]]
       anclique <- createNetworkMultifiles(
@@ -886,29 +888,31 @@ groupFeatures <-
       )
       ###we compute the cliques
       message("Computing cliques")
+      sink(file="/dev/null")
       anclique <- computeCliques(anclique, 1e-5, TRUE)
-      
-      
-      if(any(size>0)) browser()
+      sink(NULL)
       ###We correct the index for subselection.
       for (ic in seq_along(anclique@cliques)) {
         anclique@cliques[[ic]] <- sel_idx[anclique@cliques[[ic]]]
       }
       message("Merging cliques")
+      
+      ###TO DEBUG only
+      res_list <- list(cliques, anclique@cliques, assignments, size, current_id)
+      out_path <- file.path(Sys.getenv('OUTPUT'),"save_merge.rds")
+      saveRDS(res_list,file = out_path)
+      
       # ocliques <- cliques
       cliques <-
         mergeCliques(cliques, anclique@cliques, assignments, size, current_id)
-      # ocr <- range(sapply(cliques,function(x,dm){sd(dm[x,2])},dm=dm),na.rm = TRUE)[2]
-      # orr <- range(sapply(ocliques,function(x,dm){sd(dm[x,2])},dm=dm),na.rm = TRUE)[2]
-      # if(ocr>0.1) browser()
-      
+
     }
-    
+
     ###We convert the cliques ID back to the unsorted point
     # for (ic in seq_along(cliques)) {
     #   cliques[[ic]] <- cliques[[ic]]
     # }
-    
+
     summarized_df <- data.frame(
       mz = dm[, "mz"],
       mzmin = dm[, "mz"] - (dm[, "max_mz"] + dm[, "min_mz"]) * 1.5 ,
@@ -933,10 +937,10 @@ groupFeatures <-
                                         weighted = TRUE)
       return(ga)
     }
-    
+
     anclique@network <- empty_graph()
     pint <- getIntensityPos(dm)[1]
-    
+
     message("Annotating")
     res_df <- annotateCliques(cliques,
                               summarized_df,
@@ -945,14 +949,48 @@ groupFeatures <-
                               ionization_mode,
                               val_int,
                               bpp = bpp)
-    
+
     ####We add the annotation for all the peaks
     annot <- convertFeatures(res_df, polarity = ionization_mode)
+    message("Converting features.")
     return(annot)
   }
 
 ####Actual processing in the pipeline.
 args <- commandArgs(trailingOnly = TRUE)
+# args <- c("U:/users/Alexis/data/all_2mins/res_neg_2/datamatrices/datamatrix_84b6673cb2b08293f0365e15464a88ed.csv",
+#           "U:/users/Alexis/data/all_2mins/res_neg_2/processing_db.sqlite",
+#           "/U:/users/Alexis/data/all_2mins/res_neg_2/datamatrices/annotated_peaktable_84b6673cb2b08293f0365e15464a88ed_full.csv",
+#           "U:/users/Alexis/data/all_2mins/res_neg_2/datamatrices/annotated_peaktable_84b6673cb2b08293f0365e15464a88ed_reduced.csv",
+#           "5",
+#           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/xcms_raw_model.RData",
+#           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_neg.txt",
+#           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_main_neg.txt",
+#           "negative",
+#           "15.0",
+#           "0.007",
+#           "50",
+#           "2",
+#           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/Rscript/cliques_matching.cpp")
+
+
+
+# print(args)
+# args <- c("U:/users/Alexis/examples_lcms_workflow/output/datamatrices/datamatrix_3063282bcc8e77018d0b6912579a4115.csv",
+#           "U:/users/Alexis/examples_lcms_workflow/output/processing_db.sqlite",
+#           "E:/out_full_d.csv",
+#           "E:/out_simple_d.csv",
+#           "5",
+#           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/xcms_raw_model.RData",
+#           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_pos.txt",
+#           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_main_pos.txt",
+#           "positive",
+#           "15",
+#           "0.01",
+#           "50",
+#           "2",
+#           "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/Rscript/cliques_matching.cpp")
+
 PATH_DATAMATRIX <- args[1]
 PATH_DB <- args[2]
 PATH_OUTPUT_FULL <- args[3]
@@ -965,29 +1003,34 @@ POLARITY <- args[9]
 PPM <-  as.numeric(args[10])
 DMZ <-  as.numeric(args[11])
 ###We peak the FILE_USED most intense files.
-FILES_USED <- min(as.numeric(args[12]), 40)
+FILES_USED <- min(as.numeric(args[12]), 25)
 FILTER_NUMS <- max(1, as.numeric(args[13]))
 PATH_MATCHING <- args[14]
-NUM_BY_BATCH <- 10000
+NUM_BY_BATCH <- 5000
 if (length(args) == 15) {
   NUM_BY_BATCH <- as.numeric(args[15])
 }
+#
 
-PATH_DATAMATRIX <- "U:/users/Alexis/data/data_karin/mml_v2/neg/res_thin/datamatrices/datamatrix_b01904e0a545f19857549535352af3b9.csv"
-PATH_DB <- "U:/users/Alexis/data/data_karin/mml_v2/neg/res/processing_db.sqlite"
-PATH_OUTPUT_FULL <- "E:/out_full.csv"
-PATH_OUTPUT_SIMPLE <- "E:/out_simple.csv"
-NUM_CORES <- as.numeric(4)
-PATH_MODEL <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/xcms_raw_model.RData"
-PATH_ADDUCTS <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_neg.txt"
-PATH_MAIN_ADDUCTS <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_main_neg.txt"
-POLARITY <- "negative"
-PPM <-  as.numeric(20)
-DMZ <-  as.numeric(0.02)
-FILTER_NUMS <- max(1,as.numeric(2))
-FILES_USED <- 4
-PATH_MATCHING <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/Rscript/cliques_matching.cpp"
-NUM_BY_BATCH <- 20000
+###Debuggiong the test on karin data
+# PATH_DATAMATRIX <- "U:/users/Alexis/data/data_karin/mml_v2/neg/res_thin/datamatrices/datamatrix_b01904e0a545f19857549535352af3b9.csv"
+# PATH_DB <- "U:/users/Alexis/data/data_karin/mml_v2/neg/res/processing_db.sqlite"
+# PATH_OUTPUT_FULL <- "E:/out_full.csv"
+# PATH_OUTPUT_SIMPLE <- "E:/out_simple.csv"
+# NUM_CORES <- as.numeric(4)
+# PATH_MODEL <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/xcms_raw_model.RData"
+# PATH_ADDUCTS <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_neg.txt"
+# PATH_MAIN_ADDUCTS <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_main_neg.txt"
+# POLARITY <- "negative"
+# PPM <-  as.numeric(20)
+# DMZ <-  as.numeric(0.02)
+# FILTER_NUMS <- max(1,as.numeric(2))
+# FILES_USED <- 4
+# PATH_MATCHING <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/Rscript/cliques_matching.cpp"
+# NUM_BY_BATCH <- 20000
+
+
+##Debugging standard workflow
 
 ##reading data matrices
 dm <- read.table(PATH_DATAMATRIX, header = TRUE, sep = ",")
@@ -1000,11 +1043,11 @@ num_detect <-
 
 vdetect <- num_detect >= FILTER_NUMS
 ###We only keep the fitting ammount of features.
-while (sum(vdetect) > 100000) {
+while (sum(vdetect) > 200000) {
   FILTER_NUMS <- FILTER_NUMS + 1
   vdetect <- num_detect >= FILTER_NUMS
 }
-# 
+
 # message("Retained ", sum(vdetect), " signals on ", nrow(dm))
 dm <- dm[vdetect, , drop = FALSE]
 
@@ -1012,7 +1055,7 @@ dm <- dm[vdetect, , drop = FALSE]
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
 raw_files <- dbGetQuery(dbb, "SELECT path FROM samples")[, 1]
 dbDisconnect(dbb)
-raw_files <- str_replace(raw_files,pattern = "/sauer1",replacement = "U:")
+# raw_files <- str_replace(raw_files,pattern = "/sauer1",replacement = "U:")
 
 
 ####Selecting the msot intense files
@@ -1029,7 +1072,7 @@ if (get_os() == "win") {
 } else{
   bpp <- MulticoreParam(workers = min(NUM_CORES, 4))
 }
-bpp <- SerialParam()
+# bpp <- SerialParam()
 
 fadd <- file(PATH_ADDUCTS, "r")
 adducts <- readLines(fadd)
@@ -1056,6 +1099,9 @@ match_files <- apply(vav, 1, which.min)
 
 # match_files <- sapply(base_sample,function(x,vref){which(endsWith(vref,suffix=x))},vref=colnames(dm),simplify=TRUE)
 
+
+###If the software is crashing we divied the number of feature by 2 eventually
+# print(head(raw_files))
 annot <-
   groupFeatures(
     dm[, c("mz", "rt","min_mz","max_mz","min_rt","max_rt","mean_peakwidth",colnames(dm)[posIntensities[sel_files]])],
@@ -1069,7 +1115,7 @@ annot <-
     dmz = DMZ,
     size_batch = NUM_CORES,
     cut_size = NUM_BY_BATCH,
-    cosFilter = 0.4,
+    cosFilter = 0.6,
     ref_xcms = PATH_MODEL,
     path_matching = PATH_MATCHING,
     bbp = bpp
@@ -1078,15 +1124,5 @@ annot <-
 ###If the file already exists at this step we erase it
 if(file.exists(PATH_OUTPUT_SIMPLE)) file.remove(PATH_OUTPUT_SIMPLE)
 dm_full <- buildDataMatrixSimplified(dm, annot, PATH_OUTPUT_SIMPLE)
-# write.table(dm_full,
-#             file = PATH_OUTPUT_SIMPLE,
-#             sep = ";",
-#             row.names = FALSE)
-# rm(dm_full)
 if(file.exists(PATH_OUTPUT_FULL)) file.remove(PATH_OUTPUT_FULL)
 dm_full <- buildDataMatrixFull(dm, annot, PATH_OUTPUT_FULL)
-# write.table(dm_full,
-#             file = PATH_OUTPUT_FULL,
-#             sep = ";",
-#             row.names = FALSE)
-# rm(dm_full)

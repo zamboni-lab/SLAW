@@ -29,7 +29,9 @@ OUT={"DB":"processing.sqlite",
     "CANDIDATES": "ADAP/candidates.csv",
     "PEAKTABLES": "ADAP/peaktables"
      },
-    "FIGURES":{"RT_DEV":"figures/rt_dev.pdf"},
+    "FIGURES":{"RT_DEV":"figures/rt_dev.pdf",
+    "PEAKS":"figures/peaks",
+    "DIAGNOSIS":"figures/diagnosis"},
      "DATAMATRIX": "datamatrices",
      "ANNOTATION":"annotated_peaktable_",
      "EVALUATION": "evaluations",
@@ -39,6 +41,7 @@ OUT={"DB":"processing.sqlite",
          "PEAKTABLES" : "best_data",
         "FIGURE":"figure_evaluation.pdf"
      },
+     "EIC":"hdf5/eics.hdf5",
      "PARAMETERS":"parameters.yaml",
      "PYTHON_SCRIPT":"processing.py"
 }
@@ -71,7 +74,7 @@ def default_adducts_main_negative():
     return(lines)
 
 
-TEMP={"CONVERSION":
+TEMP={"DIR":"temp","CONVERSION":
       "temp/temp_names.csv",
       "GROUPING":{
       "TEMP":"temp/temp_grouping",
@@ -79,7 +82,8 @@ TEMP={"CONVERSION":
       "ALIGNMENT":"temp/alignement.rds"},
       "REPLICATES":"temp/replicates",
       "IONANNOTATION":{"FULL":"temp/adducts.csv",
-                       "MAIN":"temp/main_adducts.csv"}
+                       "MAIN":"temp/main_adducts.csv"},
+      "POSTPROCESSING":"temp/raw_files.txt"
       }
 
 
