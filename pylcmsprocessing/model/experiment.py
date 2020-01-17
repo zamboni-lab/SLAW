@@ -14,6 +14,7 @@ import model.grouping as mg
 import model.evaluating as me
 import model.comparing_evaluation as mce
 import model.annotating_adducts_isotopes as mai
+import model.post_processing as pp
 import pandas as pd
 import shutil
 
@@ -649,17 +650,60 @@ class Experiment:
             count_annot += 1
         if count_annot != 0:
             annotaters = annotaters[0:count_annot]
-            clis = [ann.command_line(self.output) for ann in annotaters]
+            clis = [ann.command_line(self.output) for ann in annotaters if ann.need_computing()]
             if len(clis) > 0:
                 runner.run(clis, silent=True)
         self.close_db()
         self.save_db()
         print("Annotation finished")
 
+
+    def post_processing(self,targets,path_raw_files=None,mztol=0.05,rttol=0.03):
+        if path_raw_files is None:
+            self.open_db()
+            c = self.conn.cursor()
+            raw_files=c.execute("SELECT path FROM samples")
+            raw_files=[rr[0] for rr in raw_files]
+            self.close_db()
+            self.save_db()
+            path_raw_files = self.output.getFile(cr.TEMP["POSTPROCESSING"])
+
+        runner = pr.ParallelRunner(1)
+        ###We check if a targetted table exist
+        num_workers = self.get_workers()
+        self.open_db()
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM peakpicking")
+        all_peakpicking = c.fetchall()
+        self.close_db()
+
+        pprocessors = [0] * len(all_peakpicking)
+        count_pprocessors = 0
+
+        for app in all_peakpicking:
+            path_dm = app[4]
+            path_peaks = self.output.getFile(cr.OUT["FIGURES"]["PEAKS"]+app[3]+".pdf")
+            path_diagnosis = self.output.getFile(cr.OUT["FIGURES"]["DIAGNOSIS"]+app[3]+".pdf")
+            path_hdf5 = self.output.getFile(cr.OUT["EIC"]+app[3]+".pdf")
+            ##FULL
+            # pp[9]
+            ##REDUCED
+            # pp[10]
+            ppv = pp.PostProcessing(self.db,path_targets=targets,path_fig_target=path_peaks,path_fig_summary=path_diagnosis,
+            path_output_hdf5=path_hdf5,num_workers=num_workers,raw_files=path_raw_files,mztol=mztol,rttol=rttol)
+            pprocessors[count_pprocessors] = ppv
+            count_pprocessors += 1
+        if count_pprocessors != 0:
+            pprocessors = pprocessors[0:count_pprocessors]
+            clis = [ppv.command_line() for ppv in pprocessors]
+            if len(clis) > 0:
+                runner.run(clis, silent=True)
+        print("Diagnosis figures printed")
+
     def clean(self):
         ###We clena the files
         to_rm= [cr.TEMP["GROUPING"]["TEMP"],cr.TEMP["IONANNOTATION"]["FULL"],cr.TEMP["IONANNOTATION"]["MAIN"],
-        cr.TEMP["CONVERSION"],cr.OUT["ADAP"]["JSON"],cr.OUT["ADAP"]["CANDIDATES"]]
+        cr.TEMP["CONVERSION"],cr.OUT["ADAP"]["JSON"],cr.OUT["ADAP"]["CANDIDATES"],cr.TEMP["DIR"]]
         for waste in to_rm:
             pwaste = self.output.getPath(waste)
             if os.path.isdir(pwaste):

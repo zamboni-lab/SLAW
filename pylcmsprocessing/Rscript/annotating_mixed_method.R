@@ -156,7 +156,6 @@ computeNetworkRawfile <-
       } else{
         sel_idx <- which(!is.na(dm[, idx]))
       }
-
       # if needed add the maxPeks argument ot the function
       #if(length(sel_idx)>maxPeaks&(!missing(idx))) sel_idx <- sort(sample(sel_idx,maxPeaks))
 
@@ -246,7 +245,6 @@ computeNetworkRawfile <-
       mzdata@processingData@files <- path_raw
       return(list(mzdata, sel, sel_idx))
     }
-
     ldata <-
       convertToCliqueMS(dm,
                         idx = idx,
@@ -272,7 +270,9 @@ computeNetworkRawfile <-
                 rtdiff = 1e-04,
                 cosFilter = 0.3)
       {
+        sink("/dev/null")
         eicmat <- cliqueMS:::defineEIC(mzdata)
+        sink(file = NULL)
         sparseeic <- as(t(eicmat), "sparseMatrix")
         cosTotal <- qlcMatrix::cosSparse(sparseeic)
         if (filter == TRUE) {
@@ -286,8 +286,8 @@ computeNetworkRawfile <-
             )
           cosTotal <- filterOut$cosTotal
           peaklist <- filterOut$peaklist
-          message(paste("Features filtered:", length(filterOut$deleted),
-                        sep = " "))
+          # message(paste("Features filtered:", length(filterOut$deleted),
+          #               sep = " "))
         }
         network <- igraph::graph.adjacency(cosTotal,
                                            weighted = TRUE,
@@ -303,12 +303,11 @@ computeNetworkRawfile <-
                                           1)] <- 0.99999999999
         return(list(network = network, peaklist = peaklist))
       }
-
     netlist <-
       createNetworkWithFilter(
         mzdata,
         anclique@peaklist[sel, ],
-        filter = FALSE,
+        filter = TRUE,
         mzerror = 1e-5,
         intdiff = 1e4,
         rtdiff = 1e-3,
@@ -323,7 +322,6 @@ computeNetworkRawfile <-
     alle[, 1] <- sel_idx[sel[vid[alle[, 1]]]]
     alle[, 2] <- sel_idx[sel[vid[alle[, 2]]]]
     alle <- as.matrix(alle)
-    #message("Done for file", raw_data)
     return(alle)
   }
 
@@ -335,7 +333,7 @@ createNetworkMultifiles <-
            match_files,
            size_batch = 5,
            ref_xcms = "X:/Documents/dev/script/diverse/xcms_raw_with_peaks.RData",
-           cosFilter = 0.2,
+           cosFilter = 0.4,
            bpp = NULL) {
     size_batch <- min(size_batch, length(raw_files) - 1)
     if (is.null(bpp))
@@ -358,7 +356,7 @@ createNetworkMultifiles <-
     } else{
       seq_cut[length(seq_cut)] <- length(raw_files) + 1
     }
-    message("Building cosine similarity network: \n0 ", appendLF = FALSE)
+    message("Building cosine similarity network", appendLF = FALSE)
 
 
     for (i in 1:(length(seq_cut) - 1)) {
@@ -377,7 +375,7 @@ createNetworkMultifiles <-
             BPPARAM = bpp
           #bptry( )
         )
-      message("ledges",format(object.size(ledges),"Mb"))
+      # message("ledges",format(object.size(ledges),"Mb"))
 
 
       found_errors <- sapply(ledges, function(x) {
@@ -392,9 +390,9 @@ createNetworkMultifiles <-
         ledges <-
           ledges[!found_errors]
 
-        if(length(found_errors)>1){
-          print(sapply(ledges[found_errors],function(x,rr){attr(x,"traceback")},simplify = FALSE))
-        }
+        # if(length(found_errors)>1){
+        #   print(sapply(ledges[found_errors],function(x,rr){attr(x,"traceback")},simplify = FALSE))
+        # }
       }
       ###We add the edges to the main network
       for (j in seq_along(ledges)) {
@@ -410,14 +408,14 @@ createNetworkMultifiles <-
           (countMat[alle[, 1:2]] + 1)
         cosMat[alle[, c(2, 1)]] <- cosMat[alle[, c(1, 2)]]
         countMat[alle[, c(1, 2)]] <- countMat[alle[, c(1, 2)]] + 1
-        message("cosMat",format(object.size(cosMat),"Mb"))
+        # message("cosMat",format(object.size(cosMat),"Mb"))
       }
     }
     message("\nDone")
 
     ##We get the first useless elemnts
     sel_val <- rowSums(cosMat) != 0
-    message(sum(sel_val),"signals with features.")
+    # message(sum(sel_val),"signals with features.")
     # sel_val <- apply(cosMat, 1, function(x) {
     #   any(x != 0)
     # })
@@ -429,7 +427,7 @@ createNetworkMultifiles <-
                                   weighted = TRUE)
     gadj <-
       set_vertex_attr(gadj, name = "id", value = which(sel_val))
-    message("gadj",format(object.size(gadj),"Mb"))
+    # message("gadj",format(object.size(gadj),"Mb"))
     ldata <-
       convertToCliqueMS(dm,
                         path_raw = raw_files[[1]],
@@ -871,11 +869,11 @@ groupFeatures <-
     size <- rep(0, nrow(dm))
     ###The first id needs to be -1
     current_id <- -1
-    print(cut_rts)
+    # print(cut_rts)
     ##We update all the cliques.
-    message("Annotations task divided in ",length(cut_rts)-2," batches. Processing batch:")
+    message("Annotations task divided in ",length(cut_rts)-2," batches.")
     for (i in seq(1, length(cut_rts) - 2)) {
-      message(i," ",appendLF=FALSE)
+      message("Processing batch ",i)
       # message("Variables:",cut_rts[i],"-",cut_rts[i+2],"current cliques size is ",length(cliques))
       sel_idx <- ort[cut_rts[i]:cut_rts[i + 2]]
       anclique <- createNetworkMultifiles(
@@ -897,6 +895,12 @@ groupFeatures <-
         anclique@cliques[[ic]] <- sel_idx[anclique@cliques[[ic]]]
       }
       message("Merging cliques")
+      
+      ###TO DEBUG only
+      res_list <- list(cliques, anclique@cliques, assignments, size, current_id)
+      out_path <- file.path(Sys.getenv('OUTPUT'),"save_merge.rds")
+      saveRDS(res_list,file = out_path)
+      
       # ocliques <- cliques
       cliques <-
         mergeCliques(cliques, anclique@cliques, assignments, size, current_id)
@@ -970,7 +974,7 @@ args <- commandArgs(trailingOnly = TRUE)
 
 
 
-print(args)
+# print(args)
 # args <- c("U:/users/Alexis/examples_lcms_workflow/output/datamatrices/datamatrix_3063282bcc8e77018d0b6912579a4115.csv",
 #           "U:/users/Alexis/examples_lcms_workflow/output/processing_db.sqlite",
 #           "E:/out_full_d.csv",
@@ -1097,7 +1101,7 @@ match_files <- apply(vav, 1, which.min)
 
 
 ###If the software is crashing we divied the number of feature by 2 eventually
-print(head(raw_files))
+# print(head(raw_files))
 annot <-
   groupFeatures(
     dm[, c("mz", "rt","min_mz","max_mz","min_rt","max_rt","mean_peakwidth",colnames(dm)[posIntensities[sel_files]])],

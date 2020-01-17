@@ -71,6 +71,11 @@ if __name__=="__main__":
     PATH_YAML = os.path.join(OUTPUT_DIR,"parameters.txt")
     PATH_XML = os.path.join(OUTPUT_DIR,"batch_xml_adap.xml")
 
+    PATH_TARGET = os.path.join(INPUT,"target.csv")
+    if os.path.isfile(PATH_TARGET):
+        print("Detected target list.")
+
+
     #Path of the outpu pytho file resuming the processing eventually.
     PATH_PYTHON = "python_script.py"
     PATH_DB = os.path.join("database_lcms_processing.sqlite")
@@ -105,7 +110,6 @@ if __name__=="__main__":
             shutil.copyfile(path_save_db,PATH_DB)
 
         exp = Experiment(PATH_DB,save_db = path_save_db,reset=False)
-        print(PATH_DB+"exists:"+str(os.path.isfile(PATH_DB)))
         exp.initialise_database(num_cpus,OUTPUT_DIR,vui.polarity,INPUT,["ADAP"], 1)
         exp.building_inputs_single_processing(PATH_XML)
         exp.run("/MZmine-2.52-Linux",int(num_cpus),log = LOG)
@@ -127,4 +131,5 @@ if __name__=="__main__":
         exp.annotate_ions(int(raw_yaml["ion_annotation"]["num_files"]["value"]),float(raw_yaml["ion_annotation"]["ppm"]["value"]),
             float(raw_yaml["ion_annotation"]["dmz"]["value"]),min_filter=raw_yaml["ion_annotation"]["min_filter"]["value"],
                     adducts=adducts_str,main_adducts=main_adducts_str, max_workers=num_cpus)
+        exp.post_processing(PATH_TARGET)
         exp.clean()
