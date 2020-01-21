@@ -50,7 +50,7 @@ if __name__=="__main__":
 
     ##We output System information
     print("Total memory available: "+str(avail_memory)+" and "+str( multiprocessing.cpu_count())+" cores. The workflow will use "+str(memory_by_core)+ " Mb by cores on "+str(num_cpus)+" cores.")
-    MANDATORY_ARGS = ["INPUT","OUTPUT"]
+    MANDATORY_ARGS = ["INPUT","OUTPUT","POLARITY"]
     if os.environ['OUTPUT'].startswith('/sauer1') or os.environ['INPUT'].startswith('/sauer1'):
         MANDATORY_ARGS.append("USERNAME")
 

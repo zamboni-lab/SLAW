@@ -30,6 +30,7 @@ getIntensityPos <- function(dm) {
 
 convertToCliqueMS <- function(dm,
                               path_raw,
+                              mzraw,
                               idx,
                               ref_xcms = "X:/Documents/dev/script/diverse/xcms_raw_with_peaks.RData",
                               maxPeaks = 5000) {
@@ -75,7 +76,6 @@ convertToCliqueMS <- function(dm,
     "sample",
     "is_filled"
   )
-  mzraw <- readMSData(path_raw, mode = "onDisk")
   rtime <- rtime(mzraw)
   tdf <-
     data.frame(
@@ -137,6 +137,7 @@ computeNetworkRawfile <-
   function(dm,
            idx,
            raw_data,
+           mzraw,
            ref_xcms = "X:/Documents/dev/script/diverse/xcms_raw_with_peaks.RData",
            cosFilter = 0.3,
            maxPeaks = 5000) {
@@ -146,7 +147,7 @@ computeNetworkRawfile <-
     convertToCliqueMS <- function(dm,
                                   idx,
                                   path_raw,
-                                  idx,
+                                  mzraw,
                                   ref_xcms = "X:/Documents/dev/script/diverse/xcms_raw_with_peaks.RData") {
       suppressMessages(library(MSnbase, warn.conflicts = FALSE))
       suppressMessages(library(xcms, warn.conflicts = FALSE))
@@ -190,7 +191,7 @@ computeNetworkRawfile <-
       )
 
       ###We create a fake xcmsSet object.
-      mzraw <- readMSData(path_raw, mode = "onDisk")
+      # mzraw <- readMSData(path_raw, mode = "onDisk")
       rtime <- rtime(mzraw)
       tdf <-
         data.frame(
@@ -251,6 +252,7 @@ computeNetworkRawfile <-
       convertToCliqueMS(dm,
                         idx = idx,
                         path_raw = raw_data,
+                        mzraw = mzraw,
                         ref_xcms = ref_xcms)
 
     mzdata <- ldata[[1]]
@@ -332,6 +334,7 @@ computeNetworkRawfile <-
 createNetworkMultifiles <-
   function(dm,
            raw_files,
+           opened_raw_files,
            match_files,
            size_batch = 5,
            ref_xcms = "X:/Documents/dev/script/diverse/xcms_raw_with_peaks.RData",
@@ -358,7 +361,7 @@ createNetworkMultifiles <-
     } else{
       seq_cut[length(seq_cut)] <- length(raw_files) + 1
     }
-    message("Building cosine similarity network", appendLF = FALSE)
+    # message("Building cosine similarity network", appendLF = FALSE)
 
 
     for (i in 1:(length(seq_cut) - 1)) {
@@ -368,6 +371,7 @@ createNetworkMultifiles <-
           bpmapply(
             seq_cut[i]:(seq_cut[i + 1] - 1),
             as.list(raw_files[seq_cut[i]:(seq_cut[i + 1] - 1)]),
+            as.list(opened_raw_files[seq_cut[i]:(seq_cut[i + 1] - 1)]),
             FUN = computeNetworkRawfile,
             MoreArgs = list(
               ref_xcms = ref_xcms,
@@ -413,7 +417,7 @@ createNetworkMultifiles <-
         # message("cosMat",format(object.size(cosMat),"Mb"))
       }
     }
-    message("\nDone")
+    # message("\nDone")
 
     ##We get the first useless elemnts
     sel_val <- rowSums(cosMat) != 0
@@ -433,6 +437,7 @@ createNetworkMultifiles <-
     ldata <-
       convertToCliqueMS(dm,
                         path_raw = raw_files[[1]],
+                        mzraw = opened_raw_files[[1]],
                         ref_xcms = ref_xcms)
 
     mzdata <- ldata[[1]]
@@ -583,9 +588,9 @@ annotateCliqueInterpretMSspectrum <-
         num_feat <- num_feat + 1
         break
       }
-      if(any(sel_idx>length(current_val))|any(is.na(current_val))) browser()
+      
       annots <-
-        suppressWarnings(findMAIN(
+        tryCatch(suppressWarnings(findMAIN(
           current_val[sel_idx, , drop = FALSE],
           ionmode = ionization_mode,
           rules = adducts,
@@ -593,8 +598,22 @@ annotateCliqueInterpretMSspectrum <-
           mzabs = dmz,
           ppm = ppm,
           mainpkthr = 0.2
-        ))[[1]]
-      # cat("OUTMAIN")
+        ))[[1]],error=function(e){return(NA)})
+      
+      
+      # val <- data.frame(mz=c(150,151.01,150-18,415),int=c(100,30,10,95))
+      # findMAIN(val,ionmode="positive")
+      
+      # mz int isogr iso charge     adduct      ppm      label
+      # 132.00  10    NA  NA     NA [M+H-H2O]+ 80.03561 [M+H-H2O]+
+      # 150.00 100     1   0      1     [M+H]+       NA     [M+H]+
+      # 151.01  30     1   1      1       <NA>       NA       <NA>
+      # 415.00  95    NA  NA     NA       <NA>       NA       <NA>
+      
+      ####In case of error we consider all the values as the default
+      
+      
+      
       sel_adducts <- which(!is.na(annots[, "adduct"]))
       if (length(sel_adducts) <= 0)
         break
@@ -603,6 +622,19 @@ annotateCliqueInterpretMSspectrum <-
         annots$label[sel_adducts] <- def_ion
         annots$adduct[sel_adducts] <- def_ion
       }
+      
+      c("index",
+        "mz",
+        "intb",
+        "isogr",
+        "iso",
+        "charge",
+        "adduct",
+        "ppm",
+        "label")
+      
+      
+      
 
       sel_iso <- annots$isogr[sel_adducts]
       sel_iso <- sel_iso[!is.na(sel_iso)]
@@ -832,6 +864,7 @@ groupFeatures <-
   function(dm,
            val_int,
            raw_files,
+           opened_raw_files,
            match_files,
            adducts,
            main_adducts,
@@ -867,10 +900,9 @@ groupFeatures <-
     ###WE update the cliaues vector at every step
     cliques <- vector(mode = "list", length = 10000)
     assignments <- rep(NA_integer_, nrow(dm))
-    size <- rep(0, nrow(dm))
+    size <- rep(0L, nrow(dm))
     ###The first id needs to be -1
-    current_id <- -1
-    # print(cut_rts)
+    current_id <- as.integer(-1)
     ##We update all the cliques.
     message("Annotations task divided in ",length(cut_rts)-2," batches.")
     for (i in seq(1, length(cut_rts) - 2)) {
@@ -880,6 +912,7 @@ groupFeatures <-
       anclique <- createNetworkMultifiles(
         dm[sel_idx, , drop = FALSE],
         raw_files,
+        opened_raw_files,
         match_files,
         size_batch = size_batch,
         ref_xcms = ref_xcms,
@@ -887,7 +920,7 @@ groupFeatures <-
         bpp = bpp
       )
       ###we compute the cliques
-      message("Computing cliques")
+      # message("Computing cliques")
       sink(file="/dev/null")
       anclique <- computeCliques(anclique, 1e-5, TRUE)
       sink(NULL)
@@ -895,12 +928,12 @@ groupFeatures <-
       for (ic in seq_along(anclique@cliques)) {
         anclique@cliques[[ic]] <- sel_idx[anclique@cliques[[ic]]]
       }
-      message("Merging cliques")
+      # message("Merging cliques")
       
       ###TO DEBUG only
-      res_list <- list(cliques, anclique@cliques, assignments, size, current_id)
-      out_path <- file.path(Sys.getenv('OUTPUT'),"save_merge.rds")
-      saveRDS(res_list,file = out_path)
+      # res_list <- list(cliques, anclique@cliques, assignments, size, current_id)
+      # out_path <- file.path(Sys.getenv('OUTPUT'),"save_merge.rds")
+      # saveRDS(res_list,file = out_path)
       
       # ocliques <- cliques
       cliques <-
@@ -1006,7 +1039,7 @@ DMZ <-  as.numeric(args[11])
 FILES_USED <- min(as.numeric(args[12]), 25)
 FILTER_NUMS <- max(1, as.numeric(args[13]))
 PATH_MATCHING <- args[14]
-NUM_BY_BATCH <- 5000
+NUM_BY_BATCH <- 7000
 if (length(args) == 15) {
   NUM_BY_BATCH <- as.numeric(args[15])
 }
@@ -1064,6 +1097,7 @@ sel_files <-
   order(val_int, decreasing = TRUE)[1:min(FILES_USED, length(val_int))]
 raw_files <- raw_files[sel_files]
 
+
 val_int_var <- apply(dm[, posIntensities], 1, mean, na.rm = TRUE)
 ###Setting up the parallel processing
 bpp <- NULL
@@ -1072,7 +1106,8 @@ if (get_os() == "win") {
 } else{
   bpp <- MulticoreParam(workers = min(NUM_CORES, 4))
 }
-# bpp <- SerialParam()
+
+opened_raw_files <- sapply(raw_files,readMSData, mode = "onDisk")
 
 fadd <- file(PATH_ADDUCTS, "r")
 adducts <- readLines(fadd)
@@ -1107,6 +1142,7 @@ annot <-
     dm[, c("mz", "rt","min_mz","max_mz","min_rt","max_rt","mean_peakwidth",colnames(dm)[posIntensities[sel_files]])],
     val_int_var,
     raw_files,
+    opened_raw_files,
     match_files,
     adducts,
     main_adducts,
