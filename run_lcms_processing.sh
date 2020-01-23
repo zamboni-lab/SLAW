@@ -25,6 +25,14 @@ then
     # echo "mount //nas22.ethz.ch/biol_imsb_sauer_1 sauer1 -nobrl -rw -o domain=d.ethz.ch,username=$USERNAME,vers=3.0,password=$PASSWORD"
     mount //nas22.ethz.ch/biol_imsb_sauer_1 sauer1 -nobrl -rw -o domain=d.ethz.ch,username=$USERNAME,vers=3.0,password=$PASSWORD
   fi
+  
+  ## WE ehck that suaer1 has been mounted ocrrectly
+  if mountpoint -q -- "sauer1"; then
+	echo "sauer1 mounted correctly"
+  else
+	echo "sauer1 does not seems to have been mounted correctly, please check your password and username ?"
+  fi
+  
 fi
 
 if [ "$(ls -A $OUTPUT)" ]; then

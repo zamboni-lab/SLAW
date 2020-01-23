@@ -1,4 +1,3 @@
-
 docker build -t lcms_workflow_zamboni .
 
 docker image rm 4f7c30049e8b

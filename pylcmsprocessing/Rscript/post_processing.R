@@ -1,9 +1,9 @@
 ###Given as input a list of file or a list of ids, extract the associated EICs.
-suppressWarnings(suppressMessages(library(DBI,warn.conflicts = FALSE)))
-suppressWarnings(suppressMessages(library(RSQLite,warn.conflicts = FALSE)))
-suppressWarnings(suppressMessages(library(BiocParallel,warn.conflicts = FALSE)))
-suppressWarnings(suppressMessages(library(stringr,warn.conflicts = FALSE)))      
-suppressWarnings(suppressMessages(library(igraph,warn.conflicts = FALSE)))
+suppressWarnings(suppressMessages(library(DBI, warn.conflicts = FALSE)))
+suppressWarnings(suppressMessages(library(RSQLite, warn.conflicts = FALSE)))
+suppressWarnings(suppressMessages(library(BiocParallel, warn.conflicts = FALSE)))
+suppressWarnings(suppressMessages(library(stringr, warn.conflicts = FALSE)))
+suppressWarnings(suppressMessages(library(igraph, warn.conflicts = FALSE)))
 
 args <- commandArgs(trailingOnly = TRUE)
 # args <- c(
@@ -27,9 +27,11 @@ PATH_DB <- args[3]
 OUTPUT_HDF5 <- args[4]
 OUTPUT_TARGET_PDF <- args[5]
 OUTPUT_SUMMARY_PDF <- args[6]
-TOL_MZ <- as.numeric(args[7])
-TOL_RT <- as.numeric(args[8])
-NCORES <- args[9]
+OUTPUT_TARGETTED_RT_TABLE <- args[7]
+OUTPUT_TARGETTED_INT_TABLE <- args[8]
+TOL_MZ <- as.numeric(args[9])
+TOL_RT <- as.numeric(args[10])
+NCORES <- as.numeric(args[11])
 
 MARGIN_RT <- 2 / 60 #(3s)
 MARGIN_MZ <- 0.007#MZ tolerance
@@ -70,6 +72,69 @@ if (length(raw_files) > 100) {
   raw_files <- raw_files[sint]
   peaktables <- peaktables[sint]
 }
+
+
+
+sum_metrics <-
+  bplapply(
+    split(peaktables, f = seq_along(peaktables)),
+    summarize,
+    val = c("SN", "intensity", "peakwidth", "right_on_left_assymetry"),
+    BPPARAM = bpp
+  )
+
+
+suppressWarnings(suppressMessages(library(ropls, warn.conflicts = FALSE)))
+sum_metrics <- do.call(rbind, sum_metrics)
+row.names(sum_metrics) <- traw_files
+sum_metrics_scaled <- scale(sum_metrics)
+pdf(OUTPUT_SUMMARY_PDF)
+sink("/dev/null")
+val <- opls(
+  sum_metrics_scaled,
+  y = NULL,
+  crossvalI = 1,
+  predI = 2
+)
+sink(file = NULL)
+
+plot(
+  sum_metrics[, c("peakwidth", "right_on_left_assymetry")],
+  xlab = "Mean peakwidth",
+  ylab = "Mean assymetry",
+  main = "Peakshape diagnosis",
+  pch = 16,
+  cex = 0.8,
+  col = "darkred"
+)
+text(
+  x = sum_metrics[, "peakwidth"],
+  y = sum_metrics[, "right_on_left_assymetry"],
+  labels = row.names(sum_metrics),
+  col = "darkred",
+  cex = 0.7,
+  adj = c(0, 0)
+)
+plot(
+  sum_metrics[, c("SN", "intensity")],
+  xlab = "Mean SN",
+  ylab = "Mean intensity",
+  main = "Intensity diagnosis",
+  pch = 16,
+  cex = 0.8,
+  col = "darkblue"
+)
+text(
+  x = sum_metrics[, "SN"],
+  y = sum_metrics[, "intensity"],
+  labels = row.names(sum_metrics),
+  col = "darkblue",
+  cex = 0.7,
+  adj = c(0, 0)
+)
+sink("/dev/null")
+dev.off()
+sink(file = NULL)
 
 
 
@@ -205,15 +270,21 @@ matchMSsignals <-
     ###We map the function to the napping
     # vm <- mineMS2:::matchMzs(mz_ref, mz_data, ppm = ppm,dmz=dmz)
     vm <- xcms:::fastMatch(mz_ref, mz_data, tol = tol_mz)
-    found <- !sapply(vm,is.null)
+    found <- !sapply(vm, is.null)
     
     
-    vfound <- mapply(vm[found],mz_ref[found],FUN=function(x,y,vmz,dd){
-      x[which.max(log10(dd[x])*abs(vmz[x]-y))]
-    },MoreArgs = list(vmz=mz_data,dd=num_detect))
+    vfound <-
+      mapply(
+        vm[found],
+        mz_ref[found],
+        FUN = function(x, y, vmz, dd) {
+          x[which.max(log10(dd[x]) * abs(vmz[x] - y))]
+        },
+        MoreArgs = list(vmz = mz_data, dd = num_detect)
+      )
     
     
-    res <- rep(NA,length(mz_ref))
+    res <- rep(NA, length(mz_ref))
     res[found] <- vfound
     return(res)
     
@@ -228,6 +299,7 @@ vrt <- NULL
 
 dm <- read.table(PATH_DATAMATRIX, sep = ";", header = TRUE)
 matched_features <- NULL
+found_signals <- NULL
 vfound <- NULL
 if (file.exists(INPUT_FEATURES)) {
   input_signals <-
@@ -245,25 +317,25 @@ if (file.exists(INPUT_FEATURES)) {
     vmz <- dm[sel_idx, "mz"]
     vrt <- dm[sel_idx, "rt"]
   } else if (ncol(input_signals) >= 2) {
-    vmz <- input_signals[,"neutral_mass"]
+    vmz <- input_signals[, "neutral_mass"]
     matched_features <- NULL
-    if(! "rt" %in% colnames(input_signals)){
+    if (!"rt" %in% colnames(input_signals)) {
       matched_features <- matchMSsignals(dm[, "neutral_mass"],
-                                         vmz,TOL_MZ,
-                                         num_detect=dm[,"num_detection"])
-    }else{
+                                         vmz, TOL_MZ,
+                                         num_detect = dm[, "num_detection"])
+    } else{
       matched_features <- matchLCMSsignals(dm[, "neutral_mass"],
                                            dm[, "rt"],
-                                           input_signals[,"neutral_mass"], input_signals[,"rt"], TOL_MZ,
+                                           input_signals[, "neutral_mass"], input_signals[, "rt"], TOL_MZ,
                                            TOL_RT)
     }
     ###In very case we map the feature to the data.
-    vmz <- dm[matched_features,"mz"]
-    vrt <- dm[matched_features,"rt"]
+    vmz <- dm[matched_features, "mz"]
+    vrt <- dm[matched_features, "rt"]
   }
   
   found_signals <- !is.na(vmz)
-  
+  if(sum(found_signals)==0) stop("No metabolites found, ")
   
   titles <- rep("", length(vmz))
   if (ncol(input_signals) >= 2) {
@@ -296,18 +368,23 @@ if (file.exists(INPUT_FEATURES)) {
     function(path_xraw,
              path_peaktable,
              mz,
-             matched=NULL,
-             rt=NULL,
+             matched = NULL,
+             rt = NULL,
              mz_margin,
              rt_margin,
-             num_detect=NULL) {
+             num_detect = NULL) {
       ###We also map the peaktbale in the data
-      suppressWarnings(suppressMessages(library(xcms,quietly = TRUE,warn.conflicts = FALSE)))
-      suppressWarnings(suppressMessages(library(igraph,quietly = TRUE,warn.conflicts = FALSE)))
+      suppressWarnings(suppressMessages(library(
+        xcms, quietly = TRUE, warn.conflicts = FALSE
+      )))
+      suppressWarnings(suppressMessages(library(
+        igraph, quietly = TRUE, warn.conflicts = FALSE
+      )))
       
       if (!file.exists(path_peaktable))
         stop(paste(path_peaktable, "file does not exist"))
-      peaktable <- read.table(path_peaktable, header = TRUE, sep = ",")
+      peaktable <-
+        read.table(path_peaktable, header = TRUE, sep = ",")
       if (!file.exists(path_xraw))
         stop(paste(path_xraw, "file does not exist"))
       xraw <- suppressMessages(suppressWarnings(xcmsRaw(path_xraw)))
@@ -436,31 +513,38 @@ if (file.exists(INPUT_FEATURES)) {
           ###We map the function to the napping
           # vm <- mineMS2:::matchMzs(mz_ref, mz_data, ppm = ppm,dmz=dmz)
           vm <- xcms:::fastMatch(mz_ref, mz_data, tol = tol_mz)
-          found <- !sapply(vm,is.null)
+          found <- !sapply(vm, is.null)
           
           
-          vfound <- mapply(vm[found],mz_ref[found],FUN=function(x,y,vmz,dd){
-            x[which.max(log10(dd[x])*abs(vmz[x]-y))]
-          },MoreArgs = list(vmz=mz_data,dd=num_detect))
+          vfound <-
+            mapply(
+              vm[found],
+              mz_ref[found],
+              FUN = function(x, y, vmz, dd) {
+                x[which.max(log10(dd[x]) * abs(vmz[x] - y))]
+              },
+              MoreArgs = list(vmz = mz_data, dd = num_detect)
+            )
           
           
-          res <- rep(NA,length(mz_ref))
+          res <- rep(NA, length(mz_ref))
           res[found] <- vfound
           return(res)
           
         }
       
       matched_features <- NULL
-        if(missing(rt)){
-          matched_features <- matchMSsignals(peaktable[, 1],
-                                             mz,mz_margin,num_detect=num_detect)
-        }else{
-          matched_features <- matchLCMSsignals(peaktable[, 1],
-                                               peaktable[, 2],
-                                               mz, rt, mz_margin,
-                                               rt_margin)
-        }
-
+      if (missing(rt)) {
+        matched_features <- matchMSsignals(peaktable[, 1],
+                                           mz, mz_margin, num_detect =
+                                             num_detect)
+      } else{
+        matched_features <- matchLCMSsignals(peaktable[, 1],
+                                             peaktable[, 2],
+                                             mz, rt, mz_margin,
+                                             rt_margin)
+      }
+      
       
       matched <- !is.na(matched_features)
       
@@ -521,7 +605,7 @@ if (file.exists(INPUT_FEATURES)) {
       
       ### WE return the limits of integration
       
-      return(reslist)
+      return(list(reslist,peaktable[matched, 2]))
     }
   
   ###We now change the vilsualization of the software by team.
@@ -540,14 +624,14 @@ if (file.exists(INPUT_FEATURES)) {
             return(c(NA_real_, NA_real_, NA_real_))
           c(range(x[[idx]]$time), max(x[[idx]]$intensity))
         }, idx = i)
-        rtmin <- suppressWarnings(min(rtlim[1, ], na.rm = TRUE))
-        rtmax <- suppressWarnings(max(rtlim[2, ], na.rm = TRUE))
-        intmax <- suppressWarnings(max(rtlim[3, ], na.rm = TRUE))
+        rtmin <- suppressWarnings(min(rtlim[1,], na.rm = TRUE))
+        rtmax <- suppressWarnings(max(rtlim[2,], na.rm = TRUE))
+        intmax <- suppressWarnings(max(rtlim[3,], na.rm = TRUE))
         if (is.infinite(rtmin))
           next
         
         ####We build the legend vector
-        sel_raw <- which(!is.na(rtlim[1, ]))
+        sel_raw <- which(!is.na(rtlim[1,]))
         col_leg <- colors[sel_raw]
         
         
@@ -559,7 +643,7 @@ if (file.exists(INPUT_FEATURES)) {
           ylim = c(0, intmax * 1.05),
           type = "n",
           main = titles[i],
-          cex.main=0.9
+          cex.main = 0.9
         )
         
         ###We plot all the values
@@ -607,19 +691,36 @@ if (file.exists(INPUT_FEATURES)) {
         rt = vrt[found_signals],
         mz_margin = MARGIN_MZ,
         rt_margin = MARGIN_RT,
-        num_detect = dm[,"num_detection"]
+        num_detect = dm[, "num_detection"]
       )
     )
- 
   
+  extracted_RTs <- lapply(extracted_eics,"[[",i=1)
+  extracted_eics <- lapply(extracted_eics,"[[",i=2)
+  
+  
+  rts_val <- as.data.frame(do.call(cbind,extracted_RTs))
+  colnames(rts_val) <- paste("rt","traw_files",sep="_")
+  
+  cnames <- colnames(rts_val)
+  
+  rts_val <- cbind(data.frame(name=titles[found_signals]),rts_val)
+  colnames(rts_val) <- c("id",cnames)
+  
+  write.table(rts_val,file = OUTPUT_TARGETTED_RT_TABLE,row.names = FALSE,col.names = TRUE,sep = ";")
 
-  # extract_EIC_raw_file(raw_files[1],peaktables[1],mz=vmz,rt=vrt,mz_margin=MARGIN_MZ,rt_margin=MARGIN_RT)
+  ###we write the subDataMatrix
+  write.table(dm[matched_features[found_signals],,drop=FALSE],file=OUTPUT_TARGETTED_INT_TABLE,sep=";",row.names = FALSE)
+  OUTPUT_TARGETTED_INT_TABLE <- args[8]
+  
+  found_signals <- !is.na(vmz)
   
   sink("/dev/null")
   pdf(OUTPUT_TARGET_PDF)
   plotPeaks(extracted_eics, titles = titles[found_signals], names_raw = traw_files)
   dev.off()
-  sink(file=NULL)
+  sink(file = NULL)
+  
 }
 
 ##We know extract the value
@@ -630,63 +731,3 @@ summarize <- function(pt, val) {
     mean(x[sel])
   })
 }
-
-sum_metrics <-
-  bplapply(
-    split(peaktables, f = seq_along(peaktables)),
-    summarize,
-    val = c("SN", "intensity", "peakwidth", "right_on_left_assymetry"),
-  BPPARAM = bpp)
-
-
-suppressWarnings(suppressMessages(library(ropls,warn.conflicts = FALSE)))
-sum_metrics <- do.call(rbind, sum_metrics)
-row.names(sum_metrics) <- traw_files
-sum_metrics_scaled <- scale(sum_metrics)
-pdf(OUTPUT_SUMMARY_PDF)
-sink("/dev/null")
-val <- opls(
-  sum_metrics_scaled,
-  y = NULL,
-  crossvalI = 1,
-  predI = 2
-)
-sink(file = NULL)
-
-plot(
-  sum_metrics[, c("peakwidth", "right_on_left_assymetry")],
-  xlab = "Mean peakwidth",
-  ylab = "Mean assymetry",
-  main = "Peakshape diagnosis",
-  pch = 16,
-  cex = 0.8,
-  col = "darkred"
-)
-text(
-  x = sum_metrics[, "peakwidth"],
-  y = sum_metrics[, "right_on_left_assymetry"],
-  labels = row.names(sum_metrics),
-  col = "darkred",
-  cex = 0.7,
-  adj = c(0, 0)
-)
-plot(
-  sum_metrics[, c("SN", "intensity")],
-  xlab = "Mean SN",
-  ylab = "Mean intensity",
-  main = "Intensity diagnosis",
-  pch = 16,
-  cex = 0.8,
-  col = "darkblue"
-)
-text(
-  x = sum_metrics[, "SN"],
-  y = sum_metrics[, "intensity"],
-  labels = row.names(sum_metrics),
-  col = "darkblue",
-  cex = 0.7,
-  adj = c(0, 0)
-)
-sink("/dev/null")
-dev.off()
-sink(file=NULL)

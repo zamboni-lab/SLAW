@@ -491,7 +491,7 @@ class Experiment:
             countgroup += 1
         if countgroup != 0:
             groupers = groupers[0:countgroup]
-            clis = [g.command_line() for g in groupers]
+            clis = [g.command_line() for g in groupers if g.need_computing()]
             if len(clis) > 0:
                 runner.run(clis, silent=silent, log=log)
         self.close_db()
