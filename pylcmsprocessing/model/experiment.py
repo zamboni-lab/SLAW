@@ -684,12 +684,11 @@ class Experiment:
             path_dm = app[4]
             path_peaks = self.output.getFile(cr.OUT["FIGURES"]["PEAKS"]+app[3]+".pdf")
             path_diagnosis = self.output.getFile(cr.OUT["FIGURES"]["DIAGNOSIS"]+app[3]+".pdf")
+            path_tab_rt = os.path.join(self.output.getDir(cr.OUT["DATAMATRIX"]),cr.OUT["TARGET"]["RT"]+app[3]+".csv")
+            path_tab_int = os.path.join(self.output.getDir(cr.OUT["DATAMATRIX"]),cr.OUT["TARGET"]["INT"]+app[3]+".csv")
             path_hdf5 = self.output.getFile(cr.OUT["EIC"]+app[3]+".pdf")
-            ##FULL
-            # pp[9]
-            ##REDUCED
-            # pp[10]
-            ppv = pp.PostProcessing(self.db,path_targets=targets,path_fig_target=path_peaks,path_fig_summary=path_diagnosis,
+            ppv = pp.PostProcessing(self.db,path_targets=targets,path_fig_target=path_peaks,
+            path_fig_summary=path_diagnosis,path_tab_rt=path_tab_rt,path_tab_int=path_tab_int,
             path_output_hdf5=path_hdf5,num_workers=num_workers,raw_files=path_raw_files,mztol=mztol,rttol=rttol)
             pprocessors[count_pprocessors] = ppv
             count_pprocessors += 1

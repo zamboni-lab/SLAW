@@ -1145,9 +1145,9 @@ val_int_var <- apply(dm[, posIntensities], 1, mean, na.rm = TRUE)
 ###Setting up the parallel processing
 bpp <- NULL
 if (get_os() == "win") {
-  bpp <- SnowParam(workers = NUM_CORES)
+  bpp <- SnowParam(workers = NUM_CORES,progressbar=TRUE)
 } else{
-  bpp <- MulticoreParam(workers = min(NUM_CORES, 4))
+  bpp <- MulticoreParam(workers = min(NUM_CORES, 4),progressbar=TRUE)
 }
 
 opened_raw_files <- sapply(raw_files,readMSData, mode = "onDisk")

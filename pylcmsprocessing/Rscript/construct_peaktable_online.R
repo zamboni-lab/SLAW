@@ -43,6 +43,7 @@ if(get_os()=="win"){
   bpp <- MulticoreParam(workers = NUM_CORES)
 }
 
+if(!file.exists(PATH_OUT_DATAMATRIX)){
 message("Beginning grouping using metric, ",VAL_INTENSITY)
 
 ##mz and rt are always stored
@@ -60,7 +61,7 @@ plotDevRt(lam,int_threshold=0.15)
 dev.off()
 
 ###We always filter the peaks present a a single time.
-if(!file.exists(PATH_OUT_DATAMATRIX)){
+
   r_datamatrix <- buildDataMatrix(lam,subvariable=which(lam@peaks$num>=2),summary_vars=c("mz","rt","rt_cor","peakwidth","SN","right_on_left_assymetry"))
   write.table(r_datamatrix,file = PATH_OUT_DATAMATRIX,sep=",",row.names = FALSE)
   message("Alignment done")

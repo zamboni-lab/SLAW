@@ -74,6 +74,22 @@ if (length(raw_files) > 100) {
 }
 
 
+bpp <- NULL
+if (get_os() == "win") {
+  bpp <- SnowParam(workers = NCORES)
+} else{
+  bpp <- MulticoreParam(workers = min(NCORES, 4))
+}
+
+##We know extract the value
+summarize <- function(pt, val) {
+  pt <- read.table(pt, header = TRUE, sep = ",")
+  apply(pt[, val, drop = FALSE], 2, function(x) {
+    sel <- !is.na(x) & !is.infinite(x) & !x > 1e11
+    mean(x[sel])
+  })
+}
+
 
 sum_metrics <-
   bplapply(
@@ -671,14 +687,6 @@ if (file.exists(INPUT_FEATURES)) {
     }
   
   
-  bpp <- NULL
-  if (get_os() == "win") {
-    bpp <- SnowParam(workers = NCORES)
-  } else{
-    bpp <- MulticoreParam(workers = min(NCORES, 4))
-  }
-  
-  
   extracted_eics <-
     bpmapply(
       raw_files,
@@ -692,7 +700,7 @@ if (file.exists(INPUT_FEATURES)) {
         mz_margin = MARGIN_MZ,
         rt_margin = MARGIN_RT,
         num_detect = dm[, "num_detection"]
-      )
+      ),BPPARAM = bpp
     )
   
   extracted_RTs <- lapply(extracted_eics,"[[",i=1)
@@ -711,8 +719,6 @@ if (file.exists(INPUT_FEATURES)) {
 
   ###we write the subDataMatrix
   write.table(dm[matched_features[found_signals],,drop=FALSE],file=OUTPUT_TARGETTED_INT_TABLE,sep=";",row.names = FALSE)
-  OUTPUT_TARGETTED_INT_TABLE <- args[8]
-  
   found_signals <- !is.na(vmz)
   
   sink("/dev/null")
@@ -723,11 +729,4 @@ if (file.exists(INPUT_FEATURES)) {
   
 }
 
-##We know extract the value
-summarize <- function(pt, val) {
-  pt <- read.table(pt, header = TRUE, sep = ",")
-  apply(pt[, val, drop = FALSE], 2, function(x) {
-    sel <- !is.na(x) & !is.infinite(x) & !x > 1e11
-    mean(x[sel])
-  })
-}
+

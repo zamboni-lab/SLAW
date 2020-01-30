@@ -35,6 +35,7 @@ OUT={"DB":"processing.sqlite",
      "DATAMATRIX": "datamatrices",
      "ANNOTATION":"annotated_peaktable_",
      "EVALUATION": "evaluations",
+     "TARGET":{"RT":"targetted_rt","INT":"targetted_int"},
      "RES_EVALUATION":{
          "FILE":"results_evaluations.csv",
          "PARAM": "best_param.xml",
