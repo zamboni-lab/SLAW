@@ -28,6 +28,10 @@ getIntensityPos <- function(dm) {
   which(startsWith(colnames(dm), "int"))
 }
 
+
+
+###Convert a data matrix in an output similar to XCMS output
+### For clique MS
 convertToCliqueMS <- function(dm,
                               path_raw,
                               mzraw,
@@ -133,6 +137,8 @@ convertToCliqueMS <- function(dm,
 }
 
 
+
+###Compute a cosine similarity network
 computeNetworkRawfile <-
   function(dm,
            idx,
@@ -578,15 +584,45 @@ annotateCliqueInterpretMSspectrum <-
         mval <- min(current_val[,2],na.rm=TRUE)
         if(is.infinite(mval)) mval <- 50
         current_val[pna,2] <- mval
-        message("NA VAL:",clique[pna])
+        # message("NA VAL:",clique[pna])
       }
     }
 
-    while (TRUE) {
-      
-      
-      
-      ###We find all the annotated adducts.
+    if (length(sel_idx) == 1) {
+      all_features[[num_feat]] <- data.frame(
+        index = sel_clust_idx[sel_idx],
+        mz = dm[clique[sel_idx], 1],
+        intb = val_int[clique[sel_idx]],
+        isogr = NA,
+        iso = NA,
+        charge = NA,
+        adduct = def_ion,
+        ppm = NA,
+        label = def_ion
+      )
+      num_feat <- num_feat + 1
+      break
+    }
+    
+    ##We check if any selected elements is NA, it is we remove the value from the list.
+    ##Values in the list are in th esame order than the  lists.
+    annots <-
+      suppressWarnings(findMAIN(
+        current_val[sel_idx, , drop = FALSE],
+        ionmode = ionization_mode,
+        rules = adducts,
+        adducthyp = main_adducts,
+        mzabs = dmz,
+        ppm = ppm,
+        mainpkthr = 0.2
+      ))
+    
+    ###We only keep one annotation by mmain peak
+    summ_annots <- summary(annots)
+    sel_pos <- match(unique(summ_annots[,1]),summ_annots[,1])
+    
+    
+    for(ii in sel_pos){
       if (length(sel_idx) == 1) {
         all_features[[num_feat]] <- data.frame(
           index = sel_clust_idx[sel_idx],
@@ -603,27 +639,8 @@ annotateCliqueInterpretMSspectrum <-
         break
       }
       
-      ##We check if any selected elements is NA, it is we remove the value from the list.
-      
-      
-      annots <-
-        suppressWarnings(findMAIN(
-          current_val[sel_idx, , drop = FALSE],
-          ionmode = ionization_mode,
-          rules = adducts,
-          adducthyp = main_adducts,
-          mzabs = dmz,
-          ppm = ppm,
-          mainpkthr = 0.2
-        ))[[1]]
-      
-      
-      # idx_main <- as.numeric(row.names(annots))
-      # 
-      # 
-      # library(InterpretMSSpectrum)
-      # val <- data.frame(mz=c(158.01,150,150-18,415),int=c(100,30,10,95))
-      # findMAIN(val,ionmode="positive")
+      annot <- annots[[ii]][sel_idx,,drop=FALSE]
+      ###We remove trhe unfiltered valued
       
       # mz int isogr iso charge     adduct      ppm      label
       # 132.00  10    NA  NA     NA [M+H-H2O]+ 80.03561 [M+H-H2O]+
@@ -635,16 +652,16 @@ annotateCliqueInterpretMSspectrum <-
       
       
       
-      sel_adducts <- which(!is.na(annots[, "adduct"]))
+      sel_adducts <- which(!is.na(annot[, "adduct"]))
       if (length(sel_adducts) <= 0)
-        break
+        next
       
       ###in this case we can leave the loop safely as there won t be 2 adduts annotation. In the future.
       if (length(sel_adducts) == 1) {
-        annots$label <- def_ion
-        annots$adduct <- def_ion
-        annots <- cbind(sel_clust_idx[sel_idx],annots)
-        colnames(annots) <- c("index",
+        annot$label <- def_ion
+        annot$adduct <- def_ion
+        annot <- cbind(sel_clust_idx[sel_idx],annot)
+        colnames(annot) <- c("index",
           "mz",
           "intb",
           "isogr",
@@ -655,23 +672,23 @@ annotateCliqueInterpretMSspectrum <-
           "label")
         
         ###We put each ion ins his own features,
-        if(all(is.na(annots$isogr))){
-          lfeats <- split(annots,f=1:nrow(annots))
+        if(all(is.na(annot$isogr))){
+          lfeats <- split(annot,f=1:nrow(annot))
           ###We increase tghe numvber of features
           all_features[num_feat:(num_feat+length(lfeats)-1)] <- lfeats
           num_feat <- num_feat+length(lfeats)
           break
         }else{
-          if(any(is.na(annots$isogr))){
-            vmm <- max(annots$isogr,na.rm=TRUE)
-            pna <- which(is.na(annots$isogr))
-            annots$isogr[pna] <- (vmm+1):(vmm+length(pna))
-            lfeats <- split(annots,f=annots$isogr)
+          if(any(is.na(annot$isogr))){
+            vmm <- max(annot$isogr,na.rm=TRUE)
+            pna <- which(is.na(annot$isogr))
+            annot$isogr[pna] <- (vmm+1):(vmm+length(pna))
+            lfeats <- split(annot,f=annot$isogr)
             all_features[num_feat:(num_feat+length(lfeats)-1)] <- lfeats
             num_feat <- num_feat+length(lfeats)
             ###Now we remove the rest eventually.
           }else{
-            lfeats <- split(annots,f=annots$isogr)
+            lfeats <- split(annot,f=annot$isogr)
             all_features[num_feat:(num_feat+length(lfeats)-1)] <- lfeats
             num_feat <- num_feat+length(lfeats)
           }
@@ -679,14 +696,16 @@ annotateCliqueInterpretMSspectrum <-
         break
       }
       
-      sel_iso <- annots$isogr[sel_adducts]
+      
+      
+      sel_iso <- annot$isogr[sel_adducts]
       sel_iso <- sel_iso[!is.na(sel_iso)]
 
-      sel_iso <- which(annots$isogr %in% sel_iso)
+      sel_iso <- which(annot$isogr %in% sel_iso)
       sel_feat <- union(sel_adducts, sel_iso)
 
       all_features[[num_feat]] <-
-        cbind(sel_clust_idx[sel_idx[sel_feat]], annots[sel_feat, ])
+        cbind(sel_clust_idx[sel_idx[sel_feat]], annot[sel_feat, ])
       colnames(all_features[[num_feat]]) <-
         c("index",
           "mz",
@@ -702,6 +721,41 @@ annotateCliqueInterpretMSspectrum <-
       sel_idx <- sel_idx[-sel_feat]
 
     }
+    
+    num_annot <- sum(sapply(all_features[1:(num_feat-1)],nrow))
+    
+    if(num_annot!=length(clique)){
+      ## Once the main adducts are detected we add the non grouped isotopes.
+      annot <- cbind(sel_clust_idx[sel_idx],annots[[1]][sel_idx,,drop=FALSE])
+      colnames(annot) <-
+        c("index","mz","intb","isogr",
+          "iso","charge","adduct","ppm",
+          "label")
+      ###We split by values 
+      val_split <- split.data.frame(annot,f = annot$isogr)
+      supp_data <- 1:nrow(annot)
+      if(length(val_split)!=0){
+        ###We add the isotopes to the features table.
+        all_features[num_feat:(num_feat+length(val_split)-1)] <- val_split
+        num_feat <- num_feat+length(val_split)
+        
+        
+        ###We extract all the independent values.
+        val_found <- lapply(val_split,function(x){x[,1]})
+        val_found <- do.call(c,val_found)
+        supp_data <-which(is.na(match(sel_clust_idx[sel_idx],
+                                      val_found)))
+      }
+      ###If there is anything non annotated we add it.
+      if(length(supp_data)!=0){
+        ###All the rest is non annotated.
+        val_split <- split.data.frame(annot[supp_data,,drop=FALSE],f = 1:length(supp_data))
+        all_features[num_feat:(num_feat+length(val_split)-1)] <- val_split
+        num_feat <- num_feat+length(val_split)
+      }
+    }
+    
+    ###If any features is missing we addd the rest 
     all_features <- all_features[1:(num_feat - 1)]
     return(all_features)
   }
@@ -732,6 +786,10 @@ convertFeatures <- function(resAnnot, polarity = "negative") {
     }
 
     sel_adducts <- xannot[, "label"]
+    if(all(is.na(sel_adducts))){
+      xannot[, "label"] <- def_label
+      xannot[, "adduct"] <- def_label
+    }
     vvv <- which(!is.na(xannot[, "adduct"]))
     pmax <- vvv[which.max(xannot[vvv, "intb"])]
     vs <-
@@ -1149,6 +1207,7 @@ if (get_os() == "win") {
 } else{
   bpp <- MulticoreParam(workers = min(NUM_CORES, 4),progressbar=TRUE)
 }
+# bpp <- SerialParam()
 
 opened_raw_files <- sapply(raw_files,readMSData, mode = "onDisk")
 
