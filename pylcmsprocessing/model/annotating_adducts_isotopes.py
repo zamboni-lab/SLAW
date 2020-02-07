@@ -26,7 +26,6 @@ class IonAnnotater:
         self.dmz=dmz
         self.min_filter = min_filter
 
-
     ###Wrti both type of adduct to a temporry directory
     def write_adducts(self,ohv):
         path_add_full = ohv.getFile(cr.TEMP["IONANNOTATION"]["FULL"])

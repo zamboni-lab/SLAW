@@ -634,6 +634,10 @@ class Experiment:
         #If the adducts are not specified we load them
         for pp in all_peakpicking:
             path_datamatrix = self.output.getDir(cr.OUT["DATAMATRIX"])
+            ### If the data matrix does not exist we skip to the next iteration
+            if not os.path.isfile(pp[4]):
+                continue
+            
             ppg = mai.IonAnnotater(pp[3], self.db, pp[4], path_datamatrix, polarity, cr.DATA["IONANNOTATION"]["XCMS_MODEL"], num_workers, nfiles,
                                    ppm, dmz, min_filter, adducts, main_adducts)
 

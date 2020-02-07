@@ -1,6 +1,7 @@
 suppressWarnings(suppressMessages(library(optparse,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
 suppressWarnings(suppressMessages(library(DBI,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
 suppressWarnings(suppressMessages(library(RSQLite,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
+suppressWarnings(suppressMessages(library(stringr,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
 suppressWarnings(suppressMessages(library(tools,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
 
 
@@ -48,6 +49,13 @@ option_list = list(
     metavar = "character"
   ),
   make_option(
+    c("-t", "--summarytype"),
+    type = "character",
+    default = "type",
+    help = "name of the factor column [default= %default]",
+    metavar = "character"
+  ),
+  make_option(
     c("-p", "--summarypath"),
     type = "character",
     default = "path",
@@ -77,6 +85,7 @@ if (!is.null(opt$directory))
 ####Parsing files and replicates informations
 paths <-  NULL
 replicates <-  NULL
+types <- NULL
 if (file.exists(opt$summary)) {
   tsummary <-
     read.table(
@@ -103,6 +112,28 @@ if (file.exists(opt$summary)) {
   } else{
     replicates <-  rep(1, length(paths))
   }
+
+  if (opt$summarytype %in% colnames(tsummary)){
+    types <- tsummary[[opt$summarytype]]
+    ###Three type of terminology are authorized, QC,blank,sample and QC and a number.
+    msamp <- types=="sample"
+    mQC <- types=="QC"
+    mBlank <- types=="blank"
+
+    ###We extrct the dilution QCs.
+    vmatch <-str_match(types,"QC([0-9]+)")
+    mDilQCs <- !is.na(vmatch)
+
+
+
+
+
+
+
+  }else{
+    types <- rep("sample",nrow(tsummary))
+  }
+
 } else{
   if(dir.exists(opt$mzml)){
       paths <- normalizePath(list.files(opt$mzml, full.names = TRUE,pattern=".mzML"))
@@ -115,7 +146,7 @@ if (file.exists(opt$summary)) {
 sample_tab <- data.frame(
   id = seq_along(paths),
   path = paths,
-  replicate = as.factor(replicates),
+  replicate = as.integer(as.factor(replicates)),
   stringsAsFactors = FALSE
 )
 

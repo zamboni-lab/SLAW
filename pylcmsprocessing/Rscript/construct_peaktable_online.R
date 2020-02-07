@@ -16,10 +16,8 @@ get_os <- function() {
   }
 }
 
-
 args <- commandArgs(trailingOnly = TRUE)
 message("args: ",paste(args,collapse="_"))
-
 
 PATH_PEAKTABLES <- args[1]
 PATH_BLOCKS <- args[2]
@@ -65,4 +63,6 @@ dev.off()
   r_datamatrix <- buildDataMatrix(lam,subvariable=which(lam@peaks$num>=2),summary_vars=c("mz","rt","rt_cor","peakwidth","SN","right_on_left_assymetry"))
   write.table(r_datamatrix,file = PATH_OUT_DATAMATRIX,sep=",",row.names = FALSE)
   message("Alignment done")
+}else{
+  message("Data matrix already exists alignement won t be performed: ",PATH_OUT_DATAMATRIX)
 }

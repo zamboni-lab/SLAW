@@ -6,19 +6,24 @@ suppressWarnings(suppressMessages(library(stringr, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(igraph, warn.conflicts = FALSE)))
 
 args <- commandArgs(trailingOnly = TRUE)
-# args <- c(
-#   "U:/users/Alexis/examples_lcms_workflow/input/target.csv",
-#   "U:/users/Alexis/sandbox/input_rawfiles.txt",
-#   "U:/users/Alexis/examples_lcms_workflow/output/processing_db.sqlite",
-#   "",
-#   "U:/users/Alexis/sandbox/target_out.pdf",
-#   "U:/users/Alexis/sandbox/diagnosis_out.pdf",
-#   "0.02",
-#   "0.02",
-#   "3"
-# )
-
 # print(args)
+# args <- c(
+#   "/sauer1/users/Alexis/examples_lcms_workflow/input/target.csv",
+#   "/sauer1/users/Alexis/examples_lcms_workflow/output/temp/raw_files.txt",
+#   "/sauer1/users/Alexis/examples_lcms_workflow/output/processing_db.sqlite",
+#   "/sauer1/users/Alexis/examples_lcms_workflow/output/hdf5/eics.hdf53063282bcc8e77018d0b6912579a4115.pdf",
+#   "/sauer1/users/Alexis/examples_lcms_workflow/output/figures/peaks3063282bcc8e77018d0b6912579a4115.pdf",
+#   "/sauer1/users/Alexis/examples_lcms_workflow/output/figures/diagnosis3063282bcc8e77018d0b6912579a4115.pdf",
+#   "/sauer1/users/Alexis/examples_lcms_workflow/output/datamatrices/targetted_rt3063282bcc8e77018d0b6912579a4115.csv",
+#   "/sauer1/users/Alexis/examples_lcms_workflow/output/datamatrices/targetted_int3063282bcc8e77018d0b6912579a4115.csv",
+#   "0.05",
+#   "0.03",
+#   "5"
+# )
+# 
+# args <- str_replace(args,"/sauer1","U:")
+
+
 
 
 INPUT_FEATURES <- args[1]
@@ -66,6 +71,10 @@ dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
 peaktables <-
   dbGetQuery(dbb, "SELECT output_ms FROM processing")[, 1]
 dbDisconnect(dbb)
+# 
+# peaktables <- str_replace(peaktables,"/sauer1","U:")
+# raw_files <- str_replace(raw_files,"/sauer1","U:")
+# PATH_DATAMATRIX <- str_replace(PATH_DATAMATRIX,"/sauer1","U:")
 
 if (length(raw_files) > 100) {
   sint <- sample.int(length(raw_files), size = 100)
@@ -73,6 +82,8 @@ if (length(raw_files) > 100) {
   peaktables <- peaktables[sint]
 }
 
+traw_files <- str_split(raw_files, fixed("."), simplify = TRUE)
+traw_files <- basename(traw_files[, 1])
 
 bpp <- NULL
 if (get_os() == "win") {
@@ -161,8 +172,6 @@ sink(file = NULL)
 #   peaktables <- str_replace(string = peaktables,pattern = fixed("/sauer1"),replacement = "U:")
 # }
 
-traw_files <- str_split(raw_files, fixed("."), simplify = TRUE)
-traw_files <- basename(traw_files[, 1])
 
 
 matchLCMSsignals <-
@@ -176,7 +185,7 @@ matchLCMSsignals <-
     # vm <- mineMS2:::matchMzs(mz_ref, mz_data, ppm = ppm,dmz=dmz)
     vm <- xcms:::fastMatch(mz_ref, mz_data, tol = tol_mz)
     pf <-  which(!sapply(vm, is.null))
-    
+
     createEdge <- function(x,
                            xi,
                            yi,
@@ -214,14 +223,14 @@ matchLCMSsignals <-
               rt2 = numeric(0)
             )
           )
-        
+
         cmz <- max(cmz) * 1.5 - cmz
         crt <- max(crt) * 1.1 - crt
-        
+
         # cint <-  log10(int_data[x]) / intlog
         score <- cmz + crt# + cint
-        
-        
+
+
         return(
           data.frame(
             from = rep(xi, length(x)),
@@ -235,7 +244,7 @@ matchLCMSsignals <-
         )
       }
     }
-    
+
     df_edges <-
       mapply(
         vm[pf],
@@ -251,7 +260,7 @@ matchLCMSsignals <-
         ),
         SIMPLIFY = FALSE
       )
-    
+
     df_edges <-  do.call(rbind, df_edges)
     ge <-
       make_bipartite_graph(
@@ -259,14 +268,14 @@ matchLCMSsignals <-
         edges = as.numeric(t(as.matrix(df_edges[, c(1, 2)]))),
         directed = FALSE
       )
-    
+
     E(ge)$weight <- df_edges[, 3]
-    
+
     ###IT WORKS
     mm <- igraph::max_bipartite_match(ge)
     ###We just add the matching part
     res_matching <-  mm$matching[1:length(mz_ref)]
-    
+
     res_matching <-  sapply(res_matching, function(x, shift) {
       if (is.na(x))
         return(x)
@@ -287,8 +296,8 @@ matchMSsignals <-
     # vm <- mineMS2:::matchMzs(mz_ref, mz_data, ppm = ppm,dmz=dmz)
     vm <- xcms:::fastMatch(mz_ref, mz_data, tol = tol_mz)
     found <- !sapply(vm, is.null)
-    
-    
+
+
     vfound <-
       mapply(
         vm[found],
@@ -298,12 +307,12 @@ matchMSsignals <-
         },
         MoreArgs = list(vmz = mz_data, dd = num_detect)
       )
-    
-    
+
+
     res <- rep(NA, length(mz_ref))
     res[found] <- vfound
     return(res)
-    
+
   }
 
 
@@ -349,10 +358,10 @@ if (file.exists(INPUT_FEATURES)) {
     vmz <- dm[matched_features, "mz"]
     vrt <- dm[matched_features, "rt"]
   }
-  
+
   found_signals <- !is.na(vmz)
   if(sum(found_signals)==0) stop("No metabolites found, ")
-  
+
   titles <- rep("", length(vmz))
   if (ncol(input_signals) >= 2) {
     if ("name" %in% colnames(input_signals)) {
@@ -361,7 +370,7 @@ if (file.exists(INPUT_FEATURES)) {
       titles <- input_signals[, 3]
     }
   }
-  
+
   supp_titles <-
     paste(
       "RT: ",
@@ -375,10 +384,10 @@ if (file.exists(INPUT_FEATURES)) {
       sep = ""
     )
   titles <- paste(titles, supp_titles, sep = "\n")
-  
-  
-  
-  
+
+
+
+
   ####
   extract_EIC_raw_file <-
     function(path_xraw,
@@ -396,7 +405,7 @@ if (file.exists(INPUT_FEATURES)) {
       suppressWarnings(suppressMessages(library(
         igraph, quietly = TRUE, warn.conflicts = FALSE
       )))
-      
+
       if (!file.exists(path_peaktable))
         stop(paste(path_peaktable, "file does not exist"))
       peaktable <-
@@ -404,7 +413,7 @@ if (file.exists(INPUT_FEATURES)) {
       if (!file.exists(path_xraw))
         stop(paste(path_xraw, "file does not exist"))
       xraw <- suppressMessages(suppressWarnings(xcmsRaw(path_xraw)))
-      
+
       matchLCMSsignals <-
         function(mz_data,
                  rt_data,
@@ -416,7 +425,7 @@ if (file.exists(INPUT_FEATURES)) {
           # vm <- mineMS2:::matchMzs(mz_ref, mz_data, ppm = ppm,dmz=dmz)
           vm <- xcms:::fastMatch(mz_ref, mz_data, tol = tol_mz)
           pf <-  which(!sapply(vm, is.null))
-          
+
           createEdge <- function(x,
                                  xi,
                                  yi,
@@ -454,14 +463,14 @@ if (file.exists(INPUT_FEATURES)) {
                     rt2 = numeric(0)
                   )
                 )
-              
+
               cmz <- max(cmz) * 1.5 - cmz
               crt <- max(crt) * 1.1 - crt
-              
+
               # cint <-  log10(int_data[x]) / intlog
               score <- cmz + crt# + cint
-              
-              
+
+
               return(
                 data.frame(
                   from = rep(xi, length(x)),
@@ -474,11 +483,11 @@ if (file.exists(INPUT_FEATURES)) {
                 )
               )
             }
-            
+
             # "from","to","weight"
-            
+
           }
-          
+
           df_edges <-
             mapply(
               vm[pf],
@@ -494,7 +503,7 @@ if (file.exists(INPUT_FEATURES)) {
               ),
               SIMPLIFY = FALSE
             )
-          
+
           df_edges <-  do.call(rbind, df_edges)
           ge <-
             make_bipartite_graph(
@@ -502,14 +511,14 @@ if (file.exists(INPUT_FEATURES)) {
               edges = as.numeric(t(as.matrix(df_edges[, c(1, 2)]))),
               directed = FALSE
             )
-          
+
           E(ge)$weight <- df_edges[, 3]
-          
+
           ###IT WORKS
           mm <- igraph::max_bipartite_match(ge)
           ###We just add the matching part
           res_matching <-  mm$matching[1:length(mz_ref)]
-          
+
           res_matching <-  sapply(res_matching, function(x, shift) {
             if (is.na(x))
               return(x)
@@ -518,8 +527,8 @@ if (file.exists(INPUT_FEATURES)) {
           ###Output : a vector giving the postion of mz_ref in the data
           return(res_matching)
         }
-      
-      
+
+
       matchMSsignals <-
         function(mz_data,
                  mz_ref,
@@ -530,8 +539,8 @@ if (file.exists(INPUT_FEATURES)) {
           # vm <- mineMS2:::matchMzs(mz_ref, mz_data, ppm = ppm,dmz=dmz)
           vm <- xcms:::fastMatch(mz_ref, mz_data, tol = tol_mz)
           found <- !sapply(vm, is.null)
-          
-          
+
+
           vfound <-
             mapply(
               vm[found],
@@ -541,14 +550,14 @@ if (file.exists(INPUT_FEATURES)) {
               },
               MoreArgs = list(vmz = mz_data, dd = num_detect)
             )
-          
-          
+
+
           res <- rep(NA, length(mz_ref))
           res[found] <- vfound
           return(res)
-          
+
         }
-      
+
       matched_features <- NULL
       if (missing(rt)) {
         matched_features <- matchMSsignals(peaktable[, 1],
@@ -560,19 +569,19 @@ if (file.exists(INPUT_FEATURES)) {
                                              mz, rt, mz_margin,
                                              rt_margin)
       }
-      
-      
+
+
       matched <- !is.na(matched_features)
-      
+
       #
       # ccc <- cbind(peaktable[matched_features[matched],1],
       #       peaktable[matched_features[matched],2],
       #       mz[matched],rt[matched])
       # print(apply(ccc,1,paste,collapse="_"))
-      
+
       ###We select the feature which are matched
       ###we build a feature list.
-      
+
       rlmzr <-
         split(cbind(peaktable[matched_features[matched], "mz_min"],
                     peaktable[matched_features[matched], "mz_max"]), f =
@@ -581,7 +590,7 @@ if (file.exists(INPUT_FEATURES)) {
         split(cbind((peaktable[matched_features[matched], "rt_min"]) * 60,
                     (peaktable[matched_features[matched], "rt_max"]) *
                       60), f = 1:sum(matched))
-      
+
       lmzr <-
         split(cbind(peaktable[matched_features[matched], "mz_min"] - mz_margin,
                     peaktable[matched_features[matched], "mz_max"] + mz_margin),
@@ -593,7 +602,7 @@ if (file.exists(INPUT_FEATURES)) {
                        rt_margin) * 60), f = 1:sum(matched))
       xraw <- suppressMessages(suppressWarnings(xcmsRaw(path_xraw)))
       reslist <- vector(mode = "list", length = length(mz))
-      
+
       vres <-
         mapply(
           lmzr,
@@ -606,7 +615,7 @@ if (file.exists(INPUT_FEATURES)) {
             integ <- ifelse(((xraw@scantime[reic$scan] <= rrtr[2]) &
                                (xraw@scantime[reic$scan] >= rrtr[1])), rep(TRUE, length(reic$scan)),
                             rep(FALSE, length(reic$scan)))
-            
+
             return(list(
               time = xraw@scantime[reic$scan],
               intensity = reic$intensity,
@@ -616,24 +625,25 @@ if (file.exists(INPUT_FEATURES)) {
           MoreArgs = list(xraw = xraw),
           SIMPLIFY = FALSE
         )
-      
+
       reslist[matched] <- vres
-      
       ### WE return the limits of integration
+      raw_rt <- rep(NA,length(matched_features))
+      raw_rt[matched] <- peaktable[matched_features[matched], 2]
       
-      return(list(reslist,peaktable[matched, 2]))
+      return(list(reslist,raw_rt))
     }
-  
+
   ###We now change the vilsualization of the software by team.
-  
-  
-  
+
+
+
   plotPeaks <-
     function(eics, titles, names_raw) {
       #,name_files,name_compounds
-      
+
       colors <- rainbow(length(eics))
-      
+
       for (i in seq_along(eics[[1]])) {
         rtlim <- sapply(eics, function(x, idx) {
           if (is.null(x[[idx]]))
@@ -645,12 +655,12 @@ if (file.exists(INPUT_FEATURES)) {
         intmax <- suppressWarnings(max(rtlim[3,], na.rm = TRUE))
         if (is.infinite(rtmin))
           next
-        
+
         ####We build the legend vector
         sel_raw <- which(!is.na(rtlim[1,]))
         col_leg <- colors[sel_raw]
-        
-        
+
+
         plot(
           0,
           xlab = "Time(min)",
@@ -661,7 +671,7 @@ if (file.exists(INPUT_FEATURES)) {
           main = titles[i],
           cex.main = 0.9
         )
-        
+
         ###We plot all the values
         for (j in seq_along(eics)) {
           if (is.null(eics[[j]][[i]]) || all(eics[[j]][[i]]$intensity == 0))
@@ -685,8 +695,7 @@ if (file.exists(INPUT_FEATURES)) {
         )
       }
     }
-  
-  
+
   extracted_eics <-
     bpmapply(
       raw_files,
@@ -700,33 +709,32 @@ if (file.exists(INPUT_FEATURES)) {
         mz_margin = MARGIN_MZ,
         rt_margin = MARGIN_RT,
         num_detect = dm[, "num_detection"]
-      ),BPPARAM = bpp
+      )
     )
-  
-  extracted_RTs <- lapply(extracted_eics,"[[",i=1)
-  extracted_eics <- lapply(extracted_eics,"[[",i=2)
-  
-  
+
+  extracted_RTs <- lapply(extracted_eics,"[[",i=2)
+  extracted_eics <- lapply(extracted_eics,"[[",i=1)
+
+
   rts_val <- as.data.frame(do.call(cbind,extracted_RTs))
   colnames(rts_val) <- paste("rt","traw_files",sep="_")
-  
+
   cnames <- colnames(rts_val)
-  
+
   rts_val <- cbind(data.frame(name=titles[found_signals]),rts_val)
   colnames(rts_val) <- c("id",cnames)
-  
+
   write.table(rts_val,file = OUTPUT_TARGETTED_RT_TABLE,row.names = FALSE,col.names = TRUE,sep = ";")
 
   ###we write the subDataMatrix
   write.table(dm[matched_features[found_signals],,drop=FALSE],file=OUTPUT_TARGETTED_INT_TABLE,sep=";",row.names = FALSE)
   found_signals <- !is.na(vmz)
-  
+
   sink("/dev/null")
   pdf(OUTPUT_TARGET_PDF)
   plotPeaks(extracted_eics, titles = titles[found_signals], names_raw = traw_files)
   dev.off()
   sink(file = NULL)
-  
-}
 
+}
 

@@ -317,7 +317,7 @@ computeNetworkRawfile <-
       createNetworkWithFilter(
         mzdata,
         anclique@peaklist[sel, ],
-        filter = TRUE,
+        filter = FALSE,
         mzerror = 1e-5,
         intdiff = 1e4,
         rtdiff = 1e-3,
@@ -395,16 +395,10 @@ createNetworkMultifiles <-
       })
       ##Cahcing errors
       if (sum(found_errors)>=1){
-        # browser()
         ledges <- attr(ledges, "result")
-
-        # print(which(found_errors))
         ledges <-
           ledges[!found_errors]
 
-        # if(length(found_errors)>1){
-        #   print(sapply(ledges[found_errors],function(x,rr){attr(x,"traceback")},simplify = FALSE))
-        # }
       }
       ###We add the edges to the main network
       for (j in seq_along(ledges)) {
@@ -486,34 +480,29 @@ annotateCliques <- function(cliques,
                             bpp = NULL) {
   if (is.null(bpp))
     bpp <- bpparam()
-  # for(ip in seq_along(cliques)){
-  #   annotateCliqueInterpretMSspectrum(cliques[[ip]],
-  #   dm = peaklist,
-  #   adducts = adducts,
-  #   main_adducts = main_adducts,
-  #   ionization_mode = ionization_mode,
-  #   val_int = val_int)
-  # }
+
+  ###We add a clique identifier to simplify the lcustering steps.
   vfeat <-
-    bplapply(
+    bpmapply(
       cliques,
+      as.list(seq_along(cliques)),
       FUN = annotateCliqueInterpretMSspectrum,
-      dm = peaklist,
+      MoreArgs=list(dm = peaklist,
       adducts = adducts,
       main_adducts = main_adducts,
       ionization_mode = ionization_mode,
-      val_int = val_int,
+      val_int = val_int),
       BPPARAM = bpp
     )
 
   totfeat <- 1
   for (i in seq_along(vfeat)) {
+    seq_size <- sapply(vfeat[[i]], nrow)
     seq_idx <-
-      rep(totfeat:(totfeat + length(vfeat[[i]]) - 1), times = sapply(vfeat[[i]], nrow))
+      rep(totfeat:(totfeat + length(vfeat[[i]]) - 1), times = seq_size)
     vfeat[[i]] <- do.call(rbind, vfeat[[i]])
-    vfeat[[i]] <- cbind(vfeat[[i]], seq_idx)
+    vfeat[[i]] <- cbind(vfeat[[i]], seq_idx,rep(i,sum(seq_size)))
     totfeat <- totfeat + nrow(vfeat[[i]])
-
   }
   ###We merge all the data matrix
   vfeat <- do.call(rbind, vfeat)
@@ -530,7 +519,8 @@ annotateCliques <- function(cliques,
       "adduct",
       "ppm",
       "label",
-      "group_label"
+      "group_label",
+      "clique_label"
     )
   colnames(vfeat) <- cnames
   return(vfeat)
@@ -546,6 +536,7 @@ annotateCliqueInterpretMSspectrum <-
            val_int,
            ppm = 10,
            dmz = 0.005) {
+    count_error <- 0
     library(InterpretMSSpectrum)
     def_ion <- NULL
     if (ionization_mode == "positive") {
@@ -573,8 +564,8 @@ annotateCliqueInterpretMSspectrum <-
 
     current_val <- cbind(dm[sel_clust_idx, 1], val_int[sel_clust_idx])
     colnames(current_val) <- c("mz", "int")
-    
-    
+
+
     all_features <- vector(mode = "list", length = 20)
     num_feat <- 1
     ###we always remova any na values in intensities
@@ -603,6 +594,14 @@ annotateCliqueInterpretMSspectrum <-
       num_feat <- num_feat + 1
       break
     }
+###We verify if two peaks have exactly th same list and clustered. If it is the case they are clustered together.
+    vok <- which(!duplicated(current_val[sel_idx,"mz"]))
+    count_error <- count_error+length(sel_idx)-length(vok)
+    
+    ###We remove the duplicated masses.
+    sel_clust_idx<- sel_clust_idx[vok]
+    sel_idx <- seq_along(sel_clust_idx)
+    current_val <- current_val[vok,,drop=FALSE]
     
     ##We check if any selected elements is NA, it is we remove the value from the list.
     ##Values in the list are in th esame order than the  lists.
@@ -616,12 +615,12 @@ annotateCliqueInterpretMSspectrum <-
         ppm = ppm,
         mainpkthr = 0.2
       ))
-    
+
     ###We only keep one annotation by mmain peak
     summ_annots <- summary(annots)
     sel_pos <- match(unique(summ_annots[,1]),summ_annots[,1])
-    
-    
+
+
     for(ii in sel_pos){
       if (length(sel_idx) == 1) {
         all_features[[num_feat]] <- data.frame(
@@ -638,24 +637,24 @@ annotateCliqueInterpretMSspectrum <-
         num_feat <- num_feat + 1
         break
       }
-      
+
       annot <- annots[[ii]][sel_idx,,drop=FALSE]
       ###We remove trhe unfiltered valued
-      
+
       # mz int isogr iso charge     adduct      ppm      label
       # 132.00  10    NA  NA     NA [M+H-H2O]+ 80.03561 [M+H-H2O]+
       # 150.00 100     1   0      1     [M+H]+       NA     [M+H]+
       # 151.01  30     1   1      1       <NA>       NA       <NA>
       # 415.00  95    NA  NA     NA       <NA>       NA       <NA>
-      
+
       ####In case of error we consider all the values as the default
-      
-      
-      
+
+
+
       sel_adducts <- which(!is.na(annot[, "adduct"]))
       if (length(sel_adducts) <= 0)
         next
-      
+
       ###in this case we can leave the loop safely as there won t be 2 adduts annotation. In the future.
       if (length(sel_adducts) == 1) {
         annot$label <- def_ion
@@ -670,14 +669,14 @@ annotateCliqueInterpretMSspectrum <-
           "adduct",
           "ppm",
           "label")
-        
+
+        lfeats <- NULL
         ###We put each ion ins his own features,
         if(all(is.na(annot$isogr))){
           lfeats <- split(annot,f=1:nrow(annot))
           ###We increase tghe numvber of features
           all_features[num_feat:(num_feat+length(lfeats)-1)] <- lfeats
           num_feat <- num_feat+length(lfeats)
-          break
         }else{
           if(any(is.na(annot$isogr))){
             vmm <- max(annot$isogr,na.rm=TRUE)
@@ -693,11 +692,10 @@ annotateCliqueInterpretMSspectrum <-
             num_feat <- num_feat+length(lfeats)
           }
         }
+        # if(any(sapply(lfeats,function(x){any(is.na(x[,"mz"]))}))) browser()
         break
       }
-      
-      
-      
+
       sel_iso <- annot$isogr[sel_adducts]
       sel_iso <- sel_iso[!is.na(sel_iso)]
 
@@ -717,13 +715,15 @@ annotateCliqueInterpretMSspectrum <-
           "ppm",
           "label")
       num_feat <- num_feat + 1
+      # if(any(all_features[[num_feat]][,"mz"])) browser()
       ##We remove the selected features.
       sel_idx <- sel_idx[-sel_feat]
+      
 
     }
-    
+
     num_annot <- sum(sapply(all_features[1:(num_feat-1)],nrow))
-    
+
     if(num_annot!=length(clique)){
       ## Once the main adducts are detected we add the non grouped isotopes.
       annot <- cbind(sel_clust_idx[sel_idx],annots[[1]][sel_idx,,drop=FALSE])
@@ -731,15 +731,15 @@ annotateCliqueInterpretMSspectrum <-
         c("index","mz","intb","isogr",
           "iso","charge","adduct","ppm",
           "label")
-      ###We split by values 
+      ###We split by values
       val_split <- split.data.frame(annot,f = annot$isogr)
       supp_data <- 1:nrow(annot)
       if(length(val_split)!=0){
         ###We add the isotopes to the features table.
         all_features[num_feat:(num_feat+length(val_split)-1)] <- val_split
         num_feat <- num_feat+length(val_split)
-        
-        
+
+
         ###We extract all the independent values.
         val_found <- lapply(val_split,function(x){x[,1]})
         val_found <- do.call(c,val_found)
@@ -754,8 +754,8 @@ annotateCliqueInterpretMSspectrum <-
         num_feat <- num_feat+length(val_split)
       }
     }
-    
-    ###If any features is missing we addd the rest 
+
+    ###If any features is missing we addd the rest
     all_features <- all_features[1:(num_feat - 1)]
     return(all_features)
   }
@@ -803,6 +803,7 @@ convertFeatures <- function(resAnnot, polarity = "negative") {
         label = as.character(xannot[, "label"]),
         charge = xannot[, "charge"],
         group_label = xannot[, "group_label"],
+        clique_label = xannot[, "clique_label"],
         adduct = as.character(xannot[, "label"]),
         ref_feature = rep(xannot[pmax, "index"], nrow(xannot)),
         stringsAsFactors = FALSE
@@ -859,7 +860,7 @@ buildDataMatrixFull <- function(dm, annot, path_output,
   }
   message("Building full data-matrix in ",
           length(seq_line) - 1,
-          " batches.")
+          " batch(es).")
   write_col <- TRUE
 
   for (i in 1:(length(seq_line) - 1)) {
@@ -867,12 +868,13 @@ buildDataMatrixFull <- function(dm, annot, path_output,
     vannot <- sapply(annot[sel_idx], function(an, dm, cnames) {
       sub_dm <-
         cbind(dm[an[, "index"], c(1, 2)], an[, "adduct"], an[, "group_label"],
-              an[, "neutral_mass"], dm[an[, "index"], 3:ncol(dm)])
+              an[,"clique_label"],an[, "neutral_mass"], dm[an[, "index"], 3:ncol(dm)])
       colnames(sub_dm) <-
         c("mz",
           "rt",
           "annotation",
           "group",
+          "clique",
           "neutral_mass",
           cnames[3:ncol(dm)])
       return(sub_dm)
@@ -905,6 +907,7 @@ buildDataMatrixSimplified <-
         "rt",
         "main_peak",
         "annotations",
+        "clique",
         "neutral_mass",
         cnames[3:ncol(dm)])
     f <- file(path_output, "a")
@@ -918,7 +921,7 @@ buildDataMatrixSimplified <-
     }
     message("Building simplified data-matrix in ",
             length(seq_line) - 1,
-            " batches.")
+            " batch(es).")
     write_col <- TRUE
     ### This is done for every batch
     for (i in 1:(length(seq_line) - 1)) {
@@ -934,6 +937,7 @@ buildDataMatrixSimplified <-
             rt = dm[refv, 2],
             main_adduct = main_adduct,
             all_adducts = all_adducts,
+            clique = an[1, "clique_label"],
             neutral_mass = neutral_mass
           )
         tdf <- cbind(tdf, dm[refv, 3:ncol(dm)])
@@ -942,6 +946,7 @@ buildDataMatrixSimplified <-
             "rt",
             "main_peak",
             "annotations",
+            "clique",
             "neutral_mass",
             cnames[3:ncol(dm)])
         return(tdf)
@@ -983,6 +988,8 @@ groupFeatures <-
 
     #We have to source the matchign function.
     sourceCpp(path_matching)
+    
+    if(cut_size>nrow(dm)) cut_size <- nrow(dm)
 
     ###We sort dm by retnetion time
     ort <- order(dm[, "rt"], decreasing = FALSE)
@@ -1005,7 +1012,7 @@ groupFeatures <-
     ###The first id needs to be -1
     current_id <- as.integer(-1)
     ##We update all the cliques.
-    message("Annotations task divided in ",length(cut_rts)-2," batches.")
+    message("Annotations task divided in ",length(cut_rts)-2," batch(es).")
     for (i in seq(1, length(cut_rts) - 2)) {
       message("Processing batch ",i)
       # message("Variables:",cut_rts[i],"-",cut_rts[i+2],"current cliques size is ",length(cliques))
@@ -1030,12 +1037,12 @@ groupFeatures <-
         anclique@cliques[[ic]] <- sel_idx[anclique@cliques[[ic]]]
       }
       # message("Merging cliques")
-      
+
       ###TO DEBUG only
       # res_list <- list(cliques, anclique@cliques, assignments, size, current_id)
       # out_path <- file.path(Sys.getenv('OUTPUT'),"save_merge.rds")
       # saveRDS(res_list,file = out_path)
-      
+
       # ocliques <- cliques
       cliques <-
         mergeCliques(cliques, anclique@cliques, assignments, size, current_id)
@@ -1049,7 +1056,7 @@ groupFeatures <-
 
     summarized_df <- data.frame(
       mz = dm[, "mz"],
-      mzmin = dm[, "mz"] - (dm[, "max_mz"] + dm[, "min_mz"]) * 1.5 ,
+      mzmin = dm[, "mz"] - (dm[, "max_mz"] - dm[, "min_mz"]) * 1.5 ,
       mzmax = dm[, "mz"] + (dm[, "max_mz"] - dm[, "min_mz"]) * 1.5,
       rt = 60 * (dm[, "rt"]),
       rtmin = 60 * (dm[, "rt"] - dm[, "mean_peakwidth"] - 0.002),
@@ -1163,6 +1170,23 @@ if (length(args) == 15) {
 # PATH_MATCHING <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/Rscript/cliques_matching.cpp"
 # NUM_BY_BATCH <- 20000
 
+###Debugging the standard workflow for Michele data
+
+# PATH_DATAMATRIX <- "U:/users/Alexis/data/FA_ARA_pos_DDA_subset/output/datamatrices/datamatrix_47981815f535c26fc039a023adfc4fb8.csv"
+# PATH_DB <- "U:/users/Alexis/data/FA_ARA_pos_DDA_subset/output/processing_db.sqlite"
+# PATH_OUTPUT_FULL <- "E:/out_full.csv"
+# PATH_OUTPUT_SIMPLE <- "E:/out_simple.csv"
+# NUM_CORES <- as.numeric(4)
+# PATH_MODEL <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/xcms_raw_model.RData"
+# PATH_ADDUCTS <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_pos.txt"
+# PATH_MAIN_ADDUCTS <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_main_pos.txt"
+# POLARITY <- "positive"
+# PPM <-  as.numeric(20)
+# DMZ <-  as.numeric(0.02)
+# FILTER_NUMS <- max(1,as.numeric(2))
+# FILES_USED <- 4
+# PATH_MATCHING <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/Rscript/cliques_matching.cpp"
+# NUM_BY_BATCH <- 8000
 
 ##Debugging standard workflow
 
@@ -1191,6 +1215,8 @@ raw_files <- dbGetQuery(dbb, "SELECT path FROM samples")[, 1]
 dbDisconnect(dbb)
 # raw_files <- str_replace(raw_files,pattern = "/sauer1",replacement = "U:")
 
+###To debug Michael data onlu
+# raw_files <- str_replace(raw_files,pattern = "/input",replacement = "U:/users/Alexis/data/FA_ARA_pos_DDA_subset/input")
 
 ####Selecting the msot intense files
 val_int <- apply(dm[, posIntensities], 2, sum, na.rm = TRUE)
@@ -1207,7 +1233,7 @@ if (get_os() == "win") {
 } else{
   bpp <- MulticoreParam(workers = min(NUM_CORES, 4),progressbar=TRUE)
 }
-# bpp <- SerialParam()
+# bpp <- SerialParam(progressbar=TRUE)
 
 opened_raw_files <- sapply(raw_files,readMSData, mode = "onDisk")
 
@@ -1238,7 +1264,6 @@ match_files <- apply(vav, 1, which.min)
 
 
 ###If the software is crashing we divied the number of feature by 2 eventually
-# print(head(raw_files))
 annot <-
   groupFeatures(
     dm[, c("mz", "rt","min_mz","max_mz","min_rt","max_rt","mean_peakwidth",colnames(dm)[posIntensities[sel_files]])],
@@ -1261,6 +1286,6 @@ annot <-
 
 ###If the file already exists at this step we erase it
 if(file.exists(PATH_OUTPUT_SIMPLE)) file.remove(PATH_OUTPUT_SIMPLE)
-dm_full <- buildDataMatrixSimplified(dm, annot, PATH_OUTPUT_SIMPLE)
+dm_simplified <- buildDataMatrixSimplified(dm, annot, PATH_OUTPUT_SIMPLE)
 if(file.exists(PATH_OUTPUT_FULL)) file.remove(PATH_OUTPUT_FULL)
 dm_full <- buildDataMatrixFull(dm, annot, PATH_OUTPUT_FULL)
