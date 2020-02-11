@@ -1,8 +1,11 @@
 import multiprocessing as mp
 import subprocess
 
-def run_cl(cl):
-    subprocess.call(cl,shell=True)
+def run_cl(cl,timeout=None):
+    if timeout is None:
+        subprocess.call(cl,shell=True)
+    else:
+        subprocess.call(cl,shell=True,timeout=timeout)
 
 
 
@@ -15,7 +18,7 @@ class ParallelRunner:
         self.chunksize=chunksize
 
 
-    def run(self,command_lines,silent=True,log=None):
+    def run(self,command_lines,silent=True,log=None,timeout=None):
         try:
             from subprocess import DEVNULL  # py3k
         except ImportError:
@@ -25,8 +28,13 @@ class ParallelRunner:
         if log is not None:
             supp_str = " > "+log+" 2>&1"
 
+        largs = None
+        if timeout is None:
+            largs = [(cl+supp_str,) for cl in command_lines]
+        else:
+            largs = [(cl+supp_str,timeout) for cl in command_lines]
         with mp.Pool(self.max_jobs) as pool:
-            results = pool.starmap(run_cl, [(cl+supp_str,) for cl in command_lines])
+            results = pool.starmap(run_cl, largs)
         return results
 
 

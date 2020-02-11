@@ -121,7 +121,7 @@ if __name__=="__main__":
             rttol=float(raw_yaml["grouping"]["drt"]["value"]),
             n_ref = int(raw_yaml["grouping"]["num_references"]["value"]),
             alpha=float(raw_yaml["grouping"]["alpha"]["value"]),
-            log="/log.txt")
+            log=LOG)
         # exp.group(max_workers=1,mztol=float(raw_yaml["grouping"]["dmz"]["value"]),
         #     rttol=float(raw_yaml["grouping"]["drt"]["value"]),
         #     intensity=str(raw_yaml["grouping"]["extracted_quantity"]["value"]))

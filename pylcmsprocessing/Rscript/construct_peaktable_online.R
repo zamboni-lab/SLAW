@@ -45,6 +45,7 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
 message("Beginning grouping using metric, ",VAL_INTENSITY)
 
 ##mz and rt are always stored
+print(PATH_PEAKTABLES)
 lam <- LCMSAlignerModelFromDirectory(PATH_PEAKTABLES,
                       path_model=PATH_ALIGNMENT,
                        output=PATH_BLOCKS,save_interval=15,

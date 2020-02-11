@@ -591,20 +591,14 @@ class Experiment:
 
     ####This part is not done in paralllel
     def compare_evaluation(self):
-
         cfigure = self.output.getFile(cr.OUT["RES_EVALUATION"]["FIGURE"])
         cparam = self.output.getFile(cr.OUT["RES_EVALUATION"]["PARAM"])
         cpeaktables = self.output.getDir(cr.OUT["RES_EVALUATION"]["PEAKTABLES"])
-
         ###We perform the comparison
-
         ce = mce.evaluationComparator(self.db, cparam, cfigure, cpeaktables)
-
         cli = ce.command_line()
-
         ###The comparison is always done on single ocore
         subprocess.call(cli, shell=True)
-
     #Annotations
     #Parallelism is handled by R always a single trhead in this case
     def annotate_ions(self, nfiles, ppm, dmz, adducts=None, main_adducts=None, max_workers=2, min_filter = 2):
@@ -637,7 +631,7 @@ class Experiment:
             ### If the data matrix does not exist we skip to the next iteration
             if not os.path.isfile(pp[4]):
                 continue
-            
+
             ppg = mai.IonAnnotater(pp[3], self.db, pp[4], path_datamatrix, polarity, cr.DATA["IONANNOTATION"]["XCMS_MODEL"], num_workers, nfiles,
                                    ppm, dmz, min_filter, adducts, main_adducts)
 
@@ -704,12 +698,18 @@ class Experiment:
         print("Diagnosis figures printed")
 
     def clean(self):
-        ###We clena the files
-        to_rm= [cr.TEMP["GROUPING"]["TEMP"],cr.TEMP["IONANNOTATION"]["FULL"],cr.TEMP["IONANNOTATION"]["MAIN"],
-        cr.TEMP["CONVERSION"],cr.OUT["ADAP"]["JSON"],cr.OUT["ADAP"]["CANDIDATES"],cr.TEMP["DIR"]]
-        for waste in to_rm:
-            pwaste = self.output.getPath(waste)
-            if os.path.isdir(pwaste):
-                shutil.rmtree(pwaste, ignore_errors=True)
-            elif os.path.exists(pwaste):
-                os.remove(pwaste)
+        ###We clena the files only if the ions have been correctly annotated.
+        self.open_db()
+        c = self.conn.cursor()
+        c.execute("SELECT annotated_peaktable_reduced FROM peakpicking")
+        peakpicking = c.fetchall()[0]
+        self.close_db()
+        if os.path.isfile(peakpicking):
+            to_rm= [cr.TEMP["GROUPING"]["TEMP"],cr.TEMP["IONANNOTATION"]["FULL"],cr.TEMP["IONANNOTATION"]["MAIN"],
+            cr.TEMP["CONVERSION"],cr.OUT["ADAP"]["JSON"],cr.OUT["ADAP"]["CANDIDATES"],cr.TEMP["DIR"]]
+            for waste in to_rm:
+                pwaste = self.output.getPath(waste)
+                if os.path.isdir(pwaste):
+                    shutil.rmtree(pwaste, ignore_errors=True)
+                elif os.path.exists(pwaste):
+                    os.remove(pwaste)
