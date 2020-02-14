@@ -348,7 +348,7 @@ class Experiment:
         self.close_db()
         return softwares
 
-    def run(self, pmzmine, batch_size=40, silent=True, log = None):
+    def run(self, pmzmine, batch_size=2000, silent=True, log = None):
         num_workers = self.get_workers()
         runner = pr.ParallelRunner(num_workers)
         softwares = self.find_software_from_peakpicking()
@@ -365,7 +365,6 @@ class Experiment:
             if not rows: break
             peakpickings = [mp.PeakPickingMZmine(row, pmzmine) for row in rows]
             need_processing = [x.need_computing() for x in peakpickings]
-
             while any(need_processing):
                 ####Peak picking
                 clis = [x.command_line_processing(hide=False) for x in peakpickings if x.need_computing()]

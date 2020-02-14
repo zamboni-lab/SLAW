@@ -40,16 +40,15 @@ if __name__=="__main__":
     if "NCORES" in os.environ:
         num_cpus = int(os.environ["NCORES"])
 
-    percent_mem = math.floor(memory_by_core*100/avail_memory)
+    # percent_mem = math.floor(memory_by_core*100/avail_memory)
 
     if "MEMORY" in os.environ:
         memory_by_core = int(os.environ["MEMORY"])
 
     ###We set the JAVA option for the peak picking evnetually
-    os.environ["JAVA_OPTS"] = "-XX:InitialRAMPercentage="+str(percent_mem)+" -XX:MinRAMPercentage="+str(percent_mem)+" -XX:MaxRAMPercentage="+str(percent_mem)
-
+    os.environ["JAVA_OPTS"] = "-Xms"+str(math.floor(memory_by_core/2))+"m -Xmx"+str(math.floor(memory_by_core))+"m"
     ##We output System information
-    print("Total memory available: "+str(avail_memory)+" and "+str( multiprocessing.cpu_count())+" cores. The workflow will use "+str(memory_by_core)+ " Mb by cores on "+str(num_cpus)+" cores.")
+    print("Total memory available: "+str(avail_memory)+" and "+str( multiprocessing.cpu_count())+" cores. The workflow will use "+str(math.floor(memory_by_core))+ " Mb by cores on "+str(num_cpus)+" cores.")
     MANDATORY_ARGS = ["INPUT","OUTPUT","POLARITY"]
     if os.environ['OUTPUT'].startswith('/sauer1') or os.environ['INPUT'].startswith('/sauer1'):
         MANDATORY_ARGS.append("USERNAME")
@@ -61,6 +60,12 @@ if __name__=="__main__":
     if OUTPUT_DIR.startswith("/sauer1"):
         if not os.path.isdir(OUTPUT_DIR):
             print("Output directory "+OUTPUT_DIR+"does not exist.")
+
+
+    LOG = os.path.join(OUTPUT_DIR,"log.txt")
+
+
+    # subprocess.call("java "+os.environ["JAVA_OPTS"]+" -XshowSettings:vm -version  >> "+LOG+" 2>&1",shell=True)
     #The raw files are always mounted into raw_files
     INPUT = os.environ['INPUT']
     if INPUT.startswith("/sauer1"):
@@ -75,9 +80,6 @@ if __name__=="__main__":
     if os.path.isfile(PATH_TARGET):
         print("Detected target list.")
 
-
-    #Path of the outpu pytho file resuming the processing eventually.
-    PATH_PYTHON = "python_script.py"
     PATH_DB = os.path.join("database_lcms_processing.sqlite")
 
     vui = UI(OUTPUT_DIR, INPUT, polarity=os.environ["POLARITY"], mass_spec="Exactive", num_workers=num_cpus, path_yaml = PATH_YAML)
@@ -100,10 +102,9 @@ if __name__=="__main__":
         with open(vui.path_yaml, 'r') as stream:
             raw_yaml = yaml.safe_load(stream)
         PATH_DB = "/temp_processing_db.sqlite"
-        LOG = "/log.txt"
         if "CLUSTER" in os.environ:
             PATH_DB = os.path.join(OUTPUT_DIR,"temp_processing_db.sqlite")
-            LOG = os.path.join(OUTPUT_DIR,"log.txt")
+        # LOG = "/log.txt"
         #Procesinf of the pipeline eventually.
         path_save_db = os.path.join(OUTPUT_DIR,"processing_db.sqlite")
         if os.path.isfile(path_save_db):
