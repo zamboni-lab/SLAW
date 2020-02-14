@@ -32,14 +32,7 @@ def is_converted(csvfile):
 ####We ensure that ther is a single databse connection at the same timnb
 class Experiment:
 
-    ###THe path of the data is useless
-    # The maximum number of workoers ot cal l durieng paralle processing
-    ###parameters JSON for open MS and MZmine ex "X:/Documents/dev/script/tools/lcmsprocessingtools/tests/openMS/json_parameters.json"
-    ###OUTDIR an output directory it needs ot be empty, it is created
-    ###Number of tested parsmeters set.
-
     #####Databases peaks
-
     def __init__(self, db,save_db=None, reset=False):
 
         path_db = os.path.abspath(db)
@@ -235,6 +228,7 @@ class Experiment:
         parameter TEXT,
         hash TEXT,
         peaktable TEXT,
+        fused_msms TEXT,
         hash_peaktable TEXT,
         index_file TEXT,
         evaluation TEXT,
@@ -375,10 +369,9 @@ class Experiment:
             while any(need_processing):
                 ####Peak picking
                 clis = [x.command_line_processing(hide=False) for x in peakpickings if x.need_computing()]
-
                 ####We run the jobs actually
                 if len(clis) > 0:
-                    runner.run(clis, silent=silent, log = log)
+                    runner.run(clis, silent=silent, log = log, timeout = cr.CONSTANT["PEAKPICKING_TIMOUT"])
                 names_output = [x.get_output() + "\n" for x in peakpickings]
                 name_temp = cr.TEMP["CONVERSION"]
                 path_temp = self.output.getFile(name_temp)
@@ -390,7 +383,7 @@ class Experiment:
                 cline = "Rscript " + pjoin + " " + path_temp + " " + str(self.get_workers(open=False))
                 subprocess.call(cline, shell=True)
                 need_processing = [not os.path.exists(row[5]) for row in rows]
-        print("Peak picking finished.")
+        print("Peak picking finished")
         self.close_db()
 
     ###Try to correct he MZmine ocrrection in case processing was interrupted
@@ -403,13 +396,13 @@ class Experiment:
         p_conversion = os.path.join(ct.find_rscript(), "wrapper_MZmine_peak_table_conversion.R ")
         to_convert = [x[0] + "\n" for x in processings if not is_converted(x[0])]
         if len(to_convert) > 0:
-            print("correcting " + str(len(to_convert)) + " files.")
+            print("correcting " + str(len(to_convert)) + " files")
             with open(path_temp, "w+") as summary:
                 summary.writelines(to_convert)
             cline = "Rscript " + p_conversion + " " + path_temp + " " + str(self.get_workers(open=False))
             subprocess.call(cline, shell=True)
         else:
-            print("No corrections to do.")
+            print("No corrections to do")
         self.close_db()
         self.save_db()
 
@@ -511,12 +504,16 @@ class Experiment:
         self.close_db()
         groupers = [0] * len(all_peakpicking)
         countgroup = 0
-        #The directory of th epeaktable
-        dir_peaktables = self.output.getDir(cr.OUT["ADAP"]["PEAKTABLES"])
+        #Alignement output
         dir_blocks = self.output.getDir(cr.TEMP["GROUPING"]["BLOCKS"])
         dir_alignment = self.output.getFile(cr.TEMP["GROUPING"]["ALIGNMENT"])
         dir_datamatrix = self.output.getDir(cr.OUT["DATAMATRIX"])
         path_fig = self.output.getFile(cr.OUT["FIGURES"]["RT_DEV"])
+
+        ###Spectra fusin output
+        path_temp_1 = self.output.getFile(cr.TEMP["FUSING"]["TEMP1"])
+        path_temp_2 = self.output.getFile(cr.TEMP["FUSING"]["TEMP2"])
+        path_fused_msms = self.output.getFile(cr.OUT["FUSED_MSMS"])
 
         for pp in all_peakpicking:
             ###name of file
@@ -529,26 +526,29 @@ class Experiment:
             ###getting samples
             nlists = c.execute("SELECT path FROM samples")
             nlists = [os.path.basename(nn[0]) for nn in nlists]
-
-            ppg = mg.OnlineGrouper(pp, dir_peaktables,dir_blocks, dir_alignment,
+            ppg = mg.OnlineGrouper(pp,self.db,dir_blocks, dir_alignment,
             dir_datamatrix, intensity, mztol, ppm, rttol, n_ref, alpha,
-            num_workers,path_fig)
+            path_fused_msms,path_temp_1,path_temp_2,num_workers,path_fig)
             ###We update the peaktable direction of the file
             poutput_dm = ppg.get_output_datamatrix()
-            query = self.update_query_construction("peakpicking", "id", str(pp[0]), "peaktable", poutput_dm)
-            c.execute(query)
+            poutput_mgf = ppg.get_fused_mgf()
+            query_align = self.update_query_construction("peakpicking", "id", str(pp[0]), "peaktable", poutput_dm)
+            c.execute(query_align)
+            query_fusing = self.update_query_construction("peakpicking", "id", str(pp[0]), "fused_msms", poutput_mgf)
+            c.execute(query_fusing)
             self.close_db()
             groupers[countgroup] = ppg
             countgroup += 1
         if countgroup != 0:
             groupers = groupers[0:countgroup]
-            clis = [g.command_line() for g in groupers]
+            clis_align = [g.command_line_aligning() for g in groupers if g.need_computing()]
+            clis_fusing = [g.command_line_fusing_msms() for g in groupers if g.need_computing()]
             # print(clis[0])
-            if len(clis) > 0:
-                runner.run(clis, log=log)
-        #self.close_db()
+            if len(clis_align) > 0:
+                runner.run(clis_align, log=log)
+                runner.run(clis_fusing, log=log)
         self.save_db()
-        print("Grouping finished")
+        print("Alignment finished")
 
     def evaluate(self, max_workers=2, silent=False):
         num_workers = self.get_workers()
@@ -613,6 +613,7 @@ class Experiment:
         path_temp_adducts = self.output.getFile(cr.TEMP["IONANNOTATION"]["FULL"])
         path_temp_adducts_main = self.output.getFile(cr.TEMP["IONANNOTATION"]["MAIN"])
         runner = pr.ParallelRunner(min(num_workers, max_workers))
+        successfull_processing = True
         #We get the polarity
         if adducts is None:
             if polarity == "positive":
@@ -630,6 +631,7 @@ class Experiment:
             path_datamatrix = self.output.getDir(cr.OUT["DATAMATRIX"])
             ### If the data matrix does not exist we skip to the next iteration
             if not os.path.isfile(pp[4]):
+                successfull_processing=False
                 continue
 
             ppg = mai.IonAnnotater(pp[3], self.db, pp[4], path_datamatrix, polarity, cr.DATA["IONANNOTATION"]["XCMS_MODEL"], num_workers, nfiles,
@@ -654,6 +656,7 @@ class Experiment:
         self.close_db()
         self.save_db()
         print("Annotation finished")
+        return successfull_processing
 
 
     def post_processing(self,targets,path_raw_files=None,mztol=0.05,rttol=0.03):
@@ -680,6 +683,8 @@ class Experiment:
 
         for app in all_peakpicking:
             path_dm = app[4]
+            if not os.path.isfile(path_dm):
+                continue
             path_peaks = self.output.getFile(cr.OUT["FIGURES"]["PEAKS"]+app[3]+".pdf")
             path_diagnosis = self.output.getFile(cr.OUT["FIGURES"]["DIAGNOSIS"]+app[3]+".pdf")
             path_tab_rt = os.path.join(self.output.getDir(cr.OUT["DATAMATRIX"]),cr.OUT["TARGET"]["RT"]+app[3]+".csv")

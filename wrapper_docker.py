@@ -122,14 +122,12 @@ if __name__=="__main__":
             n_ref = int(raw_yaml["grouping"]["num_references"]["value"]),
             alpha=float(raw_yaml["grouping"]["alpha"]["value"]),
             log=LOG)
-        # exp.group(max_workers=1,mztol=float(raw_yaml["grouping"]["dmz"]["value"]),
-        #     rttol=float(raw_yaml["grouping"]["drt"]["value"]),
-        #     intensity=str(raw_yaml["grouping"]["extracted_quantity"]["value"]))
         polarity = raw_yaml["ion_annotation"]["polarity"]["value"]
         main_adducts_str=raw_yaml["ion_annotation"]["main_adducts_"+polarity]["value"]
         adducts_str = raw_yaml["ion_annotation"]["adducts_"+polarity]["value"]
-        exp.annotate_ions(int(raw_yaml["ion_annotation"]["num_files"]["value"]),float(raw_yaml["ion_annotation"]["ppm"]["value"]),
+        successfully_processed = exp.annotate_ions(int(raw_yaml["ion_annotation"]["num_files"]["value"]),float(raw_yaml["ion_annotation"]["ppm"]["value"]),
             float(raw_yaml["ion_annotation"]["dmz"]["value"]),min_filter=raw_yaml["ion_annotation"]["min_filter"]["value"],
                     adducts=adducts_str,main_adducts=main_adducts_str, max_workers=num_cpus)
-        exp.post_processing(PATH_TARGET)
-        exp.clean()
+        if successfully_processed:
+            exp.post_processing(PATH_TARGET)
+            exp.clean()

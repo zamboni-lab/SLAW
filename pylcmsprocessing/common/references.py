@@ -29,10 +29,11 @@ OUT={"DB":"processing.sqlite",
     "CANDIDATES": "ADAP/candidates.csv",
     "PEAKTABLES": "ADAP/peaktables"
      },
-    "FIGURES":{"RT_DEV":"figures/rt_dev.pdf",
+    "FIGURES":{"RT_DEV":"figures/rt_dev_",
     "PEAKS":"figures/peaks",
     "DIAGNOSIS":"figures/diagnosis"},
      "DATAMATRIX": "datamatrices",
+     "FUSED_MSMS": "fused_mgf/fused_mgf_",
      "ANNOTATION":"annotated_peaktable_",
      "EVALUATION": "evaluations",
      "TARGET":{"RT":"targetted_rt","INT":"targetted_int"},
@@ -81,6 +82,8 @@ TEMP={"DIR":"temp","CONVERSION":
       "TEMP":"temp/temp_grouping",
       "BLOCKS":"temp/blocks",
       "ALIGNMENT":"temp/alignement.rds"},
+      "FUSING":{"TEMP1":"temp/temp1",
+      "TEMP2":"temp/temp2" },
       "REPLICATES":"temp/replicates",
       "IONANNOTATION":{"FULL":"temp/adducts.csv",
                        "MAIN":"temp/main_adducts.csv"},
@@ -90,3 +93,5 @@ TEMP={"DIR":"temp","CONVERSION":
 
 MASS_SPEC={"Exactive":"parameters_set_exactive",
 "TOF":"parameters_set_tof"}
+
+CONSTANT={"PEAKPICKING_TIMOUT":900}

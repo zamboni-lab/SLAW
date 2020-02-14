@@ -43,10 +43,11 @@ class Grouper:
                          self.output_idx,self.intensity,str(self.rttol),str(self.mztol)])
 
 class OnlineGrouper:
-    def __init__(self,row,peaktables,
-    blocks,alignment,out,intensity,mztol,ppm,rttol,num_ref,alpha,num_workers,outfig):
+    def __init__(self,row,path_db,
+    blocks,alignment,out,intensity,mztol,ppm,rttol,
+    num_ref,alpha,fused_mgf,temp_dm_1,temp_dm_2,num_workers,outfig):
         self.hash = row[3]
-        self.peaktables=peaktables
+        self.db=path_db
         self.output_data=os.path.join(out,"datamatrix_"+row[3]+".csv")
         #self.output_idx=os.path.join(out,"index_"+self.hash+".txt")
         self.blocks=blocks
@@ -57,8 +58,11 @@ class OnlineGrouper:
         self.alpha=alpha
         self.rttol=rttol
         self.num_ref=num_ref
+        self.fused_mgf=fused_mgf+row[3]+".mgf"
+        self.dm_1=temp_dm_1
+        self.dm_2=temp_dm_2
         self.num_workers=num_workers
-        self.figure=outfig
+        self.figure=outfig+row[3]+".pdf"
 
     def need_computing(self):
         return not os.path.exists(self.output_data)
@@ -66,10 +70,19 @@ class OnlineGrouper:
     def get_output_datamatrix(self):
         return self.output_data
 
-    def command_line(self):
+    def get_fused_mgf(self):
+        return self.fused_mgf
+
+    def command_line_aligning(self):
         pscript = ct.find_rscript()
         command_line = os.path.join(pscript,"construct_peaktable_online.R")
         ####We give all the name of the grouping parameters implicated in a single file
-        return " ".join(["Rscript",command_line,self.peaktables,self.blocks,self.alignment,
+        return " ".join(["Rscript",command_line,self.db,self.blocks,self.alignment,
                         self.output_data,self.intensity,str(self.rttol),str(self.mztol),str(self.ppm),
                         str(self.num_ref),str(self.alpha),str(self.num_workers),self.figure])
+
+    def command_line_fusing_msms(self):
+        pscript = ct.find_rscript()
+        command_line = os.path.join(pscript,"fusing_msms_spectra.R")
+        return " ".join(["Rscript",command_line,self.db,str(self.num_workers),
+                self.fused_mgf,self.dm_1,self.dm_2])

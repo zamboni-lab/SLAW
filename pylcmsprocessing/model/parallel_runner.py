@@ -26,13 +26,9 @@ class ParallelRunner:
             DEVNULL = open(os.devnull, 'wb')
         supp_str=""
         if log is not None:
-            supp_str = " > "+log+" 2>&1"
+            supp_str = " >> "+log+" 2>&1"
 
-        largs = None
-        if timeout is None:
-            largs = [(cl+supp_str,) for cl in command_lines]
-        else:
-            largs = [(cl+supp_str,timeout) for cl in command_lines]
+        largs = [(cl+supp_str,timeout) for cl in command_lines]
         with mp.Pool(self.max_jobs) as pool:
             results = pool.starmap(run_cl, largs)
         return results

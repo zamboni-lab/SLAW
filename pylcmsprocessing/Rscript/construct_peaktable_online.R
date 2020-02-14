@@ -1,5 +1,7 @@
 ###online version using the onlineLCMSaligner method
 
+suppressWarnings(suppressMessages(library(RSQLite,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
+suppressWarnings(suppressMessages(library(DBI,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
 suppressWarnings(suppressMessages(library(onlineLCMSaligner,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
 suppressWarnings(suppressMessages(library(BiocParallel,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
 
@@ -17,9 +19,9 @@ get_os <- function() {
 }
 
 args <- commandArgs(trailingOnly = TRUE)
-message("args: ",paste(args,collapse="_"))
+print(args)
 
-PATH_PEAKTABLES <- args[1]
+PATH_DB<- args[1]
 PATH_BLOCKS <- args[2]
 PATH_ALIGNMENT <- args[3]
 PATH_OUT_DATAMATRIX <- args[4] #PATH_DATAMATRIX <- "test_datamatrix.csv"
@@ -32,6 +34,8 @@ ALPHA_RT <- as.numeric(args[10])
 NUM_CORES <- as.numeric(args[11])
 OUTFIGURE <- args[12]
 
+
+
 ###Creating the parallel porcessing objects.
 
 bpp <- NULL
@@ -40,13 +44,16 @@ if(get_os()=="win"){
 }else{
   bpp <- MulticoreParam(workers = NUM_CORES)
 }
-
 if(!file.exists(PATH_OUT_DATAMATRIX)){
 message("Beginning grouping using metric, ",VAL_INTENSITY)
 
+dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
+all_peaktables <- dbGetQuery(dbb, "SELECT output_ms FROM processing")[, 1]
+dbDisconnect(dbb)
+print(all_peaktables)
+
 ##mz and rt are always stored
-print(PATH_PEAKTABLES)
-lam <- LCMSAlignerModelFromDirectory(PATH_PEAKTABLES,
+lam <- LCMSAlignerModelFromDirectory(all_peaktables,
                       path_model=PATH_ALIGNMENT,
                        output=PATH_BLOCKS,save_interval=15,
                        num_file=20,num_peaks=NUM_REF,col_int=VAL_INTENSITY,reset = FALSE,
@@ -55,14 +62,18 @@ lam <- LCMSAlignerModelFromDirectory(PATH_PEAKTABLES,
                       max_cor=RTTOL*3,clustering=TRUE)
 
 ###We always remove single peaks.
-pdf(OUTFIGURE)
-plotDevRt(lam,int_threshold=0.15)
-dev.off()
+if(!file.exists(OUTFIGURE)){
+  pdf(OUTFIGURE)
+  plotDevRt(lam,int_threshold=0.15)
+  dev.off()
+}else{
+  message("Rt deviation figure already exists.")
+}
 
 ###We always filter the peaks present a a single time.
 
   r_datamatrix <- buildDataMatrix(lam,subvariable=which(lam@peaks$num>=2),summary_vars=c("mz","rt","rt_cor","peakwidth","SN","right_on_left_assymetry"))
-  write.table(r_datamatrix,file = PATH_OUT_DATAMATRIX,sep=",",row.names = FALSE)
+  write.table(r_datamatrix,file = PATH_OUT_DATAMATRIX,sep=",",row.names = FALSE,na="")
   message("Alignment done")
 }else{
   message("Data matrix already exists alignement won t be performed: ",PATH_OUT_DATAMATRIX)

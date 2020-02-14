@@ -4,6 +4,7 @@ suppressWarnings(suppressMessages(library(RSQLite, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(BiocParallel, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(stringr, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(igraph, warn.conflicts = FALSE)))
+suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
 
 args <- commandArgs(trailingOnly = TRUE)
 # print(args)
@@ -20,7 +21,7 @@ args <- commandArgs(trailingOnly = TRUE)
 #   "0.03",
 #   "5"
 # )
-# 
+
 # args <- str_replace(args,"/sauer1","U:")
 
 
@@ -71,7 +72,7 @@ dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
 peaktables <-
   dbGetQuery(dbb, "SELECT output_ms FROM processing")[, 1]
 dbDisconnect(dbb)
-# 
+#
 # peaktables <- str_replace(peaktables,"/sauer1","U:")
 # raw_files <- str_replace(raw_files,"/sauer1","U:")
 # PATH_DATAMATRIX <- str_replace(PATH_DATAMATRIX,"/sauer1","U:")
@@ -94,8 +95,9 @@ if (get_os() == "win") {
 
 ##We know extract the value
 summarize <- function(pt, val) {
-  pt <- read.table(pt, header = TRUE, sep = ",")
-  apply(pt[, val, drop = FALSE], 2, function(x) {
+  library(data.table)
+  pt <- fread(pt, header = TRUE, sep = ",")
+  apply(pt[, ..val, drop = FALSE], 2, function(x) {
     sel <- !is.na(x) & !is.infinite(x) & !x > 1e11
     mean(x[sel])
   })
@@ -113,7 +115,13 @@ sum_metrics <-
 
 suppressWarnings(suppressMessages(library(ropls, warn.conflicts = FALSE)))
 sum_metrics <- do.call(rbind, sum_metrics)
-row.names(sum_metrics) <- traw_files
+
+sel_unique <- !duplicated(sum_metrics)
+
+###Stupid case of 2 times the same sample.
+sum_metrics <- sum_metrics[sel_unique,]
+
+row.names(sum_metrics) <- traw_files[sel_unique]
 sum_metrics_scaled <- scale(sum_metrics)
 pdf(OUTPUT_SUMMARY_PDF)
 sink("/dev/null")
@@ -159,9 +167,7 @@ text(
   cex = 0.7,
   adj = c(0, 0)
 )
-sink("/dev/null")
 dev.off()
-sink(file = NULL)
 
 
 
@@ -322,7 +328,7 @@ matchMSsignals <-
 vmz <- NULL
 vrt <- NULL
 
-dm <- read.table(PATH_DATAMATRIX, sep = ";", header = TRUE)
+dm <- read.table(PATH_DATAMATRIX, sep = ",", header = TRUE)
 matched_features <- NULL
 found_signals <- NULL
 vfound <- NULL
@@ -630,7 +636,7 @@ if (file.exists(INPUT_FEATURES)) {
       ### WE return the limits of integration
       raw_rt <- rep(NA,length(matched_features))
       raw_rt[matched] <- peaktable[matched_features[matched], 2]
-      
+
       return(list(reslist,raw_rt))
     }
 
@@ -737,4 +743,3 @@ if (file.exists(INPUT_FEATURES)) {
   sink(file = NULL)
 
 }
-
