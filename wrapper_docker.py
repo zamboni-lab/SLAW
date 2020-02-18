@@ -6,6 +6,7 @@ import sys
 import psutil
 import math
 import shutil
+import time
 
 ##We import the module of python processing.
 sys.path.append('/pylcmsprocessing')
@@ -15,6 +16,7 @@ from pylcmsprocessing.model.experiment import Experiment
 if __name__=="__main__":
 ##Two thing to check the number of CPUs and the ocnsumed meory eventually.
     ###We determine the amount of memory allocated to each process
+    time_start = time.clock()
     avail_memory = (psutil.virtual_memory()[1] >> 20)
     ###We allocate the memory to each process
     num_cpus = multiprocessing.cpu_count()-1
@@ -49,7 +51,8 @@ if __name__=="__main__":
     os.environ["JAVA_OPTS"] = "-Xms"+str(math.floor(memory_by_core/2))+"m -Xmx"+str(math.floor(memory_by_core))+"m"
     ##We output System information
     print("Total memory available: "+str(avail_memory)+" and "+str( multiprocessing.cpu_count())+" cores. The workflow will use "+str(math.floor(memory_by_core))+ " Mb by cores on "+str(num_cpus)+" cores.")
-    MANDATORY_ARGS = ["INPUT","OUTPUT","POLARITY"]
+
+    MANDATORY_ARGS = ["INPUT","OUTPUT"]
     if os.environ['OUTPUT'].startswith('/sauer1') or os.environ['INPUT'].startswith('/sauer1'):
         MANDATORY_ARGS.append("USERNAME")
 
@@ -97,6 +100,8 @@ if __name__=="__main__":
     else:
         #In very case we generate an adate MZmine XML file.
         vui.generate_MZmine_XML(path_xml=PATH_XML)
+        time_input = time.clock()
+        print("TIME INPUT")
 
         ##We read the yaml file
         with open(vui.path_yaml, 'r') as stream:
@@ -116,6 +121,8 @@ if __name__=="__main__":
         exp.run("/MZmine-2.52-Linux",int(num_cpus),log = LOG)
         exp.correct_conversion()
         exp.post_processing_peakpicking()
+        time_peakpicking = time.clock()
+
         exp.group_online(intensity=str(raw_yaml["grouping"]["extracted_quantity"]["value"]),
             ppm = float(raw_yaml["grouping"]["ppm"]["value"]),
             mztol=float(raw_yaml["grouping"]["dmz"]["value"]),
@@ -123,12 +130,14 @@ if __name__=="__main__":
             n_ref = int(raw_yaml["grouping"]["num_references"]["value"]),
             alpha=float(raw_yaml["grouping"]["alpha"]["value"]),
             log=LOG)
+        time_grouping = ()
         polarity = raw_yaml["ion_annotation"]["polarity"]["value"]
         main_adducts_str=raw_yaml["ion_annotation"]["main_adducts_"+polarity]["value"]
         adducts_str = raw_yaml["ion_annotation"]["adducts_"+polarity]["value"]
         successfully_processed = exp.annotate_ions(int(raw_yaml["ion_annotation"]["num_files"]["value"]),float(raw_yaml["ion_annotation"]["ppm"]["value"]),
             float(raw_yaml["ion_annotation"]["dmz"]["value"]),min_filter=raw_yaml["ion_annotation"]["min_filter"]["value"],
                     adducts=adducts_str,main_adducts=main_adducts_str, max_workers=num_cpus)
+        time_annotation = time.clock()
         if successfully_processed:
             exp.post_processing(PATH_TARGET)
             exp.clean()
