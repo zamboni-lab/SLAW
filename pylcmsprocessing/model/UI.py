@@ -80,7 +80,8 @@ class UI:
         ###We write the XML file somewhere
         tree.write(path_xml)
         
-    def optmiizeParameters(self):
+    def optimizeParameters(self):
+        
         
 
 
