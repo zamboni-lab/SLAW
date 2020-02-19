@@ -90,32 +90,52 @@ if __name__=="__main__":
     setup_params = False
     #If the yaml parameter file already exist we just read it, else. we don t read it
     #We put a message if the output is not here.
+# THE sample database is always calculated before doing any processing
+    PATH_DB = "/temp_processing_db.sqlite"
+    if "CLUSTER" in os.environ:
+        PATH_DB = os.path.join(OUTPUT_DIR,"temp_processing_db.sqlite")
+    # LOG = "/log.txt"
+    #Procesinf of the pipeline eventually.
+    path_save_db = os.path.join(OUTPUT_DIR,"processing_db.sqlite")
+    if os.path.isfile(path_save_db):
+        shutil.copyfile(path_save_db,PATH_DB)
+    exp = Experiment(PATH_DB,save_db = path_save_db,reset=False)
+
     if not os.path.exists(vui.path_yaml):
         setup_params = True
         vui.generate_yaml_files()
+        ###Optimized the parameter
+        vui.optimize_parameters()
+        while(not optimal)
+
+        exp.initialise_database(num_cpus,OUTPUT_DIR,vui.polarity,INPUT,["ADAP"], 1)
+
         if not os.path.isfile(PATH_XML):
             vui.generate_MZmine_XML(path_xml=PATH_XML)
             print("An ADAP batch file has been generated in the "+OUTPUT_DIR+" directory, you ca use it ot find peakpicking parameters.")
         print("A parameters.txt file has been generated in the "+OUTPUT_DIR+" directory, please complete it and rerun the docker.")
     else:
+
+
+
         #In very case we generate an adate MZmine XML file.
-        vui.generate_MZmine_XML(path_xml=PATH_XML)
-        time_input = time.clock()
-        print("TIME INPUT")
-
-        ##We read the yaml file
-        with open(vui.path_yaml, 'r') as stream:
-            raw_yaml = yaml.safe_load(stream)
-        PATH_DB = "/temp_processing_db.sqlite"
-        if "CLUSTER" in os.environ:
-            PATH_DB = os.path.join(OUTPUT_DIR,"temp_processing_db.sqlite")
-        # LOG = "/log.txt"
-        #Procesinf of the pipeline eventually.
-        path_save_db = os.path.join(OUTPUT_DIR,"processing_db.sqlite")
-        if os.path.isfile(path_save_db):
-            shutil.copyfile(path_save_db,PATH_DB)
-
-        exp = Experiment(PATH_DB,save_db = path_save_db,reset=False)
+        # vui.generate_MZmine_XML(path_xml=PATH_XML)
+        # time_input = time.clock()
+        # print("TIME INPUT")
+        #
+        # ##We read the yaml file
+        # with open(vui.path_yaml, 'r') as stream:
+        #     raw_yaml = yaml.safe_load(stream)
+        # PATH_DB = "/temp_processing_db.sqlite"
+        # if "CLUSTER" in os.environ:
+        #     PATH_DB = os.path.join(OUTPUT_DIR,"temp_processing_db.sqlite")
+        # # LOG = "/log.txt"
+        # #Procesinf of the pipeline eventually.
+        # path_save_db = os.path.join(OUTPUT_DIR,"processing_db.sqlite")
+        # if os.path.isfile(path_save_db):
+        #     shutil.copyfile(path_save_db,PATH_DB)
+        #
+        # exp = Experiment(PATH_DB,save_db = path_save_db,reset=False)
         exp.initialise_database(num_cpus,OUTPUT_DIR,vui.polarity,INPUT,["ADAP"], 1)
         exp.building_inputs_single_processing(PATH_XML)
         exp.run("/MZmine-2.52-Linux",int(num_cpus),log = LOG)

@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="84dbd36f-9766-4ce4-bf5b-1769fdcb59a6" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.RData" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/.RData" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rhistory" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/.Rhistory" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/pcs/files-pane.pper" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/pcs/files-pane.pper" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/pcs/source-pane.pper" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/pcs/source-pane.pper" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/494474AB" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/494474AB" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/494474AB-contents" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/494474AB-contents" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/64E75C13" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/64E75C13-contents" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/71050FDA" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/71050FDA" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/71050FDA-contents" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/71050FDA-contents" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/82F51CF4" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/82F51CF4-contents" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/932FCB1F" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/932FCB1F" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/932FCB1F-contents" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/932FCB1F-contents" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/997DE5B7" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/997DE5B7-contents" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/AC445CA4" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/AC445CA4-contents" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/BE3ED6ED" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/BE3ED6ED" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/BE3ED6ED-contents" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/BE3ED6ED-contents" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/C6349026" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/C6349026-contents" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/E91D37A" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/E91D37A-contents" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/FB3629DD" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/t/FB3629DD-contents" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/u/5284F7E0" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/u/5284F7E0" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/u/5284F7E0-contents" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/u/5284F7E0-contents" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/u/DF2447DC" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/per/u/DF2447DC-contents" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/prop/33669E82" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/prop/33669E82" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/prop/363993BC" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/prop/363993BC" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/prop/74F1C9BD" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/prop/74F1C9BD" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/prop/C2650FDA" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/prop/C2650FDA" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/prop/F3203DDD" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/prop/F3203DDD" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/prop/INDEX" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/F30F1DB7/sources/prop/INDEX" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/shared/notebooks/paths" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/.Rproj.user/shared/notebooks/paths" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/DESCRIPTION" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/DESCRIPTION" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/NAMESPACE" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/NAMESPACE" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/R/MZmineXML.R" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/R/MZmineXML.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/R/MZmineXMLManipulator-package.R" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/R/MZmineXMLManipulator-package.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/R/XMLhandler.R" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/R/XMLhandler.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/R/common.R" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/R/common.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmineXMLManipulator/R/peaktableConversion.R" beforeDir="false" afterPath="$PROJECT_DIR$/MZmineXMLManipulator/R/peaktableConversion.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/onlineLCMSaligner" beforeDir="false" afterPath="$PROJECT_DIR$/onlineLCMSaligner" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/onlineLCMSaligner/NAMESPACE" beforeDir="false" afterPath="$PROJECT_DIR$/onlineLCMSaligner/NAMESPACE" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/onlineLCMSaligner/R/LCMSAlignerDataStorage.R" beforeDir="false" afterPath="$PROJECT_DIR$/onlineLCMSaligner/R/LCMSAlignerDataStorage.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/onlineLCMSaligner/R/LCMSAlignerModel-initialisation.R" beforeDir="false" afterPath="$PROJECT_DIR$/onlineLCMSaligner/R/LCMSAlignerModel-initialisation.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/onlineLCMSaligner/R/LCMSAlignerModel-method.R" beforeDir="false" afterPath="$PROJECT_DIR$/onlineLCMSaligner/R/LCMSAlignerModel-method.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/onlineLCMSaligner/R/LCMSAlignerReferences-method.R" beforeDir="false" afterPath="$PROJECT_DIR$/onlineLCMSaligner/R/LCMSAlignerReferences-method.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/onlineLCMSaligner/R/allGenerics.R" beforeDir="false" afterPath="$PROJECT_DIR$/onlineLCMSaligner/R/allGenerics.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/onlineLCMSaligner/R/classes.R" beforeDir="false" afterPath="$PROJECT_DIR$/onlineLCMSaligner/R/classes.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/onlineLCMSaligner/R/correctRTs.R" beforeDir="false" afterPath="$PROJECT_DIR$/onlineLCMSaligner/R/correctRTs.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/onlineLCMSaligner/R/onlineLCMSaligner-package.R" beforeDir="false" afterPath="$PROJECT_DIR$/onlineLCMSaligner/R/onlineLCMSaligner-package.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/onlineLCMSaligner/R/ransac.R" beforeDir="false" afterPath="$PROJECT_DIR$/onlineLCMSaligner/R/ransac.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/onlineLCMSaligner/R/utils.R" beforeDir="false" afterPath="$PROJECT_DIR$/onlineLCMSaligner/R/utils.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/onlineLCMSaligner/man/LCMSAlignerModelFromDirectory.Rd" beforeDir="false" afterPath="$PROJECT_DIR$/onlineLCMSaligner/man/LCMSAlignerModelFromDirectory.Rd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/onlineLCMSaligner/man/alignPeaktable.Rd" beforeDir="false" afterPath="$PROJECT_DIR$/onlineLCMSaligner/man/alignPeaktable.Rd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/onlineLCMSaligner/man/buildDataMatrix-LCMSAlignerModel-method.Rd" beforeDir="false" afterPath="$PROJECT_DIR$/onlineLCMSaligner/man/buildDataMatrix-LCMSAlignerModel-method.Rd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/onlineLCMSaligner/man/plotDevRt.Rd" beforeDir="false" afterPath="$PROJECT_DIR$/onlineLCMSaligner/man/plotDevRt.Rd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/experiment.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/experiment.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wrapper_docker.py" beforeDir="false" afterPath="$PROJECT_DIR$/wrapper_docker.py" afterDir="false" />
+    </list>
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="240" />
+    <option name="y" value="130" />
+    <option name="width" value="1440" />
+    <option name="height" value="780" />
+  </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectView">
+    <navigator proportions="" version="1">
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="ProjectPane" />
+      <pane id="Scope" />
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/pylcmsprocessing" />
+    <property name="settings.editor.selected.configurable" value="configurable.group.appearance" />
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="84dbd36f-9766-4ce4-bf5b-1769fdcb59a6" name="Default Changelist" comment="" />
+      <created>1582096649932</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1582096649932</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
+    <layout>
+      <window_info id="Favorites" side_tool="true" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.25" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info anchor="bottom" id="Version Control" />
+      <window_info anchor="bottom" id="Python Console" />
+      <window_info anchor="bottom" id="Terminal" />
+      <window_info anchor="bottom" id="Event Log" side_tool="true" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" />
+      <window_info anchor="bottom" id="Run" order="2" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="right" id="R Packages" />
+      <window_info anchor="right" id="R Graphics" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+    </layout>
+  </component>
+</project>

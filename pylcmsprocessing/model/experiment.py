@@ -717,3 +717,6 @@ class Experiment:
                     shutil.rmtree(pwaste, ignore_errors=True)
                 elif os.path.exists(pwaste):
                     os.remove(pwaste)
+
+    def optimize_parameters(self):
+        pass
