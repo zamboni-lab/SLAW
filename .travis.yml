@@ -1,0 +1,9 @@
+language: ruby
+
+services:
+  - docker
+
+before_install:
+  - docker build -t lcms_workflow_zamboni .
+script:
+  - docker run lcms_worfklow_zamboni -v tests/input:/input -v test/output:/output -e POLARITY=positive -e USERNAME=test lcms_worfklow_zamboni

@@ -8,10 +8,12 @@ import math
 import shutil
 import time
 
+
 ##We import the module of python processing.
 sys.path.append('/pylcmsprocessing')
 from pylcmsprocessing.model.UI import UI
 from pylcmsprocessing.model.experiment import Experiment
+from pylcmsprocessing.model.optimization import ParametersOptimizer
 
 if __name__=="__main__":
 ##Two thing to check the number of CPUs and the ocnsumed meory eventually.
@@ -42,8 +44,6 @@ if __name__=="__main__":
     if "NCORES" in os.environ:
         num_cpus = int(os.environ["NCORES"])
 
-    # percent_mem = math.floor(memory_by_core*100/avail_memory)
-
     if "MEMORY" in os.environ:
         memory_by_core = int(os.environ["MEMORY"])
 
@@ -52,7 +52,7 @@ if __name__=="__main__":
     ##We output System information
     print("Total memory available: "+str(avail_memory)+" and "+str( multiprocessing.cpu_count())+" cores. The workflow will use "+str(math.floor(memory_by_core))+ " Mb by cores on "+str(num_cpus)+" cores.")
 
-    MANDATORY_ARGS = ["INPUT","OUTPUT"]
+    MANDATORY_ARGS = ["INPUT", "OUTPUT"]
     if os.environ['OUTPUT'].startswith('/sauer1') or os.environ['INPUT'].startswith('/sauer1'):
         MANDATORY_ARGS.append("USERNAME")
 
@@ -64,9 +64,7 @@ if __name__=="__main__":
         if not os.path.isdir(OUTPUT_DIR):
             print("Output directory "+OUTPUT_DIR+"does not exist.")
 
-
     LOG = os.path.join(OUTPUT_DIR,"log.txt")
-
 
     # subprocess.call("java "+os.environ["JAVA_OPTS"]+" -XshowSettings:vm -version  >> "+LOG+" 2>&1",shell=True)
     #The raw files are always mounted into raw_files
@@ -78,15 +76,13 @@ if __name__=="__main__":
     ##The yaml file is always putt in the paramters.text
     PATH_YAML = os.path.join(OUTPUT_DIR,"parameters.txt")
     PATH_XML = os.path.join(OUTPUT_DIR,"batch_xml_adap.xml")
+    PATH_TEMP_XML = os.path.join(OUTPUT_DIR,"batch_xml_adap_temp.xml")
 
     PATH_TARGET = os.path.join(INPUT,"target.csv")
     if os.path.isfile(PATH_TARGET):
         print("Detected target list.")
 
-    PATH_DB = os.path.join("database_lcms_processing.sqlite")
-
     vui = UI(OUTPUT_DIR, INPUT, polarity=os.environ["POLARITY"], mass_spec="Exactive", num_workers=num_cpus, path_yaml = PATH_YAML)
-
     setup_params = False
     #If the yaml parameter file already exist we just read it, else. we don t read it
     #We put a message if the output is not here.
@@ -100,64 +96,49 @@ if __name__=="__main__":
     if os.path.isfile(path_save_db):
         shutil.copyfile(path_save_db,PATH_DB)
     exp = Experiment(PATH_DB,save_db = path_save_db,reset=False)
-
+    exp.initialise_database(num_cpus, OUTPUT_DIR, vui.polarity, INPUT, ["ADAP"], 1)
+    ###In all case the first table is generated.
     if not os.path.exists(vui.path_yaml):
-        setup_params = True
         vui.generate_yaml_files()
-        ###Optimized the parameter
-        vui.optimize_parameters()
-        while(not optimal)
-
-        exp.initialise_database(num_cpus,OUTPUT_DIR,vui.polarity,INPUT,["ADAP"], 1)
-
-        if not os.path.isfile(PATH_XML):
-            vui.generate_MZmine_XML(path_xml=PATH_XML)
-            print("An ADAP batch file has been generated in the "+OUTPUT_DIR+" directory, you ca use it ot find peakpicking parameters.")
-        print("A parameters.txt file has been generated in the "+OUTPUT_DIR+" directory, please complete it and rerun the docker.")
-    else:
+        num_iter = 10
+        if "NOPTIM" in os.environ:
+            num_iter = int(num_iter)
+        PATH_OPTIM = os.path.join(OUTPUT_DIR, "temp_optim")
+        os.makedirs(PATH_OPTIM)
+        par_opt = ParametersOptimizer(exp, PATH_OPTIM, nrounds=num_iter, input_par=None)
+        par_opt.optimize_parameters(vui.path_yaml)
 
 
+        ###In this case we optimize the parameter
+        ##We first check fi there is anumber of iteration defined
 
-        #In very case we generate an adate MZmine XML file.
-        # vui.generate_MZmine_XML(path_xml=PATH_XML)
-        # time_input = time.clock()
-        # print("TIME INPUT")
-        #
-        # ##We read the yaml file
-        # with open(vui.path_yaml, 'r') as stream:
-        #     raw_yaml = yaml.safe_load(stream)
-        # PATH_DB = "/temp_processing_db.sqlite"
-        # if "CLUSTER" in os.environ:
-        #     PATH_DB = os.path.join(OUTPUT_DIR,"temp_processing_db.sqlite")
-        # # LOG = "/log.txt"
-        # #Procesinf of the pipeline eventually.
-        # path_save_db = os.path.join(OUTPUT_DIR,"processing_db.sqlite")
-        # if os.path.isfile(path_save_db):
-        #     shutil.copyfile(path_save_db,PATH_DB)
-        #
-        # exp = Experiment(PATH_DB,save_db = path_save_db,reset=False)
-        exp.initialise_database(num_cpus,OUTPUT_DIR,vui.polarity,INPUT,["ADAP"], 1)
-        exp.building_inputs_single_processing(PATH_XML)
-        exp.run("/MZmine-2.52-Linux",int(num_cpus),log = LOG)
-        exp.correct_conversion()
-        exp.post_processing_peakpicking()
-        time_peakpicking = time.clock()
+    if not os.path.isfile(PATH_XML):
+        vui.generate_MZmine_XML(path_xml=PATH_XML)
+        print("An ADAP batch file has been generated in the "+OUTPUT_DIR+" directory, you ca use it to refine peakpicking parameters using MZmine.")
+        # print("A parameters.txt file has been generated in the "+OUTPUT_DIR+" directory, please complete it and rerun the docker.")
 
-        exp.group_online(intensity=str(raw_yaml["grouping"]["extracted_quantity"]["value"]),
-            ppm = float(raw_yaml["grouping"]["ppm"]["value"]),
-            mztol=float(raw_yaml["grouping"]["dmz"]["value"]),
-            rttol=float(raw_yaml["grouping"]["drt"]["value"]),
-            n_ref = int(raw_yaml["grouping"]["num_references"]["value"]),
-            alpha=float(raw_yaml["grouping"]["alpha"]["value"]),
-            log=LOG)
-        time_grouping = ()
-        polarity = raw_yaml["ion_annotation"]["polarity"]["value"]
-        main_adducts_str=raw_yaml["ion_annotation"]["main_adducts_"+polarity]["value"]
-        adducts_str = raw_yaml["ion_annotation"]["adducts_"+polarity]["value"]
-        successfully_processed = exp.annotate_ions(int(raw_yaml["ion_annotation"]["num_files"]["value"]),float(raw_yaml["ion_annotation"]["ppm"]["value"]),
-            float(raw_yaml["ion_annotation"]["dmz"]["value"]),min_filter=raw_yaml["ion_annotation"]["min_filter"]["value"],
-                    adducts=adducts_str,main_adducts=main_adducts_str, max_workers=num_cpus)
-        time_annotation = time.clock()
-        if successfully_processed:
-            exp.post_processing(PATH_TARGET)
-            exp.clean()
+    exp.initialise_database(num_cpus,OUTPUT_DIR,vui.polarity,INPUT,["ADAP"], 1)
+    exp.building_inputs_single_processing(PATH_XML)
+    exp.run("/MZmine-2.52-Linux",int(num_cpus),log = LOG)
+    exp.correct_conversion()
+    exp.post_processing_peakpicking()
+    time_peakpicking = time.clock()
+
+    exp.group_online(intensity=str(raw_yaml["grouping"]["extracted_quantity"]["value"]),
+        ppm = float(raw_yaml["grouping"]["ppm"]["value"]),
+        mztol=float(raw_yaml["grouping"]["dmz"]["value"]),
+        rttol=float(raw_yaml["grouping"]["drt"]["value"]),
+        n_ref = int(raw_yaml["grouping"]["num_references"]["value"]),
+        alpha=float(raw_yaml["grouping"]["alpha"]["value"]),
+        log=LOG)
+    time_grouping = ()
+    polarity = raw_yaml["ion_annotation"]["polarity"]["value"]
+    main_adducts_str=raw_yaml["ion_annotation"]["main_adducts_"+polarity]["value"]
+    adducts_str = raw_yaml["ion_annotation"]["adducts_"+polarity]["value"]
+    successfully_processed = exp.annotate_ions(int(raw_yaml["ion_annotation"]["num_files"]["value"]),float(raw_yaml["ion_annotation"]["ppm"]["value"]),
+        float(raw_yaml["ion_annotation"]["dmz"]["value"]),min_filter=raw_yaml["ion_annotation"]["min_filter"]["value"],
+                adducts=adducts_str,main_adducts=main_adducts_str, max_workers=num_cpus)
+    time_annotation = time.clock()
+    if successfully_processed:
+        exp.post_processing(PATH_TARGET)
+        exp.clean()

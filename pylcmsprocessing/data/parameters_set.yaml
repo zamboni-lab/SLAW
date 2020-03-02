@@ -70,7 +70,7 @@ grouping:
   extracted_quantity:
     priority: HIGH
     description: String. The extracted type of information. Can be 'intensity' or 'height'
-    value: height
+    value: intensity
   dmz:
     priority: LOW
     description: Float. The minimum m/z tolerance in Da to be considered. Mass tolerance between peaks of different samples to aligned is given by max(ppm x m/z x 1e-6,dmz).
@@ -121,3 +121,4 @@ ion_annotation:
       priority: HIGH
       description: The number of files used to generate EICs profile for ion annotations. This number should be at most 100
       value: 50
+optimized: False

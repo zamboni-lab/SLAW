@@ -12,7 +12,7 @@ class scorerDataMatrix:
         self.data = pd.read_csv(path,header=0)
 
     ####Score a data mnatrix
-    def score_datamatrix(self,matrix):
+    def score_datamatrix(self,num_skipped=1):
         cnames = [cc for cc in self.data.columns if cc.startswith("int")]
         num_sample = len(cnames)
 
@@ -22,7 +22,7 @@ class scorerDataMatrix:
 
         weighted_CV = (num_detect*CV).sum()/num_detect.sum()
         ###We return the sum
-        n_reproducible = sum([nn for nn in num_detect if nn>=num_sample-1])
+        n_reproducible = sum([nn for nn in num_detect if nn>=(num_sample-num_skipped)])
         score = (0.5-weighted_CV)*log10(n_reproducible)
         return score
 

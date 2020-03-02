@@ -28,8 +28,10 @@ args <- commandArgs(trailingOnly = TRUE)
 
 
 INPUT_FEATURES <- args[1]
+##For later use
 INPUT_RAW_FILES <- args[2]
 PATH_DB <- args[3]
+###For later use.
 OUTPUT_HDF5 <- args[4]
 OUTPUT_TARGET_PDF <- args[5]
 OUTPUT_SUMMARY_PDF <- args[6]
@@ -131,8 +133,6 @@ val <- opls(
   crossvalI = 1,
   predI = 2
 )
-sink(file = NULL)
-
 plot(
   sum_metrics[, c("peakwidth", "right_on_left_assymetry")],
   xlab = "Mean peakwidth",
@@ -168,7 +168,7 @@ text(
   adj = c(0, 0)
 )
 dev.off()
-
+sink(file = NULL)
 
 
 # if(FALSE){

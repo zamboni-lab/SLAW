@@ -209,6 +209,11 @@ class Experiment:
     def get_samples(self):
         return self.get_query("SELECT path FROM sample")
 
+    ###Return a list of the data matrix eventually
+    def get_datamatrix(self):
+        return self.get_query("SELECT peaktable FROM peakpicking")
+
+
     def build_samples(self, path_samples):
 
         ###We build the majority
@@ -706,9 +711,9 @@ class Experiment:
         self.open_db()
         c = self.conn.cursor()
         c.execute("SELECT annotated_peaktable_reduced FROM peakpicking")
-        peakpicking = c.fetchall()[0]
+        path_annotation = c.fetchall()[0][0]
         self.close_db()
-        if os.path.isfile(peakpicking):
+        if os.path.isfile(path_annotation):
             to_rm= [cr.TEMP["GROUPING"]["TEMP"],cr.TEMP["IONANNOTATION"]["FULL"],cr.TEMP["IONANNOTATION"]["MAIN"],
             cr.TEMP["CONVERSION"],cr.OUT["ADAP"]["JSON"],cr.OUT["ADAP"]["CANDIDATES"],cr.TEMP["DIR"]]
             for waste in to_rm:
@@ -717,6 +722,3 @@ class Experiment:
                     shutil.rmtree(pwaste, ignore_errors=True)
                 elif os.path.exists(pwaste):
                     os.remove(pwaste)
-
-    def optimize_parameters(self):
-        pass

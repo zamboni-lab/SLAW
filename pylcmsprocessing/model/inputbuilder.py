@@ -117,10 +117,6 @@ class MZMineBuilder(inputBuilder):
             vid = vid + 1
         return vid
 
-
-
-
-
     def filter_inputs(self):
         conn = sqlite3.connect(self.db)
         c = conn.cursor()
