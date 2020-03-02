@@ -1,5 +1,7 @@
 # Zamboni Lab LCMSprocessing pipeline
 
+## Current version : 0.9
+
 The LCMS processing which has been developped has mainly been built for scalability and
 efficiency, meaning that it supposed to be able to process thousands of samples and it should
 extract them in a sensitive and reliable manner. However it was not design for user-friendliness.
