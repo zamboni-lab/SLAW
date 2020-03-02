@@ -1,7 +1,0 @@
-version: '0.9.{build}'
-
-build: Script
-build_script: build_docker.sh
-
-install:
-  - docker info

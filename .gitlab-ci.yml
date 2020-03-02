@@ -1,7 +1,0 @@
-before_script:
-  - docker info
-
-build_image:
-  script:
-    - docker build -t test_docker .
-    - run -e INPUT=$CI_PROJECT_DIR/test/input -e OUTPUT=$CI_PROJECT_DIR/test/output -e POLARITY=positive test_docker
