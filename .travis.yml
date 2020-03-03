@@ -1,5 +1,12 @@
 language: ruby
 
+notifications:
+  email:
+    recipients:
+      - delabriere@imsb.biol.ethz.ch
+    on_success: always
+    on_failure: always
+
 services:
   - docker
 
