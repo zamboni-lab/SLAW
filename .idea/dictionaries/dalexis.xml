@@ -1564,6 +1564,7 @@
       <w>ChemReact</w>
       <w>ChemReact1</w>
       <w>ChemReact2</w>
+      <w>ChemmineOB</w>
       <w>ChemmineR</w>
       <w>ChemspiderConn</w>
       <w>ChemspiderEntry</w>
@@ -7730,6 +7731,7 @@
       <w>canonical.permutation</w>
       <w>canonical.theme</w>
       <w>canonicalNumbering</w>
+      <w>canonicalNumbering_OB</w>
       <w>canonical_permutation</w>
       <w>canonicalize</w>
       <w>canonicalize_set_and_mapping</w>
@@ -8760,11 +8762,14 @@
       <w>convertComment</w>
       <w>convertComment.SmartComments</w>
       <w>convertComment.VComments</w>
+      <w>convertFormat</w>
+      <w>convertFormatFile</w>
       <w>convertHeight</w>
       <w>convertNative</w>
       <w>convertNumericColumnsToNumeric</w>
       <w>convertPeakTable</w>
       <w>convertTheme</w>
+      <w>convertToImage</w>
       <w>convertUnit</w>
       <w>convertWidth</w>
       <w>convertX</w>
@@ -10601,6 +10606,7 @@
       <w>ex.cliqueGroups</w>
       <w>exAM</w>
       <w>exactMassOB</w>
+      <w>exactMass_OB</w>
       <w>example</w>
       <w>example.chromatogram.multiple</w>
       <w>example.chromatogram.single</w>
@@ -11223,6 +11229,7 @@
       <w>finegray</w>
       <w>fingerprint</w>
       <w>fingerprintOB</w>
+      <w>fingerprint_OB</w>
       <w>finish</w>
       <w>finish_glance</w>
       <w>fintersect</w>
@@ -11358,6 +11365,7 @@
       <w>footnote_marker_alphabet</w>
       <w>footnote_marker_number</w>
       <w>footnote_marker_symbol</w>
+      <w>forEachMol</w>
       <w>forName</w>
       <w>forName.Class</w>
       <w>forbes</w>
@@ -19043,6 +19051,7 @@
       <w>propTestPower</w>
       <w>propTrueNull</w>
       <w>propVarExplained</w>
+      <w>prop_OB</w>
       <w>propexpr</w>
       <w>proportionsInAdmixture</w>
       <w>prose_index</w>
@@ -21737,6 +21746,7 @@
       <w>smartbind</w>
       <w>smartlegend</w>
       <w>smartsSearchOB</w>
+      <w>smartsSearch_OB</w>
       <w>smartypants</w>
       <w>smbind</w>
       <w>smean.cl.boot</w>

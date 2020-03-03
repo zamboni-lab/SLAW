@@ -182,12 +182,7 @@ findPeakswidthParameters <-  function(xraw, widening, min_pw, max_pw){
 handlers <- suppressWarnings(suppressMessages(lapply(raw_files,xcmsRaw)))
 resVal <- bplapply(handlers,FUN=findPeakswidthParameters,widening=WIDENING,min_pw=MIN_PEAKWIDTH,max_pw=MAX_PEAKWIDTH,BPPARAM = bpp)
 estimated_par <- apply(do.call(rbind,resVal),2,median)
-polarity = estimated_par[3]
-if(polarity==1){
-  Sys.setenv("POLARITY"="positive")
-}else{
-  Sys.setenv("POLARITY"="negative")
-}
+polarity <- estimated_par[3]
 
 ##We read the initial parameter estimation
 params <- yaml.load_file(INITIAL_PAR)

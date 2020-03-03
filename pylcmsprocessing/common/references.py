@@ -9,6 +9,7 @@ SUMMARY_COMBINATIONS = "summary_combinations"
 
 OUT={"DB":"processing.sqlite",
     "LOG":"log.txt",
+    "POLARITY":"polarity",
     "ADAP":
     {
         "SUMMARY":"ADAP/ADAP_parameters.csv",

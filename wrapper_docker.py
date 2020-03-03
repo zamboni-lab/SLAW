@@ -14,6 +14,7 @@ sys.path.append('/pylcmsprocessing')
 from pylcmsprocessing.model.UI import UI
 from pylcmsprocessing.model.experiment import Experiment
 from pylcmsprocessing.model.optimization import ParametersOptimizer
+from pylcmsprocessing.common.references import DATA
 
 if __name__=="__main__":
 ##Two thing to check the number of CPUs and the ocnsumed meory eventually.
@@ -57,12 +58,12 @@ if __name__=="__main__":
         MANDATORY_ARGS.append("USERNAME")
 
     if not all(env in os.environ for env in MANDATORY_ARGS):
-        raise Exception(",".join(MANDATORY_ARGS)+' and  are mandatory arguments.')
+        raise Exception(",".join(MANDATORY_ARGS)+' and  are mandatory arguments')
     #The path of the mounted directory is always output
     OUTPUT_DIR = os.environ['OUTPUT']
     if OUTPUT_DIR.startswith("/sauer1"):
         if not os.path.isdir(OUTPUT_DIR):
-            print("Output directory "+OUTPUT_DIR+"does not exist.")
+            print("Output directory "+OUTPUT_DIR+"does not exist")
 
     LOG = os.path.join(OUTPUT_DIR,"log.txt")
 
@@ -71,7 +72,7 @@ if __name__=="__main__":
     INPUT = os.environ['INPUT']
     if INPUT.startswith("/sauer1"):
         if not os.path.isdir(INPUT):
-            raise Exception('Directory '+INPUT+' does not exist.' )
+            raise Exception('Directory '+INPUT+' does not exist' )
 
     ##The yaml file is always putt in the paramters.text
     PATH_YAML = os.path.join(OUTPUT_DIR,"parameters.txt")
@@ -80,7 +81,7 @@ if __name__=="__main__":
 
     PATH_TARGET = os.path.join(INPUT,"target.csv")
     if os.path.isfile(PATH_TARGET):
-        print("Detected target list.")
+        print("Detected target list")
 
     vui = UI(OUTPUT_DIR, INPUT, polarity=os.environ["POLARITY"], mass_spec="Exactive", num_workers=num_cpus, path_yaml = PATH_YAML)
     setup_params = False
@@ -97,18 +98,22 @@ if __name__=="__main__":
         shutil.copyfile(path_save_db,PATH_DB)
     exp = Experiment(PATH_DB,save_db = path_save_db,reset=False)
     exp.initialise_database(num_cpus, OUTPUT_DIR, vui.polarity, INPUT, ["ADAP"], 1)
+    ###We try to guess the polarity form the middle file.
+    exp.guess_polarity()
+    print("Polarity detected: "+exp.polarity)
     ###In all case the first table is generated.
     if not os.path.exists(vui.path_yaml):
-        vui.generate_yaml_files()
+        vui.generate_yaml_files(DATA["YAML"])
         num_iter = 10
         if "NOPTIM" in os.environ:
             num_iter = int(num_iter)
         PATH_OPTIM = os.path.join(OUTPUT_DIR, "temp_optim")
-        os.makedirs(PATH_OPTIM)
+        if os.path.isdir(PATH_OPTIM):
+            os
+        else:
+            os.makedirs(PATH_OPTIM)
         par_opt = ParametersOptimizer(exp, PATH_OPTIM, nrounds=num_iter, input_par=None)
         par_opt.optimize_parameters(vui.path_yaml)
-
-
         ###In this case we optimize the parameter
         ##We first check fi there is anumber of iteration defined
 
