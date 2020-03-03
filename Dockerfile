@@ -1,4 +1,4 @@
-FROM basis_workflow
+FROM adelabriere/basis_workflow
 #Base image should always include all the dependencies
 
 ###INPUT FOLDER :
@@ -13,7 +13,7 @@ RUN pip3 install numpy==1.17
 
 ##The copying is always a file.
 COPY onlineLCMSaligner /onlineLCMSaligner
-RUN R -e "library(devtools);remove.packages('onlineLCMSaligner');install('/onlineLCMSaligner')"
+RUN R -e "setwd('/onlineLCMSaligner');library(devtools);remove.packages('onlineLCMSaligner');install(pkg='/onlineLCMSaligner')"
 
 COPY pylcmsprocessing /pylcmsprocessing
 #Workflow running script
