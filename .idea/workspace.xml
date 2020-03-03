@@ -1,21 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="BookmarkManager">
-    <bookmark url="file://$PROJECT_DIR$/pylcmsprocessing/model/optimization.py" line="108" />
+    <bookmark url="file://$PROJECT_DIR$/pylcmsprocessing/model/optimization.py" line="112" />
   </component>
   <component name="ChangeListManager">
     <list default="true" id="84dbd36f-9766-4ce4-bf5b-1769fdcb59a6" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/dictionaries/dalexis.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dictionaries/dalexis.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.travis.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.travis.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/initial_parameters.R" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/initial_parameters.R" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/common/references.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/common/references.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/UI.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/UI.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/experiment.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/experiment.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmine-2.52-Linux/conf/security/policy/README.txt" beforeDir="false" afterPath="$PROJECT_DIR$/MZmine-2.52-Linux/conf/security/policy/README.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmine-2.52-Linux/legal/MZmine/LICENSE.txt" beforeDir="false" afterPath="$PROJECT_DIR$/MZmine-2.52-Linux/legal/MZmine/LICENSE.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmine-2.52-Linux/lib/server/Xusage.txt" beforeDir="false" afterPath="$PROJECT_DIR$/MZmine-2.52-Linux/lib/server/Xusage.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmine-2.52-Linux/lib/vendor_lib/waters/README.txt" beforeDir="false" afterPath="$PROJECT_DIR$/MZmine-2.52-Linux/lib/vendor_lib/waters/README.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmine-2.52-Linux/lib/vendor_lib/waters/WatersRawDump.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/MZmine-2.52-Linux/lib/vendor_lib/waters/WatersRawDump.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MZmine-2.52-Linux/startMZmine-Linux" beforeDir="false" afterPath="$PROJECT_DIR$/MZmine-2.52-Linux/startMZmine-Linux" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/onlineLCMSaligner/src/RcppExports.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/onlineLCMSaligner/src/RcppExports.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/onlineLCMSaligner/src/utils.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/onlineLCMSaligner/src/utils.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/cliques_matching.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/cliques_matching.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/adap.json" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/adap.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/adducts_main_neg.txt" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/adducts_main_neg.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/adducts_main_pos.txt" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/adducts_main_pos.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/adducts_neg.txt" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/adducts_neg.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/adducts_pos.txt" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/adducts_pos.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/openms.json" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/openms.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/parameters_set.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/parameters_set.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/savgol.json" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/savgol.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/to_optimize.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/to_optimize.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/to_optimize_adap.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/to_optimize_adap.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/optimization.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/optimization.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run_lcms_processing.sh" beforeDir="false" afterPath="$PROJECT_DIR$/run_lcms_processing.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wrapper_docker.py" beforeDir="false" afterPath="$PROJECT_DIR$/wrapper_docker.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/output/parameters.txt" beforeDir="false" afterPath="$PROJECT_DIR$/tests/output/parameters.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/time_it.bat" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -29,7 +41,7 @@
         <entry file="file://$PROJECT_DIR$/pylcmsprocessing/model/experiment.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="269">
-              <caret line="77" column="27" lean-forward="true" selection-start-line="77" selection-start-column="27" selection-end-line="77" selection-end-column="27" />
+              <caret line="77" column="27" selection-start-line="77" selection-start-column="27" selection-end-line="77" selection-end-column="27" />
               <folding>
                 <element signature="e#0#14#0" expanded="true" />
               </folding>
@@ -37,11 +49,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/pylcmsprocessing/model/optimization.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="223">
-              <caret line="154" column="14" selection-start-line="154" selection-start-column="8" selection-end-line="154" selection-end-column="14" />
+            <state relative-caret-position="437">
+              <caret line="175" column="48" selection-start-line="175" selection-start-column="48" selection-end-line="175" selection-end-column="48" />
               <folding>
                 <element signature="e#80#94#0" expanded="true" />
               </folding>
@@ -65,7 +77,7 @@
         <entry file="file://$PROJECT_DIR$/pylcmsprocessing/model/parallel_runner.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="161">
-              <caret line="7" column="30" lean-forward="true" selection-start-line="7" selection-start-column="30" selection-end-line="7" selection-end-column="30" />
+              <caret line="7" column="30" selection-start-line="7" selection-start-column="30" selection-end-line="7" selection-end-column="30" />
               <folding>
                 <element signature="e#0#28#0" expanded="true" />
               </folding>
@@ -77,7 +89,7 @@
         <entry file="file://$PROJECT_DIR$/pylcmsprocessing/Rscript/initial_parameters.R">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="414">
-              <caret line="18" lean-forward="true" selection-start-line="18" selection-end-line="18" />
+              <caret line="18" selection-start-line="18" selection-end-line="18" />
             </state>
           </provider>
         </entry>
@@ -115,11 +127,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/wrapper_docker.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="430">
-              <caret line="113" column="35" lean-forward="true" selection-start-line="113" selection-start-column="35" selection-end-line="113" selection-end-column="35" />
+            <state relative-caret-position="269">
+              <caret line="106" column="17" selection-start-line="106" selection-start-column="17" selection-end-line="106" selection-end-column="17" />
               <folding>
                 <element signature="e#1#10#0" expanded="true" />
               </folding>
@@ -147,8 +159,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>numpy</find>
-      <find>print(</find>
       <find>initialise_data</find>
       <find>build_inputs_single_parameter_set</find>
       <find>datama</find>
@@ -177,6 +187,8 @@
       <find>POLARIT</find>
       <find>os.mak</find>
       <find>guess_</find>
+      <find>os.makedi</find>
+      <find>print(</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -199,8 +211,8 @@
         <option value="$PROJECT_DIR$/pylcmsprocessing/model/UI.py" />
         <option value="$PROJECT_DIR$/pylcmsprocessing/model/experiment.py" />
         <option value="$PROJECT_DIR$/pylcmsprocessing/Rscript/initial_parameters.R" />
-        <option value="$PROJECT_DIR$/pylcmsprocessing/model/optimization.py" />
         <option value="$PROJECT_DIR$/wrapper_docker.py" />
+        <option value="$PROJECT_DIR$/pylcmsprocessing/model/optimization.py" />
       </list>
     </option>
   </component>
@@ -445,7 +457,7 @@
     <entry file="file://$PROJECT_DIR$/pylcmsprocessing/model/parallel_runner.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="161">
-          <caret line="7" column="30" lean-forward="true" selection-start-line="7" selection-start-column="30" selection-end-line="7" selection-end-column="30" />
+          <caret line="7" column="30" selection-start-line="7" selection-start-column="30" selection-end-line="7" selection-end-column="30" />
           <folding>
             <element signature="e#0#28#0" expanded="true" />
           </folding>
@@ -472,7 +484,7 @@
     <entry file="file://$PROJECT_DIR$/pylcmsprocessing/Rscript/initial_parameters.R">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="414">
-          <caret line="18" lean-forward="true" selection-start-line="18" selection-end-line="18" />
+          <caret line="18" selection-start-line="18" selection-end-line="18" />
         </state>
       </provider>
     </entry>
@@ -486,20 +498,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/pylcmsprocessing/model/optimization.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="223">
-          <caret line="154" column="14" selection-start-line="154" selection-start-column="8" selection-end-line="154" selection-end-column="14" />
-          <folding>
-            <element signature="e#80#94#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/pylcmsprocessing/model/experiment.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="269">
-          <caret line="77" column="27" lean-forward="true" selection-start-line="77" selection-start-column="27" selection-end-line="77" selection-end-column="27" />
+          <caret line="77" column="27" selection-start-line="77" selection-start-column="27" selection-end-line="77" selection-end-column="27" />
           <folding>
             <element signature="e#0#14#0" expanded="true" />
           </folding>
@@ -508,10 +510,20 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/wrapper_docker.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="430">
-          <caret line="113" column="35" lean-forward="true" selection-start-line="113" selection-start-column="35" selection-end-line="113" selection-end-column="35" />
+        <state relative-caret-position="269">
+          <caret line="106" column="17" selection-start-line="106" selection-start-column="17" selection-end-line="106" selection-end-column="17" />
           <folding>
             <element signature="e#1#10#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pylcmsprocessing/model/optimization.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="437">
+          <caret line="175" column="48" selection-start-line="175" selection-start-column="48" selection-end-line="175" selection-end-column="48" />
+          <folding>
+            <element signature="e#80#94#0" expanded="true" />
           </folding>
         </state>
       </provider>

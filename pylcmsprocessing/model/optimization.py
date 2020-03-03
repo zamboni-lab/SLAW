@@ -5,6 +5,7 @@ import shutil
 import yaml
 from random import sample
 import subprocess
+import numpy as np
 
 import model.experiment as me
 import common.references as cr
@@ -30,6 +31,16 @@ def create_temp_directory(path_exp,params_archive,*argv):
     stored_xml = os.path.join(params_archive,"xml_"+str(hash_val)+".xml")
     return hash_val,temp_dir,temp_db,temp_save_db,stored_param,stored_xml
 
+
+def convert_val(x):
+    if type(x) is np.ndarray:
+        if isinstance(x[0], np.int):
+            return int(x.item())
+        if isinstance(x[0], np.float64):
+            return float(x.item())
+        return x.item()
+    return x
+
 def peak_picking_alignment_scoring(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14,fixed_params):
     ###All the params to be optimized and computed
     # p1:peakpicking/noise_level_ms1
@@ -53,16 +64,18 @@ def peak_picking_alignment_scoring(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p1
     ###we create the directory andget the path which will be used in the data.
     hash_val,OUTPUT_DIR,PATH_DB,PATH_SAVE_DB,stored_param,stored_xml = create_temp_directory(DIR_TEMP,STORAGE_YAML,p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14)
 
-
     ###We create a temporary directory to put the data in
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     LOG_PATH = os.path.join(OUTPUT_DIR,"log.txt")
 
     def convert_val(x):
-
-        if isinstance(x,float) or isinstance(x,int):
-            return x
-        return x.item()
+        if type(x) is np.ndarray:
+            if isinstance(x[0], np.int):
+                return int(x.item())
+            if isinstance(x[0], np.float64):
+                return float(x.item())
+            return x.item()
+        return x
 
     ####We load the orginial yaml file
     raw_yaml=None
@@ -95,10 +108,6 @@ def peak_picking_alignment_scoring(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p1
     vui = UI(OUTPUT_DIR, path_samples, polarity=polarity, mass_spec="Exactive", num_workers=num_cpus, path_yaml=stored_param)
     vui.generate_yaml_files(cr.DATA["YAML"])
     ###The output database is generated.
-    # to_join = [p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14]
-    # print(to_join)
-    # tto_join = [convert_val(pp) for pp in to_join]
-    # print(tto_join)
     vui.generate_MZmine_XML(path_xml=PATH_XML)
     exp.initialise_database(num_cpus, OUTPUT_DIR, polarity, path_samples, ["ADAP"], 1)
     exp.building_inputs_single_processing(PATH_XML)
@@ -130,7 +139,6 @@ def peak_picking_alignment_scoring(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p1
 
     ###We write the score in the table
     to_join = [p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14]
-    print(to_join)
     to_join = [str(pp) for pp in to_join]
     to_write = stored_param+","+str(vscore)+",".join(to_join)+"\n"
     with open(SUMMARY_YAML,"a") as ff:
@@ -165,7 +173,7 @@ class ParametersOptimizer:
     def select_samples(self,num_files=None):
         if num_files is None:
             # As many as worker to speed up the peakpicking process
-            num_files = self.num_workers
+            num_files = max(self.num_workers-1,1)
         if len(self.samples)<num_files:
             num_files = len(self.samples)
 
@@ -216,20 +224,20 @@ class ParametersOptimizer:
         with open(self.input_par, 'r') as stream:
             raw_yaml = yaml.safe_load(stream)
         ##We update the parameters to reflect the rest of the data
-        raw_yaml["peakpicking"]["noise_level_ms1"]["value"] = p1
-        raw_yaml["peakpicking"]["traces_construction"]["ppm"]["value"] = p2
-        raw_yaml["peakpicking"]["traces_construction"]["dmz"]["value"] = p3
-        raw_yaml["peakpicking"]["traces_construction"]["min_scan"]["value"] = p4
-        raw_yaml["peakpicking"]["peaks_deconvolution"]["SN"]["value"] = p5
-        raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width_min"]["value"] = p6
-        raw_yaml["peakpicking"]["peaks_deconvolution"]["rt_wavelet_min"]["value"] = p7
-        raw_yaml["peakpicking"]["peaks_deconvolution"]["rt_wavelet_max"]["value"] = p8
-        raw_yaml["peakpicking"]["peaks_deconvolution"]["coefficient_area_threshold"]["value"] = p9
-        raw_yaml["grouping"]["ppm"]["value"] = p10
-        raw_yaml["grouping"]["drt"]["value"] = p11
-        raw_yaml["grouping"]["dmz"]["value"] = p12
-        raw_yaml["grouping"]["alpha"]["value"] = p13
-        raw_yaml["grouping"]["num_references"]["value"] = p14
+        raw_yaml["peakpicking"]["noise_level_ms1"]["value"] = convert_val(p1)
+        raw_yaml["peakpicking"]["traces_construction"]["ppm"]["value"] = convert_val(p2)
+        raw_yaml["peakpicking"]["traces_construction"]["dmz"]["value"] = convert_val(p3)
+        raw_yaml["peakpicking"]["traces_construction"]["min_scan"]["value"] = convert_val(p4)
+        raw_yaml["peakpicking"]["peaks_deconvolution"]["SN"]["value"] = convert_val(p5)
+        raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width_min"]["value"] = convert_val(p6)
+        raw_yaml["peakpicking"]["peaks_deconvolution"]["rt_wavelet_min"]["value"] = convert_val(p7)
+        raw_yaml["peakpicking"]["peaks_deconvolution"]["rt_wavelet_max"]["value"] = convert_val(p8)
+        raw_yaml["peakpicking"]["peaks_deconvolution"]["coefficient_area_threshold"]["value"] = convert_val(p9)
+        raw_yaml["grouping"]["ppm"]["value"] = convert_val(p10)
+        raw_yaml["grouping"]["drt"]["value"] = convert_val(p11)
+        raw_yaml["grouping"]["dmz"]["value"] = convert_val(p12)
+        raw_yaml["grouping"]["alpha"]["value"] = convert_val(p13)
+        raw_yaml["grouping"]["num_references"]["value"] = convert_val(p14)
         ###We dump the file in a filde evnetually
         with open(outpath, 'w') as outfile:
             yaml.dump(raw_yaml, outfile, default_flow_style=False)
@@ -237,8 +245,8 @@ class ParametersOptimizer:
     def optimize_parameters(self,output_par):
         self.optimize_initial_parameters()
         self.select_samples()
-        print("Finished initial parameters estimation.")
-        print("Optimizing remaining parameters.")
+        print("Finished initial parameters estimation")
+        print("Optimizing remaining parameters")
         self.optimize_tricky_parameters()
         print("Finished  optimization")
         self.export_best_parameters(output_par)
