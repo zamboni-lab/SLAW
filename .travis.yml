@@ -13,4 +13,4 @@ services:
 before_install:
 script:
   - docker build -t lcms_workflow_zamboni:latest .
-  - docker run lcms_worfklow_zamboni:latest -v tests/input:/input -v test/output:/output -e POLARITY=positive -e USERNAME=test lcms_worfklow_zamboni
+  - docker run lcms_workflow_zamboni:latest -v tests/input:/input -v test/output:/output -e POLARITY=positive -e USERNAME=test lcms_worfklow_zamboni

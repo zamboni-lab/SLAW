@@ -107,7 +107,7 @@ class Experiment:
         with open(output, "r") as f:
             polarity = f.readline().rstrip()
         ###We remoe the path.
-        # os.remove(output)
+        os.remove(output)
         self.polarity = polarity
         os.environ["POLARITY"]=polarity
         return polarity
