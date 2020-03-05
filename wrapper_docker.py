@@ -83,7 +83,6 @@ if __name__=="__main__":
     if os.path.isfile(PATH_TARGET):
         print("Detected target list")
 
-    vui = UI(OUTPUT_DIR, INPUT, polarity=os.environ["POLARITY"], mass_spec="Exactive", num_workers=num_cpus, path_yaml = PATH_YAML)
     setup_params = False
     #If the yaml parameter file already exist we just read it, else. we don t read it
     #We put a message if the output is not here.
@@ -97,9 +96,12 @@ if __name__=="__main__":
     if os.path.isfile(path_save_db):
         shutil.copyfile(path_save_db,PATH_DB)
     exp = Experiment(PATH_DB,save_db = path_save_db,reset=False)
-    exp.initialise_database(num_cpus, OUTPUT_DIR, vui.polarity, INPUT, ["ADAP"], 1)
+    ###The polarity computed at this step does not need to mahke any sense.
+    exp.initialise_database(num_cpus, OUTPUT_DIR,"negative", INPUT, ["ADAP"], 1)
     ###We try to guess the polarity form the middle file.
-    exp.guess_polarity()
+    exp.guess_polarity(INPUT)
+    vui = UI(OUTPUT_DIR, INPUT, polarity=os.environ["POLARITY"], mass_spec="Exactive", num_workers=num_cpus,
+         path_yaml=PATH_YAML)
     print("Polarity detected: "+exp.polarity)
     ###In all case the first table is generated.
     if not os.path.exists(vui.path_yaml):
@@ -128,6 +130,10 @@ if __name__=="__main__":
     exp.correct_conversion()
     exp.post_processing_peakpicking()
     time_peakpicking = time.clock()
+
+    ###We always read the yaml paramters file.
+    with open(vui.path_yaml, 'r') as stream:
+        raw_yaml = yaml.safe_load(stream)
 
     exp.group_online(intensity=str(raw_yaml["grouping"]["extracted_quantity"]["value"]),
         ppm = float(raw_yaml["grouping"]["ppm"]["value"]),

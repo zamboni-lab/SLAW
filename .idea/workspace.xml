@@ -1,33 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="BookmarkManager">
-    <bookmark url="file://$PROJECT_DIR$/pylcmsprocessing/model/optimization.py" line="112" />
+    <bookmark url="file://$PROJECT_DIR$/pylcmsprocessing/model/optimization.py" line="125" />
   </component>
   <component name="ChangeListManager">
     <list default="true" id="84dbd36f-9766-4ce4-bf5b-1769fdcb59a6" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.travis.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.travis.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/MZmine-2.52-Linux/conf/security/policy/README.txt" beforeDir="false" afterPath="$PROJECT_DIR$/MZmine-2.52-Linux/conf/security/policy/README.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/MZmine-2.52-Linux/legal/MZmine/LICENSE.txt" beforeDir="false" afterPath="$PROJECT_DIR$/MZmine-2.52-Linux/legal/MZmine/LICENSE.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/MZmine-2.52-Linux/lib/server/Xusage.txt" beforeDir="false" afterPath="$PROJECT_DIR$/MZmine-2.52-Linux/lib/server/Xusage.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/MZmine-2.52-Linux/lib/vendor_lib/waters/README.txt" beforeDir="false" afterPath="$PROJECT_DIR$/MZmine-2.52-Linux/lib/vendor_lib/waters/README.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/MZmine-2.52-Linux/lib/vendor_lib/waters/WatersRawDump.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/MZmine-2.52-Linux/lib/vendor_lib/waters/WatersRawDump.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/MZmine-2.52-Linux/startMZmine-Linux" beforeDir="false" afterPath="$PROJECT_DIR$/MZmine-2.52-Linux/startMZmine-Linux" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/onlineLCMSaligner/src/RcppExports.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/onlineLCMSaligner/src/RcppExports.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/onlineLCMSaligner/src/utils.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/onlineLCMSaligner/src/utils.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/cliques_matching.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/cliques_matching.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/adap.json" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/adap.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/adducts_main_neg.txt" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/adducts_main_neg.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/adducts_main_pos.txt" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/adducts_main_pos.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/adducts_neg.txt" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/adducts_neg.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/adducts_pos.txt" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/adducts_pos.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/openms.json" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/openms.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/parameters_set.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/parameters_set.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/savgol.json" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/savgol.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/to_optimize.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/to_optimize.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/to_optimize_adap.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/to_optimize_adap.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/get_polarity.R" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/get_polarity.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/LIPO.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/optimizer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/experiment.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/experiment.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/optimization.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/optimization.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/output/parameters.txt" beforeDir="false" afterPath="$PROJECT_DIR$/tests/output/parameters.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/time_it.bat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/wrapper_docker.py" beforeDir="false" afterPath="$PROJECT_DIR$/wrapper_docker.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -40,8 +23,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/pylcmsprocessing/model/experiment.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="269">
-              <caret line="77" column="27" selection-start-line="77" selection-start-column="27" selection-end-line="77" selection-end-column="27" />
+            <state relative-caret-position="637">
+              <caret line="108" column="29" lean-forward="true" selection-start-line="108" selection-start-column="29" selection-end-line="108" selection-end-column="29" />
               <folding>
                 <element signature="e#0#14#0" expanded="true" />
               </folding>
@@ -52,8 +35,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/pylcmsprocessing/model/optimization.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="437">
-              <caret line="175" column="48" selection-start-line="175" selection-start-column="48" selection-end-line="175" selection-end-column="48" />
+            <state relative-caret-position="471">
+              <caret line="153" column="17" lean-forward="true" selection-start-line="153" selection-start-column="17" selection-end-line="153" selection-end-column="17" />
               <folding>
                 <element signature="e#80#94#0" expanded="true" />
               </folding>
@@ -62,22 +45,10 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/pylcmsprocessing/model/UI.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="460">
-              <caret line="32" column="48" selection-start-line="32" selection-start-column="33" selection-end-line="32" selection-end-column="48" />
-              <folding>
-                <element signature="e#0#30#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/pylcmsprocessing/model/parallel_runner.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="161">
-              <caret line="7" column="30" selection-start-line="7" selection-start-column="30" selection-end-line="7" selection-end-column="30" />
+            <state relative-caret-position="828">
+              <caret line="36" selection-start-line="36" selection-end-line="37" selection-end-column="39" />
               <folding>
                 <element signature="e#0#28#0" expanded="true" />
               </folding>
@@ -86,19 +57,46 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/pylcmsprocessing/data/parameters_set.yaml">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="474">
+              <caret line="81" column="16" lean-forward="true" selection-start-line="81" selection-start-column="2" selection-end-line="81" selection-end-column="16" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/pylcmsprocessing/data/to_optimize_adap.yaml">
+          <provider selected="true" editor-type-id="text-editor">
+            <state>
+              <caret selection-end-line="39" selection-end-column="24" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/pylcmsprocessing/Rscript/initial_parameters.R">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="414">
+            <state relative-caret-position="-3261">
               <caret line="18" selection-start-line="18" selection-end-line="18" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/pylcmsprocessing/model/LIPO.py">
+        <entry file="file://$PROJECT_DIR$/pylcmsprocessing/Rscript/get_polarity.R">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="654">
-              <caret line="159" column="68" selection-start-line="159" selection-start-column="68" selection-end-line="159" selection-end-column="68" />
+            <state relative-caret-position="299">
+              <caret line="13" column="6" lean-forward="true" selection-start-line="13" selection-start-column="6" selection-end-line="13" selection-end-column="6" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/pylcmsprocessing/model/optimizer.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="184">
+              <caret line="167" column="42" lean-forward="true" selection-start-line="167" selection-start-column="42" selection-end-line="167" selection-end-column="42" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -107,43 +105,13 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/pylcmsprocessing/common/references.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="230">
-              <caret line="52" selection-start-line="52" selection-end-line="52" selection-end-column="4" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/pylcmsprocessing/model/inputbuilder.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1449">
-              <caret line="68" column="74" selection-start-line="68" selection-start-column="74" selection-end-line="68" selection-end-column="74" />
-              <folding>
-                <element signature="e#0#19#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/wrapper_docker.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="269">
-              <caret line="106" column="17" selection-start-line="106" selection-start-column="17" selection-end-line="106" selection-end-column="17" />
+            <state relative-caret-position="223">
+              <caret line="104" column="45" lean-forward="true" selection-start-line="104" selection-start-column="45" selection-end-line="104" selection-end-column="45" />
               <folding>
                 <element signature="e#1#10#0" expanded="true" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/pylcmsprocessing/Rscript/post_processing.R">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="138">
-              <caret line="6" selection-start-line="6" selection-end-line="6" selection-end-column="34" />
             </state>
           </provider>
         </entry>
@@ -159,21 +127,12 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>initialise_data</find>
-      <find>build_inputs_single_parameter_set</find>
-      <find>datama</find>
-      <find>polarity</find>
-      <find>num_work</find>
-      <find>optimize</find>
-      <find>building_</find>
-      <find>maximize_upper_bound</find>
       <find>constraints</find>
       <find>bound</find>
       <find>subprocess.call</find>
       <find>clean</find>
       <find>sample</find>
       <find>&quot; &quot;.join</find>
-      <find>select_sampl</find>
       <find>hash_val</find>
       <find>create_temp_directory</find>
       <find>PATH_XML</find>
@@ -182,13 +141,22 @@
       <find>building</find>
       <find>estimated_pa</find>
       <find>guess</find>
-      <find>guess_po</find>
       <find>cr.OUTPUT</find>
       <find>POLARIT</find>
       <find>os.mak</find>
-      <find>guess_</find>
       <find>os.makedi</find>
       <find>print(</find>
+      <find>POLARI</find>
+      <find>yaml.</find>
+      <find>select_sa</find>
+      <find>select_sam</find>
+      <find>guess_po</find>
+      <find>polarity</find>
+      <find>Polarity</find>
+      <find>guess_pol</find>
+      <find>sel_sam</find>
+      <find>select_sampl</find>
+      <find>guess_</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -209,18 +177,21 @@
         <option value="$PROJECT_DIR$/pylcmsprocessing/data/parameters_set.yaml" />
         <option value="$PROJECT_DIR$/pylcmsprocessing/common/references.py" />
         <option value="$PROJECT_DIR$/pylcmsprocessing/model/UI.py" />
-        <option value="$PROJECT_DIR$/pylcmsprocessing/model/experiment.py" />
         <option value="$PROJECT_DIR$/pylcmsprocessing/Rscript/initial_parameters.R" />
+        <option value="$PROJECT_DIR$/pylcmsprocessing/model/optimizer.py" />
         <option value="$PROJECT_DIR$/wrapper_docker.py" />
+        <option value="$APPLICATION_CONFIG_DIR$/scratches/scratch_17.py" />
+        <option value="$PROJECT_DIR$/pylcmsprocessing/Rscript/get_polarity.R" />
+        <option value="$PROJECT_DIR$/pylcmsprocessing/model/experiment.py" />
         <option value="$PROJECT_DIR$/pylcmsprocessing/model/optimization.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="1733" />
-    <option name="y" value="179" />
+    <option name="x" value="1912" />
+    <option name="y" value="-8" />
     <option name="width" value="1936" />
-    <option name="height" value="1216" />
+    <option name="height" value="1176" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
@@ -246,6 +217,12 @@
               <item name="lcmsprocessing_docker" type="462c0819:PsiDirectoryNode" />
               <item name="pylcmsprocessing" type="462c0819:PsiDirectoryNode" />
               <item name="common" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="lcmsprocessing_docker" type="b2602c69:ProjectViewProjectNode" />
+              <item name="lcmsprocessing_docker" type="462c0819:PsiDirectoryNode" />
+              <item name="pylcmsprocessing" type="462c0819:PsiDirectoryNode" />
+              <item name="data" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="lcmsprocessing_docker" type="b2602c69:ProjectViewProjectNode" />
@@ -420,20 +397,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/pylcmsprocessing/data/to_optimize_adap.yaml">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
     <entry file="file://$PROJECT_DIR$/pylcmsprocessing/data/to_optimize.yaml">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="631">
           <caret line="41" column="7" selection-start-line="41" selection-start-column="7" selection-end-line="41" selection-end-column="7" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/pylcmsprocessing/data/parameters_set.yaml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="548">
-          <caret line="123" column="16" lean-forward="true" selection-start-line="123" selection-start-column="16" selection-end-line="123" selection-end-column="16" />
         </state>
       </provider>
     </entry>
@@ -447,33 +414,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/pylcmsprocessing/Rscript/post_processing.R">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="138">
-          <caret line="6" selection-start-line="6" selection-end-line="6" selection-end-column="34" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/pylcmsprocessing/model/parallel_runner.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="161">
-          <caret line="7" column="30" selection-start-line="7" selection-start-column="30" selection-end-line="7" selection-end-column="30" />
-          <folding>
-            <element signature="e#0#28#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/pylcmsprocessing/model/UI.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="460">
-          <caret line="32" column="48" selection-start-line="32" selection-start-column="33" selection-end-line="32" selection-end-column="48" />
-          <folding>
-            <element signature="e#0#30#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/pylcmsprocessing/common/references.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="230">
@@ -481,47 +421,102 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/pylcmsprocessing/Rscript/post_processing.R">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="138">
+          <caret line="6" selection-start-line="6" selection-end-line="6" selection-end-column="34" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pylcmsprocessing/model/UI.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="207">
+          <caret line="69" column="29" lean-forward="true" selection-start-line="69" selection-start-column="29" selection-end-line="69" selection-end-column="29" />
+          <folding>
+            <element signature="e#0#30#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pylcmsprocessing/data/to_optimize_adap.yaml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret selection-end-line="39" selection-end-column="24" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pylcmsprocessing/data/parameters_set.yaml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="474">
+          <caret line="81" column="16" lean-forward="true" selection-start-line="81" selection-start-column="2" selection-end-line="81" selection-end-column="16" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/pylcmsprocessing/Rscript/initial_parameters.R">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="414">
+        <state relative-caret-position="-3261">
           <caret line="18" selection-start-line="18" selection-end-line="18" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/pylcmsprocessing/model/LIPO.py">
+    <entry file="file://$PROJECT_DIR$/pylcmsprocessing/model/parallel_runner.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="654">
-          <caret line="159" column="68" selection-start-line="159" selection-start-column="68" selection-end-line="159" selection-end-column="68" />
+        <state relative-caret-position="828">
+          <caret line="36" selection-start-line="36" selection-end-line="37" selection-end-column="39" />
+          <folding>
+            <element signature="e#0#28#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pylcmsprocessing/model/optimizer.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="184">
+          <caret line="167" column="42" lean-forward="true" selection-start-line="167" selection-start-column="42" selection-end-line="167" selection-end-column="42" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/pylcmsprocessing/model/experiment.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="269">
-          <caret line="77" column="27" selection-start-line="77" selection-start-column="27" selection-end-line="77" selection-end-column="27" />
-          <folding>
-            <element signature="e#0#14#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/wrapper_docker.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="269">
-          <caret line="106" column="17" selection-start-line="106" selection-start-column="17" selection-end-line="106" selection-end-column="17" />
+        <state relative-caret-position="223">
+          <caret line="104" column="45" lean-forward="true" selection-start-line="104" selection-start-column="45" selection-end-line="104" selection-end-column="45" />
           <folding>
             <element signature="e#1#10#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$APPLICATION_CONFIG_DIR$/scratches/scratch_17.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="46">
+          <caret line="2" column="27" lean-forward="true" selection-start-line="2" selection-start-column="27" selection-end-line="2" selection-end-column="27" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pylcmsprocessing/Rscript/get_polarity.R">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="299">
+          <caret line="13" column="6" lean-forward="true" selection-start-line="13" selection-start-column="6" selection-end-line="13" selection-end-column="6" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pylcmsprocessing/model/experiment.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="637">
+          <caret line="108" column="29" lean-forward="true" selection-start-line="108" selection-start-column="29" selection-end-line="108" selection-end-column="29" />
+          <folding>
+            <element signature="e#0#14#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/pylcmsprocessing/model/optimization.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="437">
-          <caret line="175" column="48" selection-start-line="175" selection-start-column="48" selection-end-line="175" selection-end-column="48" />
+        <state relative-caret-position="471">
+          <caret line="153" column="17" lean-forward="true" selection-start-line="153" selection-start-column="17" selection-end-line="153" selection-end-column="17" />
           <folding>
             <element signature="e#80#94#0" expanded="true" />
           </folding>

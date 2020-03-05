@@ -11,6 +11,8 @@ xraw <- openMSfile(PATH_RAW)
 pol <- unique(header(xraw)[,"polarity"])
 if( pol==1 || pol=="1" || startsWith(tolower(pol),"pos")){
   pol <- "positive"
+}else{
+  pol <- "negative"
 }
 
 f <- file(OUTPUT,"w")

@@ -88,30 +88,29 @@ class Experiment:
             self.close_db()
         return val
 
-    def guess_polarity(self):
-        # PATH_RAW < - args[1]
-        # OUTPUT < - args[2]
-        ##We extract the path of the first raw files:s
-        raw_files = self.get_query("SELECT path FROM samples")
-        sel_samp = len(raw_files)//2
-        path_raw = raw_files[sel_samp][0]
-        output= self.output.getFile(cr.OUT["POLARITY"])
-        pscript = os.path.join(ct.find_rscript(),"get_polarity.R")
+    def guess_polarity(self,input_path=None):
+        path_raw = None
+        output = self.output.getFile(cr.OUT["POLARITY"])
+        pscript = os.path.join(ct.find_rscript(), "get_polarity.R")
+        if input_path is None:
+            raw_files = self.get_query("SELECT path FROM samples")
+            sel_samp = len(raw_files)//2
+            path_raw = raw_files[sel_samp][0]
+        else:
+            all_path = [os.path.join(input_path,pp) for pp in os.listdir(input_path)]
+            path_raw = all_path[0]
         args = ["Rscript",pscript,path_raw, output]
         cli = " ".join(args)
         ##We call the script eventually.
         subprocess.call(cli,shell=True)
         ##We now read the output file
         with open(output, "r") as f:
-            polarity = f.readline()
+            polarity = f.readline().rstrip()
         ###We remoe the path.
-        os.remove(output)
+        # os.remove(output)
         self.polarity = polarity
         os.environ["POLARITY"]=polarity
         return polarity
-
-
-
 
     def get_polarity(self, open=True):
         if open:

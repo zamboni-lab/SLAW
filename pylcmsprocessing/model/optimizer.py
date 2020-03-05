@@ -2,6 +2,7 @@ import math
 ###We impote the minimization function
 import numpy as np
 import inspect
+import concurrent.futures
 
 
 ###We consider that
@@ -166,6 +167,77 @@ def LIPO(lb,ub,func,max_call=50,initial_points = 4,fixed_arguments=None):
   ###We just have oto return the best values now
   mpos = val_points.index(max(val_points))
   return(points[mpos,:])
+
+###Stupid random grid search
+def random_grid(lb,ub,func,max_call=1000,num_points=1000,fixed_arguments=None):
+  '''
+  :param constraints: a scipy.optimize.Bounds object
+  :param func: The function ot be optimized
+  :param max_call: The maximum number of call to the function allowed INCLUDING the initial points
+  :param initial_points: The number of initial point sused for bounds estimation
+  :return: The optimized paramters
+  '''
+  ###We count the number of arguments
+  if fixed_arguments is None:
+    fixed_arguments = {}
+  args_name = inspect.getfullargspec(func)[0]
+
+  to_optimize = [name for name in args_name if name not in fixed_arguments]
+  # print(to_optimize)
+
+  ##We read the dimension from the contraints
+  ndim = len(lb)
+  if len(to_optimize) != ndim:
+    raise Exception("Arguments don't match.")
+
+  counter = 0
+  vpar = [None]*ndim
+  ##We first inestigate hos may point
+
+  ###We just sample every parameters across the different
+  for idx, (ilb,iub) in enumerate(zip(lb,ub)):
+    par_seq = np.random.uniform(ilb, iub, num_points)
+    vpar[idx] = par_seq
+
+  ###We initialize the points matrix
+  points = np.array(vpar).T
+
+
+  def wrap_func(x,min_names,fixed):
+    dict_min = dict(zip(min_names,x))
+    dict_call = {**dict_min,**fixed}
+    ###We compute the function value
+    return func(**dict_call)
+
+  with concurrent.futures.ProcessPoolExecutor(self.max_jobs) as executor:
+    executor.map(run_cl, largs)
+
+
+  while counter < max_call:
+    ###we start by finding a first minimization point
+    x0 = [0.0] * ndim
+    ###We sample the inital k values
+    for ik in range(ndim):
+      ##The intial guess of the data.
+      x0[ik]= np.random.uniform(lb[ik],ub[ik],1)[0]
+    new_point = maximize_upper_bound(points[range(counter),:], val_points, k, lb,ub)
+    ###if the returned point is None it s that we already found an upper boud.
+    if new_point is None:
+      break
+    ###If the point is already present
+
+    ###This is done in parallel for every paramters
+    val_new_point = wrap_func(new_point,to_optimize,fixed_arguments)
+    val_points.append(val_new_point)
+    points[counter,:] = new_point
+    ##We recompute the Lipschitz constant evnetually
+    counter = counter+1
+    k = calculateLipschitzConstant(points[range(counter),:], val_points)
+  ###We just have oto return the best values now
+  mpos = val_points.index(max(val_points))
+  return(points[mpos,:])
+
+
 
 
 if __name__=="__main__":
