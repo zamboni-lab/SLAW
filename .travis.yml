@@ -13,4 +13,8 @@ services:
 before_install:
   - docker build -t lcms_workflow_zamboni:latest .
 script:
+  - echo $TRAVIS_BUILD_DIR
+  - ls $TRAVIS_BUILD_DIR
+  - echo ${TRAVIS_BUILD_DIR}
+  - ls ${TRAVIS_BUILD_DIR}
   - docker run lcms_workflow_zamboni:latest -v ${TRAVIS_BUILD_DIR}/tests/input:/input -v ${TRAVIS_BUILD_DIR}/tests/output:/output -e POLARITY=positive -e USERNAME=test lcms_worfklow_zamboni

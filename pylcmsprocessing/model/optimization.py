@@ -107,13 +107,11 @@ grouping_alpha,grouping_num_references,fixed_params):
     with open(stored_param, 'w') as outfile:
         yaml.dump(raw_yaml, outfile, default_flow_style=False)
 
-    PATH_DB = "/temp_processing"+str(hash_val)+"_db.sqlite"
-    if "CLUSTER" in os.environ:
-        PATH_DB = os.path.join(OUTPUT_DIR,"/temp_processing"+str(hash_val)+"_db.sqlite")
+    PATH_DB = os.path.join(OUTPUT_DIR,"temp_processing"+str(hash_val)+"_db.sqlite")
     # LOG = "/log.txt"
     #Procesinf of the pipeline eventually.
     PATH_SAVE_DB = os.path.join(OUTPUT_DIR,"processing_db.sqlite")
-    PATH_XML = os.path.join(OUTPUT_DIR,"/temp_par"+str(hash_val)+".xml")
+    PATH_XML = os.path.join(OUTPUT_DIR,"temp_par"+str(hash_val)+".xml")
 
     exp = me.Experiment(PATH_DB,save_db = PATH_SAVE_DB,reset=False)
     ###We create the UI

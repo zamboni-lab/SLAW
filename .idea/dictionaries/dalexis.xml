@@ -3356,6 +3356,7 @@
       <w>WorldPhones</w>
       <w>WriteMspFile</w>
       <w>X11</w>
+      <w>X13CMS</w>
       <w>XChromatogram</w>
       <w>XChromatograms</w>
       <w>XDouble</w>
@@ -11076,6 +11077,7 @@
       <w>filterFeatureDefinitions</w>
       <w>filterFile</w>
       <w>filterIdentificationDataFrame</w>
+      <w>filterIsoDiffReport</w>
       <w>filterIsolationWindow</w>
       <w>filterMsLevel</w>
       <w>filterMultiplicity</w>
@@ -12230,6 +12232,8 @@
       <w>getIntegers.Arguments</w>
       <w>getInternalAddress</w>
       <w>getInternalAddress.Object</w>
+      <w>getIsoDiffReport</w>
+      <w>getIsoLabelReport</w>
       <w>getIsolistanClique</w>
       <w>getIsotope</w>
       <w>getIsotopeCluster</w>
@@ -12394,6 +12398,7 @@
       <w>getPath.Package</w>
       <w>getPcId</w>
       <w>getPcaVarVn</w>
+      <w>getPeakIntensities</w>
       <w>getPeaklist</w>
       <w>getPeaklistanClique</w>
       <w>getPeaks</w>
@@ -16529,6 +16534,7 @@
       <w>mineClosedSubgraphs</w>
       <w>mineMS2</w>
       <w>mini.roots</w>
+      <w>miniDiffReport</w>
       <w>minify</w>
       <w>minimal.st.separators</w>
       <w>minimal_html</w>
@@ -18315,6 +18321,8 @@
       <w>plotHierarchy</w>
       <w>plotHistogram</w>
       <w>plotIllnessDeathModel</w>
+      <w>plotIsoDiffReport</w>
+      <w>plotLabelReport</w>
       <w>plotLinearTrendTestDesign</w>
       <w>plotLocalMax</w>
       <w>plotLocation</w>
@@ -18398,6 +18406,7 @@
       <w>plotTable</w>
       <w>plotTolIntNormDesign</w>
       <w>plotTolIntNparDesign</w>
+      <w>plotTotalIsoPools</w>
       <w>plotTree</w>
       <w>plotTreeTime</w>
       <w>plotViewport</w>
@@ -18920,6 +18929,7 @@
       <w>printError</w>
       <w>printFlush</w>
       <w>printHead</w>
+      <w>printIsoListOutputs</w>
       <w>printSpMatrix</w>
       <w>printSpMatrix2</w>
       <w>printStackTrace</w>

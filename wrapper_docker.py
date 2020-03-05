@@ -112,7 +112,6 @@ if __name__=="__main__":
         PATH_OPTIM = os.path.join(OUTPUT_DIR, "temp_optim")
         if not os.path.isdir(PATH_OPTIM):
             os.makedirs(PATH_OPTIM)
-        print("Opitmizing in "+PATH_OPTIM)
         par_opt = ParametersOptimizer(exp, PATH_OPTIM, nrounds=num_iter, input_par=None)
         par_opt.optimize_parameters(vui.path_yaml)
         ###In this case we optimize the parameter
