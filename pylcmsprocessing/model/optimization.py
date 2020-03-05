@@ -80,11 +80,10 @@ grouping_alpha,grouping_num_references,fixed_params):
                                                                                              peakpicking_peaks_deconvolution_rt_wavelet_max,peakpicking_peaks_deconvolution_coefficient_area_threshold,
                                                                                              grouping_ppm,grouping_drt,grouping_dmz,grouping_alpha,grouping_num_references)
 
-    need_processing = is_processed(stored_param,SUMMARY_YAML)
-    if need_processing[0]:
-        return float(need_processing[1])
+    processed = is_processed(stored_param,SUMMARY_YAML)
+    if processed[0]:
+        return float(processed[1])
 
-    if not need_processing[0]:
     ###We create a temporary directory to put the data in
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     LOG_PATH = os.path.join(OUTPUT_DIR,"log.txt")
