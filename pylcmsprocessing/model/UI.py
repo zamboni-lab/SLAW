@@ -56,9 +56,8 @@ class UI:
 
         ###Centroidization noise level MS1
         root[1][2][0][0].text=str(raw_yaml['peakpicking']['noise_level_ms1']['value'])
-
         ###Centroidization noise level MS2
-        root[2][2][0][0].text=str(raw_yaml['peakpicking']['noise_level_ms1']['value'])
+        root[2][2][0][0].text=str(raw_yaml['peakpicking']['noise_level_ms2']['value'])
 
         ###Mass traces construction
         root[3][3].text=str(raw_yaml['peakpicking']['traces_construction']['min_scan']['value'])

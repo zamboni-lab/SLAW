@@ -91,6 +91,8 @@ mergeSpectra <- function(x,specs,tab_summary,cos_thresh=0.7,round=10){
       }
       tau <- tau-tau_min
     }
+    ###We return the samples in which this is separated.
+    
     ###Returning the cluster and the idx
     return(list(clust_idx[to_consider],representative_spec[to_consider],
                 representative_idx[to_consider]))
@@ -146,16 +148,15 @@ writeMgfDataFileToConnection <- function (splist, con, TITLE = NULL,
 
 args <- commandArgs(trailingOnly = TRUE)
 
-print(args)
 # args <- c("U:/users/Alexis/data/all_2mins/res_neg_2/processing_db.sqlite",
 #           "4","E:/fused_mgf.mgf","E:/out_csv.csv","E:/tmp_rename_csv.csv")
 
-# args <- c("/sauer1/users/Alexis/examples_lcms_workflow/output/temp_processing_db.sqlite","5",                                                                                                         
-# "/sauer1/users/Alexis/examples_lcms_workflow/output/fused_mgf/fused_mgf_3063282bcc8e77018d0b6912579a4115.mgf",
-# "/sauer1/users/Alexis/examples_lcms_workflow/output/temp/temp1",                                             
-# "/sauer1/users/Alexis/examples_lcms_workflow/output/temp/temp2")
-# library(stringr)
-# args <-str_replace(args,"/sauer1/","U:/")
+args <- c("/sauer1/users/Alexis/examples_lcms_workflow/output/processing_db.sqlite","5",
+"/sauer1/users/Alexis/examples_lcms_workflow/output/fused_mgf/fused_mgf_3063282bcc8e77018d0b6912579a4115.mgf",
+"/sauer1/users/Alexis/examples_lcms_workflow/output/temp/temp1",
+"/sauer1/users/Alexis/examples_lcms_workflow/output/temp/temp2")
+library(stringr)
+args <-str_replace(args,"/sauer1/","U:/")
 
 
 PATH_DB <- args[1]
@@ -164,9 +165,6 @@ NUM_CORES <- as.numeric(args[2])
 PATH_MGF <- args[3]
 TEMP_LOCATION <- args[4]
 TEMP_FILE_SWITCHING <- args[5]
-
-
-
 
 ##Can be changed evnetually.
 MZ_TOL <- 0.002
@@ -191,24 +189,10 @@ PATH_MSMS <- dbGetQuery(dbb, "SELECT output_ms2 FROM processing")[, 1]
 dbDisconnect(dbb)
 
 
-
-
-# if(FALSE){
-#   library(stringr)
-#   PATH_MSMS <- str_replace(PATH_MSMS,"/sauer1","U:")
-#   dbb <- dbConnect(RSQLite:::SQLite(), "U:/users/Alexis/examples_lcms_workflow/output/processing_db.sqlite")
-#   PATH_DATAMATRIX <- dbGetQuery(dbb, "SELECT peaktable FROM peakpicking")[, 1]
-#   dbDisconnect(dbb)
-#   PATH_DATAMATRIX <- str_replace(PATH_DATAMATRIX,"/sauer1","U:")
-#   
-#   dbb <- dbConnect(RSQLite:::SQLite(), "U:/users/Alexis/examples_lcms_workflow/output/processing_db.sqlite")
-#   PATH_MSMS <- dbGetQuery(dbb, "SELECT output_ms2 FROM processing")[, 1]
-#   dbDisconnect(dbb)
-#   PATH_MSMS <- str_replace(PATH_MSMS,"/sauer1","U:")
-# 
-# }
-
+PATH_MSMS <-str_replace(PATH_MSMS,"/sauer1/","U:/")
+PATH_DATAMATRIX <-str_replace(PATH_DATAMATRIX,"/sauer1/","U:/")
 PATH_MSMS <- PATH_MSMS[file.exists(PATH_MSMS)]
+PATH_DATAMATRIX <- PATH_DATAMATRIX[file.exists(PATH_DATAMATRIX)]
 
 ### Checking if an actual file exist
 if(length(PATH_MSMS)==0) stop("No MS2 spectra to Merge.")

@@ -1,6 +1,9 @@
 peakpicking_noise_level_ms1:
   - 500
   - 10000
+peakpicking_noise_level_ms2:
+  - 100
+  - 5000
 peakpicking_traces_construction_ppm:
   - 3
   - 15

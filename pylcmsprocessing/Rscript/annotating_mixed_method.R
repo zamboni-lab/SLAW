@@ -848,13 +848,14 @@ convertFeatures <- function(resAnnot, polarity = "negative") {
 buildDataMatrixFull <- function(dm, annot, path_output,
                                 num_line = 15000) {
   ###We write by batch to avoid memory oerloads.
+    ndm <- colnames(dm)
   cnames <-
     c("mz",
       "rt",
       "main_peak",
       "annotations",
       "neutral_mass",
-      cnames[3:ncol(dm)])
+      ndm[3:length(ndm))
   f <- file(path_output, "a")
 
   seq_line <- seq(1, length(annot), by = num_line)
@@ -908,6 +909,7 @@ buildDataMatrixSimplified <-
            vsep = ";",
            num_line = 15000) {
     ###We write by batch to avoid memory oerloads.
+    ndm <- colnames(dm)
     cnames <-
       c("mz",
         "rt",
@@ -915,7 +917,7 @@ buildDataMatrixSimplified <-
         "annotations",
         "clique",
         "neutral_mass",
-        cnames[3:ncol(dm)])
+        ndm[3:length(ndm)])
     f <- file(path_output, "a")
 
 
@@ -1019,7 +1021,6 @@ groupFeatures <-
     ###The first id needs to be -1
     current_id <- as.integer(-1)
     ##We update all the cliques.
-    message("Annotations task divided in ",length(cut_rts)-2," batch(es).")
     for (i in seq(1, length(cut_rts) - 2)) {
       message("Processing batch ",i)
       # message("Variables:",cut_rts[i],"-",cut_rts[i+2],"current cliques size is ",length(cliques))
@@ -1037,21 +1038,13 @@ groupFeatures <-
       ###we compute the cliques
       # message("Computing cliques")
       sink(file="/dev/null")
-      # sink("E:/outout.txt")
       anclique <- computeCliques(anclique, 1e-5, TRUE)
       sink(NULL)
       ###We correct the index for subselection.
       for (ic in seq_along(anclique@cliques)) {
         anclique@cliques[[ic]] <- sel_idx[anclique@cliques[[ic]]]
       }
-      # message("Merging cliques")
 
-      ###TO DEBUG only
-      # res_list <- list(cliques, anclique@cliques, assignments, size, current_id)
-      # out_path <- file.path(Sys.getenv('OUTPUT'),"save_merge.rds")
-      # saveRDS(res_list,file = out_path)
-
-      # ocliques <- cliques
       cliques <-
         mergeCliques(cliques, anclique@cliques, assignments, size, current_id)
 

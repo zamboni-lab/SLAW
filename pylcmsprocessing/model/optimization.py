@@ -45,7 +45,7 @@ def convert_val(x):
 
 
 # def peak_picking_alignment_scoring(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14,fixed_params):
-def peak_picking_alignment_scoring(peakpicking_noise_level_ms1,peakpicking_traces_construction_ppm,peakpicking_traces_construction_dmz,
+def peak_picking_alignment_scoring(peakpicking_noise_level_ms1,peakpicking_noise_level_ms2,peakpicking_traces_construction_ppm,peakpicking_traces_construction_dmz,
 peakpicking_traces_construction_min_scan,peakpicking_peaks_deconvolution_SN,peakpicking_peaks_deconvolution_peak_width_min,
 peakpicking_peaks_deconvolution_rt_wavelet_min,peakpicking_peaks_deconvolution_rt_wavelet_max,
 peakpicking_peaks_deconvolution_coefficient_area_threshold,grouping_ppm,grouping_drt,grouping_dmz,
@@ -73,7 +73,7 @@ grouping_alpha,grouping_num_references,fixed_params):
     DIR_TEMP,STORAGE_YAML,SUMMARY_YAML,num_cpus,polarity,path_samples,initial_yaml=fixed_params
 
     ###we create the directory andget the path which will be used in the data.
-    hash_val,OUTPUT_DIR,PATH_DB,PATH_SAVE_DB,stored_param,stored_xml = create_temp_directory(DIR_TEMP,STORAGE_YAML,peakpicking_noise_level_ms1,
+    hash_val,OUTPUT_DIR,PATH_DB,PATH_SAVE_DB,stored_param,stored_xml = create_temp_directory(DIR_TEMP,STORAGE_YAML,peakpicking_noise_level_ms1,peakpicking_noise_level_ms2,
                                                                                              peakpicking_traces_construction_ppm,peakpicking_traces_construction_dmz,
                                                                                              peakpicking_traces_construction_min_scan,peakpicking_peaks_deconvolution_SN,
                                                                                              peakpicking_peaks_deconvolution_peak_width_min,peakpicking_peaks_deconvolution_rt_wavelet_min,
@@ -95,6 +95,7 @@ grouping_alpha,grouping_num_references,fixed_params):
 
     ##We update the parameters to reflect the rest of the data
     raw_yaml["peakpicking"]["noise_level_ms1"]["value"]=float(convert_val(peakpicking_noise_level_ms1))
+    raw_yaml["peakpicking"]["noise_level_ms2"]["value"]=float(convert_val(peakpicking_noise_level_ms2))
     raw_yaml["peakpicking"]["traces_construction"]["ppm"]["value"]=float(convert_val(peakpicking_traces_construction_ppm))
     raw_yaml["peakpicking"]["traces_construction"]["dmz"]["value"]=float(convert_val(peakpicking_traces_construction_dmz))
     raw_yaml["peakpicking"]["traces_construction"]["min_scan"]["value"]=int(convert_val(peakpicking_traces_construction_min_scan))
@@ -151,7 +152,7 @@ grouping_alpha,grouping_num_references,fixed_params):
         return -1
 
     ###We write the score in the table
-    to_join = [peakpicking_noise_level_ms1,peakpicking_traces_construction_ppm,peakpicking_traces_construction_dmz,
+    to_join = [peakpicking_noise_level_ms1,peakpicking_noise_level_ms2,peakpicking_traces_construction_ppm,peakpicking_traces_construction_dmz,
                peakpicking_traces_construction_min_scan,peakpicking_peaks_deconvolution_SN,
                 peakpicking_peaks_deconvolution_peak_width_min,peakpicking_peaks_deconvolution_rt_wavelet_min,
                 peakpicking_peaks_deconvolution_rt_wavelet_max,peakpicking_peaks_deconvolution_coefficient_area_threshold,
@@ -162,8 +163,8 @@ grouping_alpha,grouping_num_references,fixed_params):
     ###We wrtie the header if it is the first one.
     if not os.path.isfile(SUMMARY_YAML):
         ##We write the path name.
-        to_join=["path_parameters","score"]+["peakpicking_noise_level_ms1","peakpicking_traces_construction_ppm","peakpicking_traces_construction_dmz",
-                "peakpicking_traces_construction_min_scan","peakpicking_peaks_deconvolution_SN",
+        to_join=["path_parameters","score"]+["peakpicking_noise_level_ms1","peakpicking_noise_level_ms2","peakpicking_traces_construction_ppm",
+                                             "peakpicking_traces_construction_dmz","peakpicking_traces_construction_min_scan","peakpicking_peaks_deconvolution_SN",
                 "peakpicking_peaks_deconvolution_peak_width_min","peakpicking_peaks_deconvolution_rt_wavelet_min",
                 "peakpicking_peaks_deconvolution_rt_wavelet_max","peakpicking_peaks_deconvolution_coefficient_area_threshold",
                 "grouping_ppm","grouping_drt","grouping_dmz","grouping_alpha","grouping_num_references"]
@@ -179,6 +180,7 @@ grouping_alpha,grouping_num_references,fixed_params):
 
 def get_yaml_value(raw_yaml,key):
     dic = {"peakpicking_noise_level_ms1":raw_yaml["peakpicking"]["noise_level_ms1"]["value"],
+           "peakpicking_noise_level_ms2": raw_yaml["peakpicking"]["noise_level_ms2"]["value"],
           "peakpicking_traces_construction_ppm":raw_yaml["peakpicking"]["traces_construction"]["ppm"]["value"],
            "peakpicking_traces_construction_dmz":raw_yaml["peakpicking"]["traces_construction"]["dmz"]["value"],
             "peakpicking_traces_construction_min_scan":raw_yaml["peakpicking"]["traces_construction"]["min_scan"]["value"],
@@ -298,6 +300,7 @@ class ParametersOptimizer:
         ##We update the parameters to reflect the rest of the data
         ## Noise level should be tuned by the user
         raw_yaml["peakpicking"]["noise_level_ms1"]["value"] = self.best_par["peakpicking_noise_level_ms1"]
+        raw_yaml["peakpicking"]["noise_level_ms2"]["value"] = self.best_par["peakpicking_noise_level_ms2"]
 
         ## Ppm and dmz are mass spectrometer dependent, can be read or set by the user.
         raw_yaml["peakpicking"]["traces_construction"]["ppm"]["value"] = convert_val(self.best_par["peakpicking_traces_construction_ppm"])
