@@ -41,6 +41,7 @@ convertToCliqueMS <- function(dm,
                               maxPeaks = 5000) {
   suppressMessages(library(MSnbase, warn.conflicts = FALSE))
   suppressMessages(library(xcms, warn.conflicts = FALSE))
+  suppressMessages(library(data.table, warn.conflicts = FALSE))
   mzdata <- readRDS(file = ref_xcms)
   sel_idx <- NULL
   if (missing(idx)) {
@@ -161,7 +162,7 @@ computeNetworkRawfile <-
                                   ref_xcms = "X:/Documents/dev/script/diverse/xcms_raw_with_peaks.RData") {
       suppressMessages(library(MSnbase, warn.conflicts = FALSE))
       suppressMessages(library(xcms, warn.conflicts = FALSE))
-      sel_idx <- which(!is.na(dm[,..idx]))
+      suppressMessages(library(data.table, warn.conflicts = FALSE))
       mzdata <- readRDS(file = ref_xcms)
       sel_idx <- NULL
       if (missing(idx)) {
@@ -723,13 +724,10 @@ annotateCliqueInterpretMSspectrum <-
       # if(any(all_features[[num_feat]][,"mz"])) browser()
       ##We remove the selected features.
       sel_idx <- sel_idx[-sel_feat]
-
-
     }
-
     num_annot <- sum(sapply(all_features[1:(num_feat-1)],nrow))
-
-    if(num_annot!=length(clique)){
+    if(num_annot!=length(sel_clust_idx)){
+      # message("mistake")
       ## Once the main adducts are detected we add the non grouped isotopes.
       annot <- cbind(sel_clust_idx[sel_idx],annots[[1]][sel_idx,,drop=FALSE])
       colnames(annot) <-
@@ -739,6 +737,7 @@ annotateCliqueInterpretMSspectrum <-
       ###We split by values
       val_split <- split.data.frame(annot,f = annot$isogr)
       supp_data <- 1:nrow(annot)
+      # message("val_split",length(val_split))
       if(length(val_split)!=0){
         ###We add the isotopes to the features table.
         all_features[num_feat:(num_feat+length(val_split)-1)] <- val_split
@@ -753,6 +752,7 @@ annotateCliqueInterpretMSspectrum <-
       }
       ###If there is anything non annotated we add it.
       if(length(supp_data)!=0){
+        # message("split_data",supp_data)
         ###All the rest is non annotated.
         val_split <- split.data.frame(annot[supp_data,,drop=FALSE],f = 1:length(supp_data))
         all_features[num_feat:(num_feat+length(val_split)-1)] <- val_split
@@ -855,7 +855,7 @@ buildDataMatrixFull <- function(dm, annot, path_output,
       "main_peak",
       "annotations",
       "neutral_mass",
-      ndm[3:length(ndm))
+      ndm[3:length(ndm)])
   f <- file(path_output, "a")
 
   seq_line <- seq(1, length(annot), by = num_line)
@@ -919,8 +919,7 @@ buildDataMatrixSimplified <-
         "neutral_mass",
         ndm[3:length(ndm)])
     f <- file(path_output, "a")
-
-
+    
     seq_line <- seq(1, length(annot), by = num_line)
     if (seq_line[length(seq_line)] != length(annot)) {
       seq_line <- c(seq_line, length(annot))
@@ -948,6 +947,9 @@ buildDataMatrixSimplified <-
             clique = an[1, "clique_label"],
             neutral_mass = neutral_mass
           )
+        ##We fuse the MS2 information column
+
+
         tdf <- cbind(tdf, dm[refv, 3:ncol(dm)])
         colnames(tdf) <-
           c("mz",
@@ -1100,23 +1102,6 @@ groupFeatures <-
 
 ####Actual processing in the pipeline.
 args <- commandArgs(trailingOnly = TRUE)
-# args <- c("U:/users/Alexis/examples_lcms_workflow/output/datamatrices/datamatrix_3063282bcc8e77018d0b6912579a4115.csv",
-# "U:/users/Alexis/examples_lcms_workflow/output/processing_db.sqlite",
-# "U:/users/Alexis/examples_lcms_workflow/output/datamatrices/annotated_peaktable_3063282bcc8e77018d0b6912579a4115_full.csv",
-# "U:/users/Alexis/examples_lcms_workflow/output/datamatrices/annotated_peaktable_3063282bcc8e77018d0b6912579a4115_reduced.csv",
-# "5",
-# "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/xcms_raw_model.RData",
-# "U://users/Alexis/examples_lcms_workflow/output/temp/adducts.csv",
-# "U://users/Alexis/examples_lcms_workflow/output/temp/main_adducts.csv",
-# "positive",
-# "15.0",
-# "0.01",
-# "50",
-# "2",
-# "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/Rscript/cliques_matching.cpp")
-
-
-# print(args)
 
 PATH_DATAMATRIX <- args[1]
 PATH_DB <- args[2]
@@ -1137,44 +1122,6 @@ NUM_BY_BATCH <- 7000
 if (length(args) == 15) {
   NUM_BY_BATCH <- as.numeric(args[15])
 }
-#
-
-###Debuggiong the test on karin data
-# PATH_DATAMATRIX <- "U:/users/Alexis/data/data_karin/mml_v2/neg/res_thin/datamatrices/datamatrix_b01904e0a545f19857549535352af3b9.csv"
-# PATH_DB <- "U:/users/Alexis/data/data_karin/mml_v2/neg/res/processing_db.sqlite"
-# PATH_OUTPUT_FULL <- "E:/out_full.csv"
-# PATH_OUTPUT_SIMPLE <- "E:/out_simple.csv"
-# NUM_CORES <- as.numeric(4)
-# PATH_MODEL <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/xcms_raw_model.RData"
-# PATH_ADDUCTS <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_neg.txt"
-# PATH_MAIN_ADDUCTS <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_main_neg.txt"
-# POLARITY <- "negative"
-# PPM <-  as.numeric(20)
-# DMZ <-  as.numeric(0.02)
-# FILTER_NUMS <- max(1,as.numeric(2))
-# FILES_USED <- 4
-# PATH_MATCHING <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/Rscript/cliques_matching.cpp"
-# NUM_BY_BATCH <- 20000
-
-###Debugging the standard workflow for Michele data
-
-# PATH_DATAMATRIX <- "U:/users/Alexis/data/FA_ARA_pos_DDA_subset/output/datamatrices/datamatrix_47981815f535c26fc039a023adfc4fb8.csv"
-# PATH_DB <- "U:/users/Alexis/data/FA_ARA_pos_DDA_subset/output/processing_db.sqlite"
-# PATH_OUTPUT_FULL <- "E:/out_full.csv"
-# PATH_OUTPUT_SIMPLE <- "E:/out_simple.csv"
-# NUM_CORES <- as.numeric(4)
-# PATH_MODEL <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/xcms_raw_model.RData"
-# PATH_ADDUCTS <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_pos.txt"
-# PATH_MAIN_ADDUCTS <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/data/adducts_main_pos.txt"
-# POLARITY <- "positive"
-# PPM <-  as.numeric(20)
-# DMZ <-  as.numeric(0.02)
-# FILTER_NUMS <- max(1,as.numeric(2))
-# FILES_USED <- 4
-# PATH_MATCHING <- "C:/Users/dalexis/Documents/python/lcmsprocessing/pylcmsprocessing/Rscript/cliques_matching.cpp"
-# NUM_BY_BATCH <- 8000
-
-##Debugging standard workflow
 
 ##reading data matrices
 dm <- fread(PATH_DATAMATRIX, header = TRUE, sep = ",")
@@ -1197,12 +1144,9 @@ dm <- dm[vdetect, , drop = FALSE]
 
 ###Reading the raw files
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
-raw_files <- dbGetQuery(dbb, "SELECT path FROM samples")[, 1]
+raw_files <- dbGetQuery(dbb, "SELECT path FROM samples WHERE level='MS1'")[, 1]
 dbDisconnect(dbb)
  # raw_files <- str_replace(raw_files,pattern = "/sauer1",replacement = "U:")
-
-###To debug Michael data onlu
-# raw_files <- str_replace(raw_files,pattern = "/input",replacement = "U:/users/Alexis/data/FA_ARA_pos_DDA_subset/input")
 
 ####Selecting the msot intense files
 val_int <- apply(dm[, ..posIntensities], 2, sum, na.rm = TRUE)
@@ -1219,7 +1163,7 @@ if (get_os() == "win") {
 } else{
   bpp <- MulticoreParam(workers = min(NUM_CORES, 4),progressbar=TRUE)
 }
-bpp <- SerialParam(progressbar=TRUE)
+# bpp <- SerialParam(progressbar=TRUE)
 
 opened_raw_files <- sapply(raw_files,readMSData, mode = "onDisk")
 

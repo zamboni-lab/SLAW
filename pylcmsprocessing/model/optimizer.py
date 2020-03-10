@@ -107,9 +107,7 @@ def LIPO(lb,ub,func,max_call=50,initial_points = 4,fixed_arguments=None):
   if fixed_arguments is None:
     fixed_arguments = {}
   args_name = inspect.getfullargspec(func)[0]
-
   to_optimize = [name for name in args_name if name not in fixed_arguments]
-  # print(to_optimize)
 
   ##We read the dimension from the contraints
   ndim = len(lb)
@@ -168,8 +166,14 @@ def LIPO(lb,ub,func,max_call=50,initial_points = 4,fixed_arguments=None):
   mpos = val_points.index(max(val_points))
   return(points[mpos,:])
 
-###Stupid random grid search
-def random_grid(lb,ub,func,max_call=1000,num_points=1000,fixed_arguments=None):
+
+def wrap_func_dic(x):
+  func = x.pop("fun")
+  ###We compute the function value
+  return func(**x)
+
+###We randomly sample some point in the data eventually
+def random_sampling_with_limits(lb,ub,func,num_points=1000,num_cores = None,fixed_arguments=None):
   '''
   :param constraints: a scipy.optimize.Bounds object
   :param func: The function ot be optimized
@@ -178,66 +182,36 @@ def random_grid(lb,ub,func,max_call=1000,num_points=1000,fixed_arguments=None):
   :return: The optimized paramters
   '''
   ###We count the number of arguments
+  if num_cores is None:
+    num_cores = 1
+
   if fixed_arguments is None:
     fixed_arguments = {}
   args_name = inspect.getfullargspec(func)[0]
-
   to_optimize = [name for name in args_name if name not in fixed_arguments]
-  # print(to_optimize)
 
   ##We read the dimension from the contraints
   ndim = len(lb)
   if len(to_optimize) != ndim:
     raise Exception("Arguments don't match.")
 
-  counter = 0
-  vpar = [None]*ndim
-  ##We first inestigate hos may point
+  val_par = [None]*ndim
 
   ###We just sample every parameters across the different
   for idx, (ilb,iub) in enumerate(zip(lb,ub)):
     par_seq = np.random.uniform(ilb, iub, num_points)
-    vpar[idx] = par_seq
+    val_par[idx] = par_seq
 
-  ###We initialize the points matrix
-  points = np.array(vpar).T
-
-
-  def wrap_func(x,min_names,fixed):
-    dict_min = dict(zip(min_names,x))
-    dict_call = {**dict_min,**fixed}
-    ###We compute the function value
-    return func(**dict_call)
-
-  with concurrent.futures.ProcessPoolExecutor(self.max_jobs) as executor:
-    executor.map(run_cl, largs)
+  ###We reshape the data frame in a list of dictionnary
+  all_dict = [{**dict(zip(to_optimize, cargs)),**fixed_arguments,"fun":func} for cargs in zip(*val_par)]
+  with concurrent.futures.ProcessPoolExecutor(max_workers=num_cores) as executor:
+    vres = list(map(wrap_func_dic, all_dict))
+  pindex = vres.index(max(vres))
+  params = tuple([x[pindex] for x in val_par])
+  return params
 
 
-  while counter < max_call:
-    ###we start by finding a first minimization point
-    x0 = [0.0] * ndim
-    ###We sample the inital k values
-    for ik in range(ndim):
-      ##The intial guess of the data.
-      x0[ik]= np.random.uniform(lb[ik],ub[ik],1)[0]
-    new_point = maximize_upper_bound(points[range(counter),:], val_points, k, lb,ub)
-    ###if the returned point is None it s that we already found an upper boud.
-    if new_point is None:
-      break
-    ###If the point is already present
-
-    ###This is done in parallel for every paramters
-    val_new_point = wrap_func(new_point,to_optimize,fixed_arguments)
-    val_points.append(val_new_point)
-    points[counter,:] = new_point
-    ##We recompute the Lipschitz constant evnetually
-    counter = counter+1
-    k = calculateLipschitzConstant(points[range(counter),:], val_points)
-  ###We just have oto return the best values now
-  mpos = val_points.index(max(val_points))
-  return(points[mpos,:])
-
-
+  ###We return the value which maximize the function
 
 
 if __name__=="__main__":
@@ -245,13 +219,14 @@ if __name__=="__main__":
   ub=[3.5,2.5]
   def test(x,y,k):
     return -5*(np.sin(10*(x+y))+2*(x+y)**2)+k
-  voptim = LIPO(lb,ub,test,10,4,fixed_arguments={"k":2})
-
+  voptim = LIPO(lb,ub,test,10000,10,fixed_arguments={"k":2})
+  random_sampling_with_limits(lb, ub, test, num_points=10000, num_cores=1, fixed_arguments={"k":2})
   lb2 = [-5]
   ub2 = [5]
   def test2(x):
     return -(5*np.sin(10*x)+2*(x**2))
   voptim2 = LIPO(lb2,ub2,test2,50,4)
+
 
 
 # # Make data.

@@ -178,7 +178,7 @@ correctRt <- function(rtmodel,peaktable,extensions=c(4,0.05),maxCor = NULL,lim =
   ####We find the range end of the loess mode
   peaktable[pnna,2] <- peaktable[pnna,2]+pred_dev[pnna]
 
-  if(any(abs(cpeaktable-peaktable[,2]))>lim) peaktable[,2] <- peaktable[,2]
+  if(any(abs(cpeaktable-peaktable[,2])>lim)) peaktable[,2] <- peaktable[,2]
 
   return(peaktable)
 }

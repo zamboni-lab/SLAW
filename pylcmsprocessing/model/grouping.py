@@ -45,7 +45,7 @@ class Grouper:
 class OnlineGrouper:
     def __init__(self,row,path_db,
     blocks,alignment,out,intensity,mztol,ppm,rttol,
-    num_ref,alpha,fused_mgf,temp_dm_1,temp_dm_2,num_workers,outfig):
+    num_ref,alpha,ms2_mz_tol,ms2_rt_tol,fused_mgf,temp_dm_1,temp_dm_2,num_workers,outfig):
         self.hash = row[3]
         self.db=path_db
         self.output_data=os.path.join(out,"datamatrix_"+row[3]+".csv")
@@ -56,6 +56,8 @@ class OnlineGrouper:
         self.mztol=mztol
         self.ppm = ppm
         self.alpha=alpha
+        self.ms2_mz_tol=ms2_mz_tol
+        self.ms2_rt_tol=ms2_rt_tol
         self.rttol=rttol
         self.num_ref=num_ref
         self.fused_mgf=fused_mgf+row[3]+".mgf"
@@ -84,5 +86,5 @@ class OnlineGrouper:
     def command_line_fusing_msms(self):
         pscript = ct.find_rscript()
         command_line = os.path.join(pscript,"fusing_msms_spectra.R")
-        return " ".join(["Rscript",command_line,self.db,str(self.num_workers),
+        return " ".join(["Rscript",command_line,self.db,str(self.ms2_mz_tol),str(self.ms2_rt_tol),str(self.num_workers),
                 self.fused_mgf,self.dm_1,self.dm_2])

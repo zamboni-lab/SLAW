@@ -293,7 +293,6 @@ class ParametersOptimizer:
         # The best paramters is passed along the data
         self.best_par = final_dic
 
-
     def export_best_parameters(self,outpath):
         with open(self.input_par, 'r') as stream:
             raw_yaml = yaml.safe_load(stream)
@@ -335,6 +334,8 @@ class ParametersOptimizer:
         self.optimize_tricky_parameters()
         print("Finished  optimization")
         self.export_best_parameters(output_par)
+
+    # def sample_parameters(self,output_par):
 
 
         ###We strat by doing the initial optimization of parameters

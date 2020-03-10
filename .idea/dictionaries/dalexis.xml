@@ -6229,6 +6229,10 @@
       <w>andrewsplot</w>
       <w>angle</w>
       <w>angleAxis</w>
+      <w>angle_fixed</w>
+      <w>angle_halfcircle_bottom</w>
+      <w>angle_halfcircle_right</w>
+      <w>angle_identity</w>
       <w>animals</w>
       <w>animationOptions</w>
       <w>animation_options</w>
@@ -6530,6 +6534,7 @@
       <w>as.character.factor</w>
       <w>as.character.hexmode</w>
       <w>as.character.hi</w>
+      <w>as.character.mongo.oid</w>
       <w>as.character.numeric_version</w>
       <w>as.character.octmode</w>
       <w>as.character.srcref</w>
@@ -6994,6 +6999,7 @@
       <w>attr.all.equal</w>
       <w>attrDataItem</w>
       <w>attrDefaults</w>
+      <w>attr_rem</w>
       <w>attrassign</w>
       <w>attributes</w>
       <w>atya</w>
@@ -7617,6 +7623,8 @@
       <w>byCluster</w>
       <w>byX</w>
       <w>byXflex</w>
+      <w>by_row</w>
+      <w>by_slice</w>
       <w>bydir</w>
       <w>bystats</w>
       <w>bystats2</w>
@@ -8249,6 +8257,7 @@
       <w>clientid</w>
       <w>clip</w>
       <w>clipGrob</w>
+      <w>clip_lines</w>
       <w>clipboard</w>
       <w>clipr</w>
       <w>clipr_available</w>
@@ -9755,6 +9764,7 @@
       <w>diff.difftime</w>
       <w>diff2</w>
       <w>diffSplice</w>
+      <w>diff_mat2letter_not</w>
       <w>difference</w>
       <w>diffinv</w>
       <w>diffmeanX</w>
@@ -9911,6 +9921,9 @@
       <w>dlnormTruncAlt</w>
       <w>dlogis</w>
       <w>dlply</w>
+      <w>dmap</w>
+      <w>dmap_at</w>
+      <w>dmap_if</w>
       <w>dmicroseconds</w>
       <w>dmilliseconds</w>
       <w>dminutes</w>
@@ -10283,6 +10296,7 @@
       <w>edgelabels</w>
       <w>edgemode</w>
       <w>edges</w>
+      <w>edges2diff_mat</w>
       <w>edit</w>
       <w>editData</w>
       <w>editDetails</w>
@@ -11352,6 +11366,7 @@
       <w>fnsd</w>
       <w>foi</w>
       <w>fold</w>
+      <w>fold.change</w>
       <w>foldCount</w>
       <w>foldchange</w>
       <w>foldchange2logratio</w>
@@ -13115,6 +13130,7 @@
       <w>groupKFold</w>
       <w>groupMatrix</w>
       <w>group_close</w>
+      <w>group_correct</w>
       <w>group_ids</w>
       <w>group_rows</w>
       <w>groupedData</w>
@@ -13245,6 +13261,7 @@
       <w>h6</w>
       <w>haar2level</w>
       <w>hadamard</w>
+      <w>half.min</w>
       <w>halfspacen</w>
       <w>halley</w>
       <w>hamming.distance</w>
@@ -13379,6 +13396,7 @@
       <w>heapSort</w>
       <w>heart</w>
       <w>heat</w>
+      <w>heat.clust</w>
       <w>heat.colors</w>
       <w>heatDiagram</w>
       <w>heat_hcl</w>
@@ -14197,6 +14215,7 @@
       <w>invlap</w>
       <w>invokeRestart</w>
       <w>invokeRestartInteractively</w>
+      <w>invoke_rows</w>
       <w>ionCount</w>
       <w>ionSource</w>
       <w>ionSourceDetails</w>
@@ -14681,6 +14700,8 @@
       <w>is_ascii</w>
       <w>is_atomic</w>
       <w>is_bare</w>
+      <w>is_between</w>
+      <w>is_between_1range</w>
       <w>is_binary</w>
       <w>is_bipartite</w>
       <w>is_blob</w>
@@ -14791,12 +14812,18 @@
       <w>islay</w>
       <w>isn</w>
       <w>isoMDS</w>
+      <w>iso_to_sfg</w>
+      <w>isoband</w>
+      <w>isobands</w>
+      <w>isobands_grob</w>
       <w>isolate</w>
       <w>isolatePeaks</w>
       <w>isolationWindow</w>
       <w>isolationWindowLowerMz</w>
       <w>isolationWindowTargetMz</w>
       <w>isolationWindowUpperMz</w>
+      <w>isolines</w>
+      <w>isolines_grob</w>
       <w>isomap</w>
       <w>isomapdist</w>
       <w>isomorphic</w>
@@ -15224,6 +15251,10 @@
       <w>label_parse</w>
       <w>label_parsed</w>
       <w>label_percent</w>
+      <w>label_placer_manual</w>
+      <w>label_placer_minmax</w>
+      <w>label_placer_none</w>
+      <w>label_placer_simple</w>
       <w>label_pvalue</w>
       <w>label_scientific</w>
       <w>label_time</w>
@@ -15749,6 +15780,7 @@
       <w>loadhistory</w>
       <w>loadingNamespaceInfo</w>
       <w>loadings</w>
+      <w>loc_mat_2_group_idx</w>
       <w>local</w>
       <w>localAlignment</w>
       <w>localMaximum</w>
@@ -15849,6 +15881,7 @@
       <w>longToWide</w>
       <w>longestCommonPrefix</w>
       <w>longestCommonSuffix</w>
+      <w>longest_piece_above</w>
       <w>longley</w>
       <w>lookup</w>
       <w>lookup.xport</w>
@@ -16156,6 +16189,7 @@
       <w>mapToIntervals.numeric</w>
       <w>mapToRef</w>
       <w>map_data</w>
+      <w>map_rows</w>
       <w>mape</w>
       <w>maples</w>
       <w>maply</w>
@@ -16199,6 +16233,7 @@
       <w>maskedwidth</w>
       <w>mass</w>
       <w>massWindowSizes</w>
+      <w>massageR</w>
       <w>mat.or.vec</w>
       <w>mat3</w>
       <w>mat5M3ID</w>
@@ -16668,6 +16703,171 @@
       <w>moments</w>
       <w>mona</w>
       <w>monde84</w>
+      <w>mongo.add.user</w>
+      <w>mongo.aggregation</w>
+      <w>mongo.authenticate</w>
+      <w>mongo.binary.binary</w>
+      <w>mongo.binary.function</w>
+      <w>mongo.binary.md5</w>
+      <w>mongo.binary.old</w>
+      <w>mongo.binary.user</w>
+      <w>mongo.binary.uuid</w>
+      <w>mongo.bson.array</w>
+      <w>mongo.bson.binary</w>
+      <w>mongo.bson.bool</w>
+      <w>mongo.bson.buffer.append</w>
+      <w>mongo.bson.buffer.append.bool</w>
+      <w>mongo.bson.buffer.append.bson</w>
+      <w>mongo.bson.buffer.append.code</w>
+      <w>mongo.bson.buffer.append.code.w.scope</w>
+      <w>mongo.bson.buffer.append.complex</w>
+      <w>mongo.bson.buffer.append.double</w>
+      <w>mongo.bson.buffer.append.element</w>
+      <w>mongo.bson.buffer.append.int</w>
+      <w>mongo.bson.buffer.append.list</w>
+      <w>mongo.bson.buffer.append.long</w>
+      <w>mongo.bson.buffer.append.null</w>
+      <w>mongo.bson.buffer.append.object</w>
+      <w>mongo.bson.buffer.append.oid</w>
+      <w>mongo.bson.buffer.append.raw</w>
+      <w>mongo.bson.buffer.append.regex</w>
+      <w>mongo.bson.buffer.append.string</w>
+      <w>mongo.bson.buffer.append.symbol</w>
+      <w>mongo.bson.buffer.append.time</w>
+      <w>mongo.bson.buffer.append.timestamp</w>
+      <w>mongo.bson.buffer.append.undefined</w>
+      <w>mongo.bson.buffer.create</w>
+      <w>mongo.bson.buffer.finish.object</w>
+      <w>mongo.bson.buffer.size</w>
+      <w>mongo.bson.buffer.start.array</w>
+      <w>mongo.bson.buffer.start.object</w>
+      <w>mongo.bson.code</w>
+      <w>mongo.bson.code.w.scope</w>
+      <w>mongo.bson.date</w>
+      <w>mongo.bson.dbref</w>
+      <w>mongo.bson.destroy</w>
+      <w>mongo.bson.double</w>
+      <w>mongo.bson.empty</w>
+      <w>mongo.bson.eoo</w>
+      <w>mongo.bson.find</w>
+      <w>mongo.bson.from.JSON</w>
+      <w>mongo.bson.from.buffer</w>
+      <w>mongo.bson.from.df</w>
+      <w>mongo.bson.from.list</w>
+      <w>mongo.bson.int</w>
+      <w>mongo.bson.iterator.create</w>
+      <w>mongo.bson.iterator.key</w>
+      <w>mongo.bson.iterator.next</w>
+      <w>mongo.bson.iterator.type</w>
+      <w>mongo.bson.iterator.value</w>
+      <w>mongo.bson.long</w>
+      <w>mongo.bson.null</w>
+      <w>mongo.bson.object</w>
+      <w>mongo.bson.oid</w>
+      <w>mongo.bson.print</w>
+      <w>mongo.bson.regex</w>
+      <w>mongo.bson.size</w>
+      <w>mongo.bson.string</w>
+      <w>mongo.bson.symbol</w>
+      <w>mongo.bson.timestamp</w>
+      <w>mongo.bson.to.Robject</w>
+      <w>mongo.bson.to.list</w>
+      <w>mongo.bson.undefined</w>
+      <w>mongo.bson.value</w>
+      <w>mongo.code.create</w>
+      <w>mongo.code.w.scope.create</w>
+      <w>mongo.command</w>
+      <w>mongo.count</w>
+      <w>mongo.create</w>
+      <w>mongo.cursor.destroy</w>
+      <w>mongo.cursor.next</w>
+      <w>mongo.cursor.to.data.frame</w>
+      <w>mongo.cursor.to.list</w>
+      <w>mongo.cursor.to.rlist</w>
+      <w>mongo.cursor.value</w>
+      <w>mongo.destroy</w>
+      <w>mongo.disconnect</w>
+      <w>mongo.distinct</w>
+      <w>mongo.drop</w>
+      <w>mongo.drop.database</w>
+      <w>mongo.find</w>
+      <w>mongo.find.all</w>
+      <w>mongo.find.await.data</w>
+      <w>mongo.find.batch</w>
+      <w>mongo.find.cursor.tailable</w>
+      <w>mongo.find.exhaust</w>
+      <w>mongo.find.no.cursor.timeout</w>
+      <w>mongo.find.one</w>
+      <w>mongo.find.oplog.replay</w>
+      <w>mongo.find.partial.results</w>
+      <w>mongo.find.slave.ok</w>
+      <w>mongo.findOne</w>
+      <w>mongo.get.database.collections</w>
+      <w>mongo.get.databases</w>
+      <w>mongo.get.err</w>
+      <w>mongo.get.hosts</w>
+      <w>mongo.get.last.err</w>
+      <w>mongo.get.prev.err</w>
+      <w>mongo.get.primary</w>
+      <w>mongo.get.server.err</w>
+      <w>mongo.get.server.err.string</w>
+      <w>mongo.get.socket</w>
+      <w>mongo.get.timeout</w>
+      <w>mongo.get.values</w>
+      <w>mongo.gridfile.destroy</w>
+      <w>mongo.gridfile.get.chunk</w>
+      <w>mongo.gridfile.get.chunk.count</w>
+      <w>mongo.gridfile.get.chunk.size</w>
+      <w>mongo.gridfile.get.chunks</w>
+      <w>mongo.gridfile.get.content.type</w>
+      <w>mongo.gridfile.get.descriptor</w>
+      <w>mongo.gridfile.get.filename</w>
+      <w>mongo.gridfile.get.length</w>
+      <w>mongo.gridfile.get.md5</w>
+      <w>mongo.gridfile.get.metadata</w>
+      <w>mongo.gridfile.get.upload.date</w>
+      <w>mongo.gridfile.pipe</w>
+      <w>mongo.gridfile.read</w>
+      <w>mongo.gridfile.seek</w>
+      <w>mongo.gridfile.writer.create</w>
+      <w>mongo.gridfile.writer.finish</w>
+      <w>mongo.gridfile.writer.write</w>
+      <w>mongo.gridfs.create</w>
+      <w>mongo.gridfs.destroy</w>
+      <w>mongo.gridfs.find</w>
+      <w>mongo.gridfs.remove.file</w>
+      <w>mongo.gridfs.store</w>
+      <w>mongo.gridfs.store.file</w>
+      <w>mongo.index.TTLcreate</w>
+      <w>mongo.index.background</w>
+      <w>mongo.index.create</w>
+      <w>mongo.index.drop.dups</w>
+      <w>mongo.index.sparse</w>
+      <w>mongo.index.unique</w>
+      <w>mongo.insert</w>
+      <w>mongo.insert.batch</w>
+      <w>mongo.is.connected</w>
+      <w>mongo.is.master</w>
+      <w>mongo.oid.create</w>
+      <w>mongo.oid.from.string</w>
+      <w>mongo.oid.print</w>
+      <w>mongo.oid.time</w>
+      <w>mongo.oid.to.string</w>
+      <w>mongo.reconnect</w>
+      <w>mongo.regex.create</w>
+      <w>mongo.remove</w>
+      <w>mongo.rename</w>
+      <w>mongo.reset.err</w>
+      <w>mongo.set.timeout</w>
+      <w>mongo.shorthand</w>
+      <w>mongo.simple.command</w>
+      <w>mongo.symbol.create</w>
+      <w>mongo.timestamp.create</w>
+      <w>mongo.undefined.create</w>
+      <w>mongo.update</w>
+      <w>mongo.update.basic</w>
+      <w>mongo.update.multi</w>
+      <w>mongo.update.upsert</w>
       <w>mono.con</w>
       <w>monoMDS</w>
       <w>monoisotopicPeaks</w>
@@ -17275,6 +17475,7 @@
       <w>normalize.quantiles.in.blocks</w>
       <w>normalize.quantiles.robust</w>
       <w>normalize.quantiles.use.target</w>
+      <w>normalize01</w>
       <w>normalizeBetweenArrays</w>
       <w>normalizeCyclicLoess</w>
       <w>normalizeDoubleBracketSubscript</w>
@@ -17294,6 +17495,7 @@
       <w>normalizeVSN.default</w>
       <w>normalizeWithinArrays</w>
       <w>normalize_path</w>
+      <w>normalize_range</w>
       <w>normest</w>
       <w>normexp.fit</w>
       <w>normexp.fit.control</w>
@@ -18445,6 +18647,7 @@
       <w>plot_grid</w>
       <w>plot_hex</w>
       <w>plot_hierarchy</w>
+      <w>plot_iso</w>
       <w>plot_mnsl</w>
       <w>plot_peaks</w>
       <w>plot_signals</w>
@@ -18892,6 +19095,8 @@
       <w>print.libraryIQR</w>
       <w>print.listof</w>
       <w>print.matprint</w>
+      <w>print.mongo.bson</w>
+      <w>print.mongo.oid</w>
       <w>print.noquote</w>
       <w>print.numeric_version</w>
       <w>print.octmode</w>
@@ -19171,6 +19376,7 @@
       <w>purge_runs</w>
       <w>purityCorrect</w>
       <w>purl</w>
+      <w>purrrlyr</w>
       <w>push</w>
       <w>push.relabel.max.flow</w>
       <w>push.viewport</w>
@@ -19431,6 +19637,7 @@
       <w>ramsort.default</w>
       <w>ramsortorder</w>
       <w>rand</w>
+      <w>rand.to.min</w>
       <w>randEH</w>
       <w>randIndex</w>
       <w>rand_bytes</w>
@@ -19490,6 +19697,7 @@
       <w>ratetable</w>
       <w>ratetableDate</w>
       <w>ratinterp</w>
+      <w>ratio.w.invert</w>
       <w>rational</w>
       <w>rationalfit</w>
       <w>ratlab</w>
@@ -20096,6 +20304,7 @@
       <w>rep2abI</w>
       <w>repEach</w>
       <w>rep_len</w>
+      <w>rep_na</w>
       <w>repair_encoding</w>
       <w>repair_names</w>
       <w>repeat.time</w>
@@ -20336,6 +20545,7 @@
       <w>rmarkdown_format</w>
       <w>rmd_format</w>
       <w>rmdshot</w>
+      <w>rmongodb</w>
       <w>rms.curv</w>
       <w>rms.wavefront</w>
       <w>rmse</w>
@@ -21194,6 +21404,7 @@
       <w>seq_len</w>
       <w>seq_mnsl</w>
       <w>seq_range</w>
+      <w>seq_rel</w>
       <w>seq_root2tip</w>
       <w>seqinfo</w>
       <w>seqinr</w>
@@ -21734,6 +21945,7 @@
       <w>slice</w>
       <w>slice.affinity</w>
       <w>slice.index</w>
+      <w>slice_rows</w>
       <w>slider</w>
       <w>sliderInput</w>
       <w>slidingIRanges</w>
@@ -23430,6 +23642,7 @@
       <w>tidy_dir</w>
       <w>tidy_eval</w>
       <w>tidy_file</w>
+      <w>tidy_group_correct</w>
       <w>tidy_irlba</w>
       <w>tidy_label_colours</w>
       <w>tidy_label_descriptions</w>
@@ -24295,6 +24508,7 @@
       <w>unserializeJSON</w>
       <w>unserialize_model</w>
       <w>unsignedAdjacency</w>
+      <w>unslice</w>
       <w>unsort</w>
       <w>unsort.ahi</w>
       <w>unsort.hi</w>
@@ -25020,6 +25234,7 @@
       <w>which.edge</w>
       <w>which.is.max</w>
       <w>which.max</w>
+      <w>which.median</w>
       <w>which.min</w>
       <w>which.packet</w>
       <w>which.pmax</w>
@@ -25633,6 +25848,7 @@
       <w>zip.unpack</w>
       <w>zipdown</w>
       <w>ziplss</w>
+      <w>zips</w>
       <w>zipup</w>
       <w>zlibbioc</w>
       <w>zoom</w>

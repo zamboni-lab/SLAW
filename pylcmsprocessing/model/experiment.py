@@ -33,7 +33,7 @@ def is_converted(csvfile):
 class Experiment:
 
     #####Databases peaks
-    def __init__(self, db,save_db=None, reset=False):
+    def __init__(self, db,save_db=None, reset=False, temp_outdir = None):
 
         path_db = os.path.abspath(db)
         if os.path.isfile(path_db):
@@ -46,11 +46,14 @@ class Experiment:
         self.parameters = True
         self.peakpicking = []
         self.output = None
-        if self.db_exists():
-            self.output = oh.OutputDirectory(self.get_outdir())
-        elif self.path_save_db is not None and os.path.isfile(self.path_save_db):
-            self.load_db()
-            self.output = oh.OutputDirectory(self.get_outdir())
+        if temp_outdir is not None :
+            self.output = oh.OutputDirectory(temp_outdir)
+        else:
+            if self.db_exists():
+                self.output = oh.OutputDirectory(self.get_outdir())
+            elif self.path_save_db is not None and os.path.isfile(self.path_save_db):
+                self.load_db()
+                self.output = oh.OutputDirectory(self.get_outdir())
 
 
     def db_exists(self):
@@ -92,8 +95,11 @@ class Experiment:
         path_raw = None
         output = self.output.getFile(cr.OUT["POLARITY"])
         pscript = os.path.join(ct.find_rscript(), "get_polarity.R")
+
+
+
         if input_path is None:
-            raw_files = self.get_query("SELECT path FROM samples")
+            raw_files = self.get_query("SELECT path FROM samples WHERE level='MS1'")
             sel_samp = len(raw_files)//2
             path_raw = raw_files[sel_samp][0]
         else:
@@ -111,6 +117,8 @@ class Experiment:
         self.polarity = polarity
         os.environ["POLARITY"]=polarity
         return polarity
+
+
 
     def get_polarity(self, open=True):
         if open:
@@ -231,18 +239,20 @@ class Experiment:
         self.close_db()
 
     def get_samples(self):
-        return self.get_query("SELECT path FROM sample")
+        return self.get_query("SELECT path FROM samples WHERE level='MS1'")
 
     ###Return a list of the data matrix eventually
     def get_datamatrix(self):
         return self.get_query("SELECT peaktable FROM peakpicking")
 
 
-    def build_samples(self, path_samples):
+    def build_samples(self, path_samples, path_ms2=None):
 
         ###We build the majority
         pscript = os.path.join(ct.find_rscript(), "createSQLiteexperiment.R")
         cline = "Rscript " + pscript + " -d " + path_samples + " -b " + self.db
+        if path_ms2 is not None:
+            cline = cline + " -o '"+path_ms2+"'"
         subprocess.call(cline, shell=True)
 
     def build_peakpicking(self):
@@ -303,17 +313,16 @@ class Experiment:
           )''')
         self.close_db()
 
-    def initialise_database(self, max_jobs, outdir, polarity, path_samples, algorithms, num_parameters=50):
+    def initialise_database(self, max_jobs, outdir, polarity, path_samples, algorithms, num_parameters=50, path_ms2=None):
         ###We construct the initia software in the method
         self.add_initial_infos(max_jobs, outdir, polarity)
-        self.build_samples(path_samples)
+        self.build_samples(path_samples,path_ms2=path_ms2)
         ###If the output directory is not existing we create it
         if not os.path.isdir(outdir):
             os.makedirs(outdir)
         self.add_processing_method(algorithms, num_parameters)
         self.build_peakpicking()
         self.build_processing()
-        print("Database intialized")
 
     #Parameters handling part
 
@@ -385,7 +394,7 @@ class Experiment:
         ####we generate the command line for all the inputs
         self.open_db()
         c = self.conn.cursor()
-        c.execute("SELECT * FROM processing")
+        c.execute("SELECT * FROM processing WHERE output_ms!='NOT PROCESSED'")
 
         ###We modify it to
 
@@ -419,7 +428,7 @@ class Experiment:
         path_temp = self.output.getFile(cr.TEMP["CONVERSION"])
         self.open_db()
         c = self.conn.cursor()
-        c.execute("SELECT output_ms FROM processing")
+        c.execute("SELECT output_ms FROM processing WHERE output_ms!='NOT PROCESSED'")
         processings = c.fetchall()
         p_conversion = os.path.join(ct.find_rscript(), "wrapper_MZmine_peak_table_conversion.R ")
         to_convert = [x[0] + "\n" for x in processings if not is_converted(x[0])]
@@ -439,9 +448,9 @@ class Experiment:
         ###We rename the peaktable to get more meaningful names.
         self.open_db()
         c = self.conn.cursor()
-        c.execute("SELECT id,output_ms,output_ms2 FROM processing")
+        c.execute("SELECT id,output_ms,output_ms2 FROM processing WHERE output_ms!='NOT PROCESSED'")
         all_peaktable = c.fetchall()
-        c.execute("SELECT path FROM samples")
+        c.execute("SELECT path FROM samples WHERE level='MS1'")
         all_samples = c.fetchall()
 
         dirname = self.output.getDir(cr.OUT["ADAP"]["PEAKTABLES"])
@@ -477,6 +486,15 @@ class Experiment:
         self.close_db()
         self.save_db()
 
+
+    def extract_ms2(self,noise_level=0):
+        num_workers = self.get_workers()
+        dir_out= self.output.getDir(cr.OUT["ADAP"]["MSMS"])
+        pscript = os.path.join(ct.find_rscript(),"extractingMGFfromMZML.R")
+        cli = " ".join(["Rscript",pscript,self.db,dir_out,str(noise_level),str(num_workers)])
+        subprocess.call(cli,shell=True)
+        print("MS2 extraction finished")
+
     ###At the moment there is a single grouping method
     def group(self, max_workers=2, silent=False, intensity="height",mztol=0.007,rttol=0.02, log=None):
         num_workers = self.get_workers()
@@ -496,7 +514,7 @@ class Experiment:
             flists = [f[0] for f in flists]
 
             ###getting samples
-            nlists = c.execute("SELECT path FROM samples")
+            nlists = c.execute("SELECT path FROM samples WHERE level='MS1'")
             nlists = [os.path.basename(nn[0]) for nn in nlists]
 
             ppg = mg.Grouper(pp, dir_temp, dir_datamatrix, flists, nlists, intensity,mztol,rttol)
@@ -521,7 +539,9 @@ class Experiment:
 
 
     def group_online(self,intensity="intensity",
-    ppm = 15,mztol=0.007,rttol=0.02,n_ref = 150,alpha = 0.1,log=None):
+    ppm = 15,mztol=0.007,rttol=0.02,n_ref = 150,
+                     ms2_mz_tol=0.01,ms2_rt_tol=0.05,
+                     alpha = 0.1,log=None):
         num_workers = self.get_workers()
         runner = pr.ParallelRunner(num_workers)
         ####We create all the grouper eventually
@@ -548,16 +568,15 @@ class Experiment:
             self.open_db()
             c = self.conn.cursor()
             flists = c.execute("SELECT output_ms FROM processing WHERE peakpicking = " + str(pp[0]))
-
             flists = [f[0] for f in flists]
-
             ###getting samples
-            nlists = c.execute("SELECT path FROM samples")
+            nlists = c.execute("SELECT path FROM samples WHERE level='MS1'")
             nlists = [os.path.basename(nn[0]) for nn in nlists]
             ppg = mg.OnlineGrouper(pp,self.db,dir_blocks, dir_alignment,
             dir_datamatrix, intensity, mztol, ppm, rttol, n_ref, alpha,
-            path_fused_msms,path_temp_1,path_temp_2,num_workers,path_fig)
-            ###We update the peaktable direction of the file
+                                   ms2_mz_tol,ms2_rt_tol,path_fused_msms,
+                                   path_temp_1,path_temp_2,num_workers,path_fig)
+            ###We update the peaktable path
             poutput_dm = ppg.get_output_datamatrix()
             poutput_mgf = ppg.get_fused_mgf()
             query_align = self.update_query_construction("peakpicking", "id", str(pp[0]), "peaktable", poutput_dm)
@@ -691,7 +710,7 @@ class Experiment:
         if path_raw_files is None:
             self.open_db()
             c = self.conn.cursor()
-            raw_files=c.execute("SELECT path FROM samples")
+            raw_files=c.execute("SELECT path FROM samples WHERE level='MS1'")
             raw_files=[rr[0] for rr in raw_files]
             self.close_db()
             self.save_db()

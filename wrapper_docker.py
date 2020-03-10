@@ -95,13 +95,18 @@ if __name__=="__main__":
     path_save_db = os.path.join(OUTPUT_DIR,"processing_db.sqlite")
     if os.path.isfile(path_save_db):
         shutil.copyfile(path_save_db,PATH_DB)
-    exp = Experiment(PATH_DB,save_db = path_save_db,reset=False)
+    exp = Experiment(PATH_DB,save_db = path_save_db,reset=False,temp_outdir=OUTPUT_DIR)
     ###The polarity computed at this step does not need to mahke any sense.
-    exp.initialise_database(num_cpus, OUTPUT_DIR,"negative", INPUT, ["ADAP"], 1)
+    path_ms2 = None
+    if "MS2" in os.environ:
+        path_ms2 = os.environ["MS2"]
     ###We try to guess the polarity form the middle file.
-    exp.guess_polarity(INPUT)
+    pol = exp.guess_polarity(INPUT)
+    exp.initialise_database(num_cpus, OUTPUT_DIR, pol, INPUT, ["ADAP"], 1, path_ms2=path_ms2)
     vui = UI(OUTPUT_DIR, INPUT, polarity=os.environ["POLARITY"], mass_spec="Exactive", num_workers=num_cpus,
          path_yaml=PATH_YAML)
+    vui.initialize_yaml_polarity(PATH_YAML, pol)
+
     print("Polarity detected: "+exp.polarity)
     ###In all case the first table is generated.
     if not os.path.exists(vui.path_yaml):
@@ -133,12 +138,18 @@ if __name__=="__main__":
     with open(vui.path_yaml, 'r') as stream:
         raw_yaml = yaml.safe_load(stream)
 
+    ###If there is an MS2 folder we process it
+    if "MS2" in os.environ:
+        exp.extract_ms2(noise_level=float(raw_yaml["peakpicking"]["noise_level_ms2"]["value"]))
+
     exp.group_online(intensity=str(raw_yaml["grouping"]["extracted_quantity"]["value"]),
         ppm = float(raw_yaml["grouping"]["ppm"]["value"]),
         mztol=float(raw_yaml["grouping"]["dmz"]["value"]),
         rttol=float(raw_yaml["grouping"]["drt"]["value"]),
         n_ref = int(raw_yaml["grouping"]["num_references"]["value"]),
         alpha=float(raw_yaml["grouping"]["alpha"]["value"]),
+        ms2_mz_tol = float(raw_yaml["peakpicking"]['peaks_deconvolution']["ms2_mz_tol"]["value"]),
+        ms2_rt_tol = float(raw_yaml["peakpicking"]['peaks_deconvolution']["ms2_rt_tol"]["value"]),
         log=LOG)
     time_grouping = ()
     polarity = raw_yaml["ion_annotation"]["polarity"]["value"]

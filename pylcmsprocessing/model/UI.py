@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 import model.output_handler as oh
 import multiprocessing
 
+
 ####This is the set of functions whici are furnished to the Users
 class UI:
     def __init__(self,output_dir,raw_files,polarity="positive",mass_spec = "Exactive",path_yaml = None, num_workers=None):
@@ -25,6 +26,21 @@ class UI:
         if not mass_spec in cr.MASS_SPEC:
             raise Exception("Unknown mass spectrometer.")
 
+    def initialize_yaml_polarity(self, path_yaml, polarity):
+        with open(path_yaml, 'r') as stream:
+            raw_yaml = yaml.safe_load(stream)
+        if polarity == "positive":
+            if raw_yaml["ion_annotation"]["adducts_positive"]["value"] == "NONE":
+                raw_yaml["ion_annotation"]["adducts_positive"]["value"] = cr.default_adducts_positive()
+                raw_yaml["ion_annotation"]["main_adducts_positive"]["value"] = cr.default_adducts_main_positive()
+        else:
+            if raw_yaml["ion_annotation"]["adducts_negative"]["value"] == "NONE":
+                raw_yaml["ion_annotation"]["adducts_negative"]["value"] = cr.default_adducts_negative()
+                raw_yaml["ion_annotation"]["main_adducts_negative"]["value"] = cr.default_adducts_main_negative()
+        # We write the yaml in the output directory
+        with open(path_yaml, 'w') as outfile:
+            yaml.dump(raw_yaml, outfile, default_flow_style=False)
+
 
     def generate_yaml_files(self,force=False):
         #We rewrite the yaml file to be completed by the user.
@@ -33,16 +49,11 @@ class UI:
                 self.path_yaml = cr.DATA["YAML"]
             with open(self.path_yaml, 'r') as stream:
                 raw_yaml = yaml.safe_load(stream)
-            raw_yaml["ion_annotation"]["polarity"]['value'] = self.polarity
-            if self.polarity=="positive":
-                raw_yaml["ion_annotation"]["adducts_positive"]["value"] = cr.default_adducts_positive()
-                raw_yaml["ion_annotation"]["main_adducts_positive"]["value"] = cr.default_adducts_main_positive()
-            else:
-                raw_yaml["ion_annotation"]["adducts_negative"]["value"] = cr.default_adducts_negative()
-                raw_yaml["ion_annotation"]["main_adducts_negative"]["value"] = cr.default_adducts_main_negative()
             #We write the yaml in the output directory
             with open(self.path_yaml, 'w') as outfile:
                 yaml.dump(raw_yaml,outfile, default_flow_style=False)
+            self.initialize_yaml_polarity(self.path_yaml,self.polarity)
+
 
     def generate_MZmine_XML(self,path_xml=None):
         if path_xml is None:
@@ -82,8 +93,6 @@ class UI:
 
     def optimizeParameters(self):
         pass
-
-
 
     def openYamlParameters(self):
         raw_yaml = None

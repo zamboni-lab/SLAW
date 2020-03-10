@@ -32,15 +32,12 @@ path_peaktables <- normalizePath(args[9])
 
 peak_picking_id <- as.numeric(args[10])
 db <- dbConnect(RSQLite:::SQLite(),dbpath)
-
-
-
 ##The num worker is read form the databse
 
 num_workers <- as.numeric(dbGetQuery(db, "SELECT max_jobs FROM common")[, 1])
 
 ####We get the path form all the sample
-samplist <- dbGetQuery(db, "SELECT path FROM samples")[, 1]
+samplist <- dbGetQuery(db, "SELECT path FROM samples WHERE level='MS1'")[, 1]
 message(paste(samplist,sep="|"))
 
 dbDisconnect(db)

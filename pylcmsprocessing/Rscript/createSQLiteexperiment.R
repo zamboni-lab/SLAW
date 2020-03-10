@@ -9,7 +9,7 @@ suppressWarnings(suppressMessages(library(tools,warn.conflicts = FALSE,quietly =
 DBSAMPLES <-  "samples" ###Containing peak and path
 DBPROCESSINGSAMPLE <-  "processing" ###Containing peak and path
 DBPEAKSPICKING <- "peakpicking"
-DBNAME <-    "MSexperiment" ###
+DBNAME <-    "MSexperiment" ###b
 
 
 option_list = list(
@@ -68,6 +68,13 @@ option_list = list(
     default = paste("MSexperiment", "sqlite", sep = "."),
     help = "name of default database [default= %default]",
     metavar = "character"
+  ),
+    make_option(
+    c("-o", "--pathms2"),
+    type = "character",
+    default = NA,
+    help = "path to MS2 data if there is some eventually [default= %default]",
+    metavar = "character"
   )
 
 )
@@ -86,6 +93,8 @@ if (!is.null(opt$directory))
 paths <-  NULL
 replicates <-  NULL
 types <- NULL
+MSlevels <- NULL
+
 if (file.exists(opt$summary)) {
   tsummary <-
     read.table(
@@ -95,12 +104,15 @@ if (file.exists(opt$summary)) {
       sep = opt$summarysep[[1]]
     )
 
+  path_dir <- NULL
   ###Getting the pah of the raw files
   if(dir.exists(opt$mzml)){
-      paths <- normalizePath(list.files(opt$mzml, full.names = TRUE,pattern=".mzML"))
+    path_dir <- opt$mzml
   }else{
-    paths <- normalizePath(list.files(opt$directory, full.names = TRUE,pattern=".mzML"))
+    path_dir <- opt$directory
   }
+  paths <- normalizePath(list.files(path_dir, full.names = TRUE,pattern=".mzML"))
+
   expected_paths <- tsummary[[opt$summarypath]]
   vm <- match(basename(expected_paths), basename(paths))
   if (any(is.na(vm)))
@@ -124,12 +136,6 @@ if (file.exists(opt$summary)) {
     vmatch <-str_match(types,"QC([0-9]+)")
     mDilQCs <- !is.na(vmatch)
 
-
-
-
-
-
-
   }else{
     types <- rep("sample",nrow(tsummary))
   }
@@ -140,35 +146,44 @@ if (file.exists(opt$summary)) {
   }else{
     paths <- normalizePath(list.files(opt$directory, full.names = TRUE,pattern=".mzML"))
   }
+  types <- rep("sample",length(paths))
   replicates <-  rep(1, length(paths))
 }
 
 sample_tab <- data.frame(
   id = seq_along(paths),
   path = paths,
+  level = rep("MS1",length(paths)),
+  types = types,
   replicate = as.integer(as.factor(replicates)),
   stringsAsFactors = FALSE
 )
 
-# message(sample_tab)
-
-#####Writing the sample table and intializing the table
-
-
-# if (file.exists(opt$database))
-#   stop(
-#     "Database ",
-#     opt$database,
-#     " already exists please remove it if you want to repopulat ethe sample table."
-#   )
+###We check if an MS2 argument is present if it the case we add the samples in the table as MS2
+if(!is.na(opt$pathms2)){
+  ##We add the MS2
+  path_ms2 <- list.files(opt$pathms2,full.names=TRUE)
+  ##Now we rebuild the next step
+  supp_tab <- data.frame(
+    id = seq_along(path_ms2)+nrow(sample_tab),
+    path = path_ms2,
+    level = rep("MS2",length(path_ms2)),
+    types = rep("MS2",length(path_ms2)),
+    replicate = as.integer(rep(0,length(path_ms2))),
+    stringsAsFactors = FALSE
+  )
+  sample_tab <- rbind(sample_tab,supp_tab)
+}
 
 db <- dbConnect(RSQLite::SQLite(), opt$database)
 dd <- dbExecute(db,"PRAGMA foreign_keys = ON")
 
 ###WE always activate the foreign key constrainct pracma
-dd <- dbExecute(db,paste("CREATE TABLE ",DBSAMPLES," (
+dd <- dbExecute(db,paste("CREATE TABLE IF NOT EXISTS ",DBSAMPLES," (
           id INTEGER PRIMARY KEY,
           path TEXT NOT NULL,
+          level TEXT NOT NULL,
+          types TEXT NOT NULL,
           replicate INTEGER NOT NULL
 )",sep=""))
 

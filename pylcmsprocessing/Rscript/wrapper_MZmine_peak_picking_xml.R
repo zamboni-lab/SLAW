@@ -34,7 +34,7 @@ num_workers <- as.numeric(dbGetQuery(db, "SELECT max_jobs FROM common")[, 1])
 ####We get the path form all the sample
 samplist <-NULL
 
-samplist <- dbGetQuery(db, "SELECT path FROM samples")[, 1]
+samplist <- dbGetQuery(db, "SELECT path FROM samples WHERE level='MS1'")[, 1]
 dbDisconnect(db)
 
 

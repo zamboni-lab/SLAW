@@ -19,7 +19,6 @@ get_os <- function() {
 }
 
 args <- commandArgs(trailingOnly = TRUE)
-print(args)
 
 PATH_DB<- args[1]
 PATH_BLOCKS <- args[2]
@@ -34,10 +33,7 @@ ALPHA_RT <- as.numeric(args[10])
 NUM_CORES <- as.numeric(args[11])
 OUTFIGURE <- args[12]
 
-
-
 ###Creating the parallel porcessing objects.
-
 bpp <- NULL
 if(get_os()=="win"){
   bpp <- SnowParam(workers = NUM_CORES)
@@ -48,7 +44,7 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
 message("Beginning grouping using metric, ",VAL_INTENSITY)
 
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
-all_peaktables <- dbGetQuery(dbb, "SELECT output_ms FROM processing")[, 1]
+all_peaktables <- dbGetQuery(dbb, "SELECT output_ms FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1'")[, 1]
 dbDisconnect(dbb)
 print(all_peaktables)
 

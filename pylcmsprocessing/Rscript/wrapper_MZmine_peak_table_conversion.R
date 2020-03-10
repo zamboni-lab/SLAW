@@ -2,13 +2,9 @@ library(BiocParallel,quietly=TRUE,warn.conflicts = FALSE)
 library(MZmineXMLManipulator,quietly=TRUE,warn.conflicts = FALSE)
 library(tools,quietly=TRUE,warn.conflicts = FALSE)
 
-
-
-
 args <- commandArgs(trailingOnly=TRUE)
 infiles <-  args[1]
 MAX_WORKERS <- as.numeric(args[2])
-
 
 get_os <- function() {
   if (.Platform$OS.type == "windows") {

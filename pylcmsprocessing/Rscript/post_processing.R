@@ -67,12 +67,12 @@ dbDisconnect(dbb)
 
 
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
-raw_files <- dbGetQuery(dbb, "SELECT path FROM samples")[, 1]
+raw_files <- dbGetQuery(dbb, "SELECT path FROM samples WHERE level='MS1'")[, 1]
 dbDisconnect(dbb)
 
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
 peaktables <-
-  dbGetQuery(dbb, "SELECT output_ms FROM processing")[, 1]
+  dbGetQuery(dbb, "SELECT output_ms FROM processing WHERE output_ms!='NOT PROCESSED'")[, 1]
 dbDisconnect(dbb)
 #
 # peaktables <- str_replace(peaktables,"/sauer1","U:")
@@ -170,13 +170,6 @@ text(
 dev.off()
 sink(file = NULL)
 
-
-# if(FALSE){
-#   library(stringr)
-#   PATH_DATAMATRIX <- str_replace(string = PATH_DATAMATRIX,pattern = fixed("/sauer1"),replacement = "U:")
-#   raw_files <- str_replace(string = raw_files,pattern = fixed("/sauer1"),replacement = "U:")
-#   peaktables <- str_replace(string = peaktables,pattern = fixed("/sauer1"),replacement = "U:")
-# }
 
 
 
