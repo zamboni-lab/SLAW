@@ -271,7 +271,7 @@ LCMSAlignerModelFromDirectory <-
     }
     if(nrow(lam@peaks)==length(lam@clustering)){
       if(clustering){
-        clustering <- finalClustering(lam,bw=lam@references@parameters$rt_dens,binSize=0.02,bpp)
+        clustering <- finalClustering(lam,bw=lam@references@parameters$rt_dens,binSize=lam@references@parameters$dmz,bpp)
         lam <- clusterPeaktable(lam,clustering,bpp=bpp)
         lam@clustering <- clustering
         ###We just return the index
@@ -418,7 +418,8 @@ LCMSAlignerModelFromDirectoryByBatch <-
     }
     if(nrow(lam@peaks)==length(lam@clustering)){
       if(clustering){
-        clustering <- finalClustering(lam,bw=lam@references@parameters$rt_dens,binSize=0.02,bpp)
+        clustering <- finalClustering(lam,bw=lam@references@parameters$rt_dens,
+                                      binSize=lam@references@parameters$dmz,bpp)
         lam <- clusterPeaktable(lam,clustering,bpp=bpp)
         lam@clustering <- clustering
         ###We just return the index

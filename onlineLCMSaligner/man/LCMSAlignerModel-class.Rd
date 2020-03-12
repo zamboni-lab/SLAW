@@ -4,6 +4,9 @@
 \name{LCMSAlignerModel-class}
 \alias{LCMSAlignerModel-class}
 \title{LCMSAlignerModel}
+\value{
+
+}
 \description{
 LCMSAlignerModel
 }

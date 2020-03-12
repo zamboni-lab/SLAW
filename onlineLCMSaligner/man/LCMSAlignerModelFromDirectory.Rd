@@ -4,12 +4,27 @@
 \alias{LCMSAlignerModelFromDirectory}
 \title{Align all the file form a directory to an exisiting LCMSAlignerModel eventually}
 \usage{
-LCMSAlignerModelFromDirectory(directory, path_model, output,
-  save_interval = 5, num_file = 10, reset = FALSE,
-  allowed_jump = 0, threshold = 5, span = 0.6, n_clusters = 15,
+LCMSAlignerModelFromDirectory(
+  directory,
+  path_model,
+  output,
+  save_interval = 5,
+  num_file = 10,
+  reset = FALSE,
+  threshold = 5,
+  span = 0.6,
+  n_clusters = 15,
   supp_data = c("peakwidth", "SN", "right_on_left_assymetry"),
-  ransac_l1 = 0.05, ransac_dist_threshold = 0.1, seed = 512,
-  bpp = NULL, ...)
+  ransac_l1 = 0.05,
+  ransac_dist_threshold = 0.1,
+  maxAlign = 100,
+  seed = 512,
+  max_cor = 0.1,
+  clustering = TRUE,
+  bpp = NULL,
+  graphical = FALSE,
+  ...
+)
 }
 \arguments{
 \item{directory}{The directory to monitor}

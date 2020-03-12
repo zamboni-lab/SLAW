@@ -110,11 +110,11 @@ updateFeatureInfos <- function(lam, peaks, pos) {
   lam@peaks[vp[,4], "current_num"] <- (lam@peaks[vp[,4], "current_num"] + vp[,3])
 
   lam@peaks[vp[,4], 1] <-
-    (lam@peaks[vp[,4], 1] * (lam@peaks[vp[,4], "num"] - vp[,3]) + vp[,1]) /
+    (lam@peaks[vp[,4], 1] * (lam@peaks[vp[,4], "num"] - vp[,3]) + vp[,1]*vp[,3]) /
     (lam@peaks[vp[,4], "num"])
 
   lam@peaks[vp[,4], 2] <-
-    (lam@peaks[vp[,4], 2] * (lam@peaks[vp[,4], "num"] - vp[,3]) + vp[,2]) /
+    (lam@peaks[vp[,4], 2] * (lam@peaks[vp[,4], "num"] - vp[,3]) + vp[,2]*vp[,3]) /
     (lam@peaks[vp[,4], "num"])
   return(lam)
 }
@@ -235,7 +235,6 @@ alignToModel.nn <- function(lam,
 
 
 ###Align the data using an online estimatio of the density
-#Removing all the dtaa in this shit because fuck it.
 #TODO change the binsize to a more rational qunaitity depending of the resolution
 alignToModel.density <- function(lam, peaktable,bw = 10,binSize = 0.01, maxFeatures = 50,
                                  sleep = 0, mzCost = 0.005, rtCost = 0.05, bpp = NULL){

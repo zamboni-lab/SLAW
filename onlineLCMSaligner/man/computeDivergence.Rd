@@ -15,6 +15,9 @@ computeDivergence(lar, neighbours, points, ref_point)
 
 \item{ref_point}{The reference point in whichi to comapre this shit}
 }
+\value{
+
+}
 \description{
 Compute all the divergence values of a set of graph
 }

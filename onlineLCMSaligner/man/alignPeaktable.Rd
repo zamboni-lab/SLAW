@@ -4,11 +4,21 @@
 \alias{alignPeaktable}
 \title{Title}
 \usage{
-alignPeaktable(lam, path, rt_scaling = c(0.9, 0.95, 1, 1.05, 1.1),
-  ransac_niter = 2000, ransac_dist_threshold = NULL,
-  ransac_l1 = 0.05, rt_extensions = c(4, 0.15), path_aligner = NULL,
-  span = 0.6, supp_data = c("peakwidth", "SN",
-  "right_on_left_assymetry"))
+alignPeaktable(
+  lam,
+  path,
+  rt_scaling = c(0.9, 0.95, 1, 1.05, 1.1),
+  ransac_niter = 2000,
+  ransac_dist_threshold = NULL,
+  ransac_l1 = 0.05,
+  rt_extensions = c(4, 0.15),
+  path_aligner = NULL,
+  span = 0.6,
+  supp_data = c("peakwidth", "SN", "right_on_left_assymetry"),
+  lim = 0.1,
+  graphical = FALSE,
+  bpp = NULL
+)
 }
 \arguments{
 \item{lam}{An LCMS aligner object}
@@ -24,6 +34,9 @@ alignPeaktable(lam, path, rt_scaling = c(0.9, 0.95, 1, 1.05, 1.1),
 \item{rt_extensions}{The retention time of RT}
 
 \item{alignment_threshold}{The threshold used to align peaks}
+}
+\value{
+
 }
 \description{
 Title
