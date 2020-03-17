@@ -102,25 +102,30 @@ if __name__=="__main__":
         path_ms2 = os.environ["MS2"]
     ###We try to guess the polarity form the middle file.
     pol = exp.guess_polarity(INPUT)
+    print("Polarity detected: " + exp.polarity)
     exp.initialise_database(num_cpus, OUTPUT_DIR, pol, INPUT, ["ADAP"], 1, path_ms2=path_ms2)
     vui = UI(OUTPUT_DIR, INPUT, polarity=os.environ["POLARITY"], mass_spec="Exactive", num_workers=num_cpus,
          path_yaml=PATH_YAML)
-    vui.initialize_yaml_polarity(PATH_YAML, pol)
 
-    print("Polarity detected: "+exp.polarity)
     ###In all case the first table is generated.
     if not os.path.exists(vui.path_yaml):
-        vui.generate_yaml_files(DATA["YAML"])
-        num_iter = 10
+        vui.generate_yaml_files()
+        vui.initialize_yaml_polarity(PATH_YAML, pol)
+        num_iter = 100
         if "NOPTIM" in os.environ:
             num_iter = int(num_iter)
         PATH_OPTIM = os.path.join(OUTPUT_DIR, "temp_optim")
         if not os.path.isdir(PATH_OPTIM):
             os.makedirs(PATH_OPTIM)
+
+        ###We optimize the parameters
         par_opt = ParametersOptimizer(exp, PATH_OPTIM, nrounds=num_iter, input_par=None)
-        par_opt.optimize_parameters(vui.path_yaml)
-        ###In this case we optimize the parameter
-        ##We first check fi there is anumber of iteration defined
+        if "OPTIM" not in os.environ or os.environ["OPTIM"]=="LIPO":
+            par_opt.optimize_parameters(vui.path_yaml, optimizer="LIPO", max_call=num_iter,initial_points = 3)
+        elif os.environ["OPTIM"]=="random":
+            par_opt.optimize_parameters(vui.path_yaml, optimizer="random", num_points=num_iter, num_cores=1)
+        else:
+            raise Exception("Unknown optimizer")
 
     if not os.path.isfile(PATH_XML):
         vui.generate_MZmine_XML(path_xml=PATH_XML)

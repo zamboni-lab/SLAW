@@ -44,12 +44,10 @@ class UI:
 
     def generate_yaml_files(self,force=False):
         #We rewrite the yaml file to be completed by the user.
-        if not force:
-            if self.path_yaml is None:
-                self.path_yaml = cr.DATA["YAML"]
-            with open(self.path_yaml, 'r') as stream:
-                raw_yaml = yaml.safe_load(stream)
-            #We write the yaml in the output directory
+        with open(cr.DATA["YAML"], 'r') as stream:
+            raw_yaml = yaml.safe_load(stream)
+        #We write the yaml in the output directory
+        if not os.path.isfile(self.path_yaml) or force:
             with open(self.path_yaml, 'w') as outfile:
                 yaml.dump(raw_yaml,outfile, default_flow_style=False)
             self.initialize_yaml_polarity(self.path_yaml,self.polarity)
@@ -91,8 +89,6 @@ class UI:
         ###We write the XML file somewhere
         tree.write(path_xml)
 
-    def optimizeParameters(self):
-        pass
 
     def openYamlParameters(self):
         raw_yaml = None

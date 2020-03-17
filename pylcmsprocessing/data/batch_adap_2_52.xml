@@ -151,7 +151,7 @@
                 </parameter>
             </module>
         </parameter>
-        <parameter measure="MEDIAN" name="m/z center calculation" weighting="NONE">CenterFunction</parameter>
+        <parameter measure="AUTO" name="m/z center calculation" weighting="LINEAR">CenterFunction</parameter>
         <parameter name="m/z range for MS2 scan pairing (Da)" selected="true">0.05</parameter>
         <parameter name="RT range for MS2 scan pairing (min)" selected="true">0.1</parameter>
         <parameter name="Remove original feature list">false</parameter>

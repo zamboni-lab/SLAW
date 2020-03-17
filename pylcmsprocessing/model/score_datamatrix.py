@@ -26,4 +26,3 @@ class scorerDataMatrix:
         score = (0.5-weighted_CV)*log10(n_reproducible)
         return score
 
-

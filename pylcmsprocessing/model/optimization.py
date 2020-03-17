@@ -12,6 +12,7 @@ import model.experiment as me
 import common.references as cr
 import model.score_datamatrix as ms
 import model.optimizer as mlp
+import model.parameters_handler as ph
 import common.tools as ct
 from model.UI import UI
 
@@ -45,11 +46,14 @@ def convert_val(x):
 
 
 # def peak_picking_alignment_scoring(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14,fixed_params):
-def peak_picking_alignment_scoring(peakpicking_noise_level_ms1,peakpicking_noise_level_ms2,peakpicking_traces_construction_ppm,peakpicking_traces_construction_dmz,
-peakpicking_traces_construction_min_scan,peakpicking_peaks_deconvolution_SN,peakpicking_peaks_deconvolution_peak_width_min,
-peakpicking_peaks_deconvolution_rt_wavelet_min,peakpicking_peaks_deconvolution_rt_wavelet_max,
-peakpicking_peaks_deconvolution_coefficient_area_threshold,grouping_ppm,grouping_drt,grouping_dmz,
-grouping_alpha,grouping_num_references,fixed_params):
+def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noise_level_ms2,peakpicking__traces_construction__ppm,
+                                   peakpicking__traces_construction__dmz,peakpicking__traces_construction__min_scan,
+                                   peakpicking__peaks_deconvolution__SN,peakpicking__peaks_deconvolution__peak_width_min,
+                                   peakpicking__peaks_deconvolution__rt_wavelet_min,peakpicking__peaks_deconvolution__rt_wavelet_max,
+                                   peakpicking__peaks_deconvolution__coefficient_area_threshold,grouping__ppm,grouping__drt,grouping__dmz,
+                                   grouping__alpha,grouping__num_references,fixed_params):
+    args_refs = locals()
+    del args_refs["fixed_params"]
 
     def is_processed(stored_param, summary_table):
         if not os.path.isfile(summary_table):
@@ -71,14 +75,9 @@ grouping_alpha,grouping_num_references,fixed_params):
 
     # p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14=params
     DIR_TEMP,STORAGE_YAML,SUMMARY_YAML,num_cpus,polarity,path_samples,initial_yaml=fixed_params
-
+    call_list = [DIR_TEMP,STORAGE_YAML]+list(args_refs.values())
     ###we create the directory andget the path which will be used in the data.
-    hash_val,OUTPUT_DIR,PATH_DB,PATH_SAVE_DB,stored_param,stored_xml = create_temp_directory(DIR_TEMP,STORAGE_YAML,peakpicking_noise_level_ms1,peakpicking_noise_level_ms2,
-                                                                                             peakpicking_traces_construction_ppm,peakpicking_traces_construction_dmz,
-                                                                                             peakpicking_traces_construction_min_scan,peakpicking_peaks_deconvolution_SN,
-                                                                                             peakpicking_peaks_deconvolution_peak_width_min,peakpicking_peaks_deconvolution_rt_wavelet_min,
-                                                                                             peakpicking_peaks_deconvolution_rt_wavelet_max,peakpicking_peaks_deconvolution_coefficient_area_threshold,
-                                                                                             grouping_ppm,grouping_drt,grouping_dmz,grouping_alpha,grouping_num_references)
+    hash_val,OUTPUT_DIR,PATH_DB,PATH_SAVE_DB,stored_param,stored_xml = create_temp_directory(*call_list)
 
     processed = is_processed(stored_param,SUMMARY_YAML)
     if processed[0]:
@@ -89,28 +88,24 @@ grouping_alpha,grouping_num_references,fixed_params):
     LOG_PATH = os.path.join(OUTPUT_DIR,"log.txt")
 
     ####We load the orginial yaml file
-    raw_yaml=None
-    with open(initial_yaml, 'r') as stream:
-        raw_yaml = yaml.safe_load(stream)
-
+    parameters = ph.ParametersFileHandler(initial_yaml)
+    for k in args_refs.keys():
+        parameters[k] = args_refs[k]
     ##We update the parameters to reflect the rest of the data
-    raw_yaml["peakpicking"]["noise_level_ms1"]["value"]=float(convert_val(peakpicking_noise_level_ms1))
-    raw_yaml["peakpicking"]["noise_level_ms2"]["value"]=float(convert_val(peakpicking_noise_level_ms2))
-    raw_yaml["peakpicking"]["traces_construction"]["ppm"]["value"]=float(convert_val(peakpicking_traces_construction_ppm))
-    raw_yaml["peakpicking"]["traces_construction"]["dmz"]["value"]=float(convert_val(peakpicking_traces_construction_dmz))
-    raw_yaml["peakpicking"]["traces_construction"]["min_scan"]["value"]=int(convert_val(peakpicking_traces_construction_min_scan))
-    raw_yaml["peakpicking"]["peaks_deconvolution"]["SN"]["value"]=float(convert_val(peakpicking_peaks_deconvolution_SN))
-    raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width_min"]["value"]=float(convert_val(peakpicking_peaks_deconvolution_peak_width_min))
-    raw_yaml["peakpicking"]["peaks_deconvolution"]["rt_wavelet_min"]["value"]=float(convert_val(peakpicking_peaks_deconvolution_rt_wavelet_min))
-    raw_yaml["peakpicking"]["peaks_deconvolution"]["rt_wavelet_max"]["value"]=float(convert_val(peakpicking_peaks_deconvolution_rt_wavelet_max))
-    raw_yaml["peakpicking"]["peaks_deconvolution"]["coefficient_area_threshold"]["value"]=float(convert_val(peakpicking_peaks_deconvolution_coefficient_area_threshold))
+    # raw_yaml["peakpicking"]["noise_level_ms1"]["value"]=float(convert_val(peakpicking_noise_level_ms1))
+    # raw_yaml["peakpicking"]["noise_level_ms2"]["value"]=float(convert_val(peakpicking_noise_level_ms2))
+    # raw_yaml["peakpicking"]["traces_construction"]["ppm"]["value"]=float(convert_val(peakpicking_traces_construction_ppm))
+    # raw_yaml["peakpicking"]["traces_construction"]["dmz"]["value"]=float(convert_val(peakpicking_traces_construction_dmz))
+    # raw_yaml["peakpicking"]["traces_construction"]["min_scan"]["value"]=int(convert_val(peakpicking_traces_construction_min_scan))
+    # raw_yaml["peakpicking"]["peaks_deconvolution"]["SN"]["value"]=float(convert_val(peakpicking_peaks_deconvolution_SN))
+    # raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width_min"]["value"]=float(convert_val(peakpicking_peaks_deconvolution_peak_width_min))
+    # raw_yaml["peakpicking"]["peaks_deconvolution"]["rt_wavelet_min"]["value"]=float(convert_val(peakpicking_peaks_deconvolution_rt_wavelet_min))
+    # raw_yaml["peakpicking"]["peaks_deconvolution"]["rt_wavelet_max"]["value"]=float(convert_val(peakpicking_peaks_deconvolution_rt_wavelet_max))
+    # raw_yaml["peakpicking"]["peaks_deconvolution"]["coefficient_area_threshold"]["value"]=float(convert_val(peakpicking_peaks_deconvolution_coefficient_area_threshold))
     ###We dump the yaml
-    with open(stored_param, 'w') as outfile:
-        yaml.dump(raw_yaml, outfile, default_flow_style=False)
+    parameters.write_parameters(stored_param)
 
     PATH_DB = os.path.join(OUTPUT_DIR,"temp_processing"+str(hash_val)+"_db.sqlite")
-    # LOG = "/log.txt"
-    #Procesinf of the pipeline eventually.
     PATH_SAVE_DB = os.path.join(OUTPUT_DIR,"processing_db.sqlite")
     PATH_XML = os.path.join(OUTPUT_DIR,"temp_par"+str(hash_val)+".xml")
 
@@ -132,11 +127,11 @@ grouping_alpha,grouping_num_references,fixed_params):
         return -1
 
     exp.group_online(intensity="intensity",
-                     ppm=float(convert_val(grouping_ppm)),
-                     mztol=float(convert_val(grouping_dmz)),
-                     rttol=float(convert_val(grouping_drt)),
-                     n_ref=int(convert_val(grouping_num_references)),
-                     alpha=float(convert_val(grouping_alpha)),
+                     ppm=float(convert_val(grouping__ppm)),
+                     mztol=float(convert_val(grouping__dmz)),
+                     rttol=float(convert_val(grouping__drt)),
+                     n_ref=int(convert_val(grouping__num_references)),
+                     alpha=float(convert_val(grouping__alpha)),
                      log=LOG_PATH)
     ###We load all the datamtrices.
     datamatrices = exp.get_datamatrix()
@@ -147,27 +142,17 @@ grouping_alpha,grouping_num_references,fixed_params):
         vscore = msd.score_datamatrix(1)
     except ValueError:
         subprocess.call("rm -r " + OUTPUT_DIR)
-        # shutil.rmtree(OUTPUT_DIR,ignore_errors=True)
-        ###Case where no peaktable has been found.
         return -1
 
     ###We write the score in the table
-    to_join = [peakpicking_noise_level_ms1,peakpicking_noise_level_ms2,peakpicking_traces_construction_ppm,peakpicking_traces_construction_dmz,
-               peakpicking_traces_construction_min_scan,peakpicking_peaks_deconvolution_SN,
-                peakpicking_peaks_deconvolution_peak_width_min,peakpicking_peaks_deconvolution_rt_wavelet_min,
-                peakpicking_peaks_deconvolution_rt_wavelet_max,peakpicking_peaks_deconvolution_coefficient_area_threshold,
-                grouping_ppm,grouping_drt,grouping_dmz,grouping_alpha,grouping_num_references]
+    to_join = list(args_refs.values())
     to_join = [str(pp) for pp in to_join]
     to_write = stored_param+","+str(vscore)+",".join(to_join)+"\n"
 
     ###We wrtie the header if it is the first one.
     if not os.path.isfile(SUMMARY_YAML):
         ##We write the path name.
-        to_join=["path_parameters","score"]+["peakpicking_noise_level_ms1","peakpicking_noise_level_ms2","peakpicking_traces_construction_ppm",
-                                             "peakpicking_traces_construction_dmz","peakpicking_traces_construction_min_scan","peakpicking_peaks_deconvolution_SN",
-                "peakpicking_peaks_deconvolution_peak_width_min","peakpicking_peaks_deconvolution_rt_wavelet_min",
-                "peakpicking_peaks_deconvolution_rt_wavelet_max","peakpicking_peaks_deconvolution_coefficient_area_threshold",
-                "grouping_ppm","grouping_drt","grouping_dmz","grouping_alpha","grouping_num_references"]
+        to_join=["path_parameters","score"]+list(args_refs.keys())
         joined_summary = ",".join(to_join)
         with open(SUMMARY_YAML, "w") as ff:
             ff.write(joined_summary)
@@ -177,26 +162,6 @@ grouping_alpha,grouping_num_references,fixed_params):
     ##After each evaluation we remove the the directory.
     shutil.rmtree(OUTPUT_DIR)
     return vscore
-
-def get_yaml_value(raw_yaml,key):
-    dic = {"peakpicking_noise_level_ms1":raw_yaml["peakpicking"]["noise_level_ms1"]["value"],
-           "peakpicking_noise_level_ms2": raw_yaml["peakpicking"]["noise_level_ms2"]["value"],
-          "peakpicking_traces_construction_ppm":raw_yaml["peakpicking"]["traces_construction"]["ppm"]["value"],
-           "peakpicking_traces_construction_dmz":raw_yaml["peakpicking"]["traces_construction"]["dmz"]["value"],
-            "peakpicking_traces_construction_min_scan":raw_yaml["peakpicking"]["traces_construction"]["min_scan"]["value"],
-            "peakpicking_peaks_deconvolution_SN:":raw_yaml["peakpicking"]["peaks_deconvolution"]["SN"]["value"],
-            "peakpicking_peaks_deconvolution_peak_width_min":raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width_min"]["value"],
-            "peakpicking_peaks_deconvolution_peak_width_max": raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width_max"]["value"],
-            "peakpicking_peaks_deconvolution_rt_wavelet_min":raw_yaml["peakpicking"]["peaks_deconvolution"]["rt_wavelet_min"]["value"],
-            "peakpicking_peaks_deconvolution_rt_wavelet_max":raw_yaml["peakpicking"]["peaks_deconvolution"]["rt_wavelet_max"]["value"],
-            "peakpicking_peaks_deconvolution_coefficient_area_threshold":raw_yaml["peakpicking"]["peaks_deconvolution"]["coefficient_area_threshold"]["value"],
-           "grouping_ppm": raw_yaml["grouping"]["ppm"]["value"],
-           "grouping_drt": raw_yaml["grouping"]["drt"]["value"],
-           "grouping_dmz": raw_yaml["grouping"]["dmz"]["value"],
-           "grouping_alpha": raw_yaml["grouping"]["alpha"]["value"],
-           "grouping_num_references": raw_yaml["grouping"]["num_references"]["value"]}
-    return dic[key]
-
 
 class ParametersOptimizer:
     def __init__(self,exp,output,nrounds=10,input_par=None):
@@ -231,7 +196,7 @@ class ParametersOptimizer:
         for ss in sel_samples:
             shutil.copy(ss[0],self.path_samples)
 
-    def optimize_initial_parameters(self):
+    def determine_initial_parameters(self):
         pscript = os.path.join(ct.find_rscript(),"initial_parameters.R")
 
         # we tun the optimization ins a signle thread.
@@ -244,98 +209,55 @@ class ParametersOptimizer:
         ###We read the polarity directly
         subprocess.call(cli, shell=True, env=os.environ.copy())
 
-    def get_reduced_parameters(self):
-        arglist = ["peakpicking_traces_construction_min_scan", "peakpicking_peaks_deconvolution_SN",
-                   "peakpicking_peaks_deconvolution_peak_width_min",
-                   "peakpicking_peaks_deconvolution_coefficient_area_threshold",
-                   "grouping_drt"]
-        return arglist
 
-    def optimize_tricky_parameters(self,to_optimize=None):
-        if to_optimize is None:
-            to_optimize = self.get_reduced_parameters()
+    def do_optimize_parameters(self,optimizer="LIPO",**kwargs):
         ###We read the standar doptimization interval eventually
-        limits = cr.ALGORITHMS_TABLE["ADAP"][3]
-        with open(limits, 'r') as stream:
-            limits = yaml.safe_load(stream)
+        optim_func = mlp.get_optimizers(optimizer)
 
-        ###Creatingthe limit object
-        lb = [limits[ll][0] for ll in to_optimize]
-        ub = [limits[ll][1] for ll in to_optimize]
+        pfh = ph.ParametersFileHandler(self.temp_yaml)
+        to_optimize = pfh.get_optimizable_parameters(string=True)
+        all_parameters = pfh.get_parameters()
+        lb = [x[0] for x in to_optimize.values()]
+        ub = [x[1] for x in to_optimize.values()]
+
+        ###if the yaml has not been optimize we create the first value
+        if not os.path.isfile(self.temp_yaml):
+            self.temp_yaml = self.input_par
 
         # Paramters which are always fixed.
         fixed_params = self.path_exp, self.params_archive, self.path_summary, self.num_workers, self.polarity, self.path_samples, self.temp_yaml
         dic_fixed = {"fixed_params":fixed_params}
 
-        with open(self.input_par, 'r') as stream:
-            init_par = yaml.safe_load(stream)
-
-
         ###We fix the paramter which are not yet fixed
-        for ll in limits.keys():
+        for ll in all_parameters:
             if ll not in to_optimize:
-                dic_fixed[ll]=get_yaml_value(init_par,ll)
-
-        # We update the limits vector
-        ###if the yaml has not been optimize we create the first value
-        if not os.path.isfile(self.temp_yaml):
-            self.temp_yaml = self.input_par
-
-        ###We add the arugment which are not present in the dataset eventually
+                dic_fixed[ll]=pfh[ll]
 
         # we optimize the peakpicking
-        voptim = mlp.LIPO(lb,ub,peak_picking_alignment_scoring,self.nrounds,3,fixed_arguments=dic_fixed)
-
-        # We stroe the best performing paramters  in addi ctionnary in every case.
+        voptim = optim_func(lb,ub,peak_picking_alignment_scoring,fixed_arguments=dic_fixed,**kwargs)
+                         #LIPO algoirhtm  ,max_call=self.nrounds,initial_points=3,)
         final_dic = dic_fixed
         for io in range(len(voptim)):
             final_dic[to_optimize[io]] = convert_val(voptim[io])
-        # The best paramters is passed along the data
+        # The best paramters is stroed
         self.best_par = final_dic
 
     def export_best_parameters(self,outpath):
-        with open(self.input_par, 'r') as stream:
-            raw_yaml = yaml.safe_load(stream)
-        ##We update the parameters to reflect the rest of the data
-        ## Noise level should be tuned by the user
-        raw_yaml["peakpicking"]["noise_level_ms1"]["value"] = self.best_par["peakpicking_noise_level_ms1"]
-        raw_yaml["peakpicking"]["noise_level_ms2"]["value"] = self.best_par["peakpicking_noise_level_ms2"]
+        pfh = ph.ParametersFileHandler(self.input_par)
+        for k in self.best_par:
+            pfh[k] = convert_val(self.best_par[k])
+        pfh.write_parameters(outpath)
 
-        ## Ppm and dmz are mass spectrometer dependent, can be read or set by the user.
-        raw_yaml["peakpicking"]["traces_construction"]["ppm"]["value"] = convert_val(self.best_par["peakpicking_traces_construction_ppm"])
-        raw_yaml["peakpicking"]["traces_construction"]["dmz"]["value"] = convert_val(self.best_par["peakpicking_traces_construction_dmz"])
 
-        ## Parameter to optimize
-        raw_yaml["peakpicking"]["traces_construction"]["min_scan"]["value"] = convert_val(self.best_par["peakpicking_traces_construction_min_scan"])
-        raw_yaml["peakpicking"]["peaks_deconvolution"]["SN"]["value"] = convert_val(self.best_par["peakpicking_peaks_deconvolution_SN"])
-        raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width_min"]["value"] = convert_val(self.best_par["peakpicking_peaks_deconvolution_peak_width_min"])
-        raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width_max"]["value"] = convert_val(self.best_par["peakpicking_peaks_deconvolution_peak_width_max"])
-        raw_yaml["peakpicking"]["peaks_deconvolution"]["rt_wavelet_min"]["value"] = convert_val(self.best_par["peakpicking_peaks_deconvolution_rt_wavelet_min"])
-        raw_yaml["peakpicking"]["peaks_deconvolution"]["rt_wavelet_max"]["value"] = convert_val(self.best_par["peakpicking_peaks_deconvolution_rt_wavelet_max"])
-        raw_yaml["peakpicking"]["peaks_deconvolution"]["coefficient_area_threshold"]["value"] = convert_val(self.best_par["peakpicking_peaks_deconvolution_coefficient_area_threshold"])
-        raw_yaml["grouping"]["drt"]["value"] = convert_val(self.best_par["grouping_drt"])
-
-        ###Can be tuned by the user.
-        raw_yaml["grouping"]["ppm"]["value"] = convert_val(self.best_par["grouping_ppm"])
-        raw_yaml["grouping"]["dmz"]["value"] = convert_val(self.best_par["grouping_dmz"])
-
-        ##Should be split directly by the data.
-        raw_yaml["grouping"]["alpha"]["value"] = convert_val(self.best_par["grouping_alpha"])
-        raw_yaml["grouping"]["num_references"]["value"] = convert_val(self.best_par["grouping_num_references"])
-        ###We dump the file in a filde evnetually
-        with open(outpath, 'w') as outfile:
-            yaml.dump(raw_yaml, outfile, default_flow_style=False)
-
-    def optimize_parameters(self,output_par):
-        self.optimize_initial_parameters()
+    def optimize_parameters(self,output_par,optimizer="LIPO",**kwargs):
+        ##Supplementary arugment for LIPO
+        # max_call=self.nrounds,initial_points=3
+        ##Supplementary for random sampling
+        # num_points=1000,num_cores = 1)
+        self.determine_initial_parameters()
         self.select_samples()
         print("Finished initial parameters estimation")
         print("Optimizing remaining parameters")
-        self.optimize_tricky_parameters()
+        self.do_optimize_parameters(optimizer=optimizer,**kwargs)
         print("Finished  optimization")
         self.export_best_parameters(output_par)
-
-    # def sample_parameters(self,output_par):
-
-
-        ###We strat by doing the initial optimization of parameters

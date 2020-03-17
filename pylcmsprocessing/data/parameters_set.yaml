@@ -29,6 +29,9 @@ peakpicking:
       priority: HIGH
       description: Float. The signal-over-noise threshold for a peak to be discarded.
       value: 15
+      range:
+        - 3
+        - 20
     noise_level:
       priority: HIGH
       description: Float. The min feature height for a deconvoluted peak to be kept.
@@ -53,6 +56,9 @@ peakpicking:
       priority: LOW
       description: Float. Coefficient over area filtering for ADAP.
       value: 50
+      range:
+        - 20
+        - 200
     ms2_mz_tol:
       priority: LOW
       description: Float. The tolerance in mz for MS-MS pairing.
@@ -71,6 +77,9 @@ grouping:
     priority: HIGH
     description: Float. The size of the bandwitdth of th gaussian to be considered. Should be half of the rt deviation expected approximately.
     value: 0.03
+    range:
+      - 0.02
+      - 0.15
   extracted_quantity:
     priority: HIGH
     description: String. The extracted type of information. Can be 'intensity' or 'height'

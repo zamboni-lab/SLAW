@@ -1,11 +1,16 @@
 import math
-###We impote the minimization function
 import numpy as np
 import inspect
 import concurrent.futures
 
 
-###We consider that
+def get_optimizers(string):
+  if string=="LIPO":
+    return LIPO
+  if string=="random":
+    return random_sampling_with_limits
+  raise Exception("Unknown optimizer")
+
 
 def upper_bound(x,supp):
   points, val_points, k = supp
@@ -95,7 +100,7 @@ def calculateLipschitzConstant(points,val_points):
     k[d]=np.max(slopes)
   return k
 
-def LIPO(lb,ub,func,max_call=50,initial_points = 4,fixed_arguments=None):
+def LIPO(lb,ub,func,max_call=50,initial_points = 3,fixed_arguments=None):
   '''
   :param constraints: a scipy.optimize.Bounds object
   :param func: The function ot be optimized
