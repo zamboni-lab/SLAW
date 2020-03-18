@@ -3,12 +3,15 @@ import numpy as np
 import inspect
 import concurrent.futures
 
+import model.rsm as mr
 
 def get_optimizers(string):
   if string=="LIPO":
     return LIPO
   if string=="random":
     return random_sampling_with_limits
+  if string=="bbd":
+    return best_bbd
   raise Exception("Unknown optimizer")
 
 
@@ -215,6 +218,40 @@ def random_sampling_with_limits(lb,ub,func,num_points=1000,num_cores = None,fixe
   params = tuple([x[pindex] for x in val_par])
   return params
 
+def best_bbd(lb,ub,func,num_cores = None,fixed_arguments=None):
+  '''
+  :param constraints: a scipy.optimize.Bounds object
+  :param func: The function ot be optimized
+  :param max_call: The maximum number of call to the function allowed INCLUDING the initial points
+  :param initial_points: The number of initial point sused for bounds estimation
+  :return: The optimized paramters
+  '''
+  ###We count the number of arguments
+  if num_cores is None:
+    num_cores = 1
+
+  if fixed_arguments is None:
+    fixed_arguments = {}
+  args_name = inspect.getfullargspec(func)[0]
+  to_optimize = [name for name in args_name if name not in fixed_arguments]
+
+  if len(to_optimize) != ndim:
+    raise Exception("Arguments don't match.")
+
+  ##We read the dimension from the contraints
+  ndim = len(lb)
+  bbd = mr.bbdesign(ndim,center=1)
+  for it in range(ndim):
+    bbd[:, it] = bbd[:, it] * (ub[it] - lb[it]) / 2 + (ub[it] + lb[it]) / 2
+  lpar = bbd.to_list()
+
+  ###We reshape the data frame in a list of dictionnary
+  all_dict = [{**dict(zip(to_optimize, cargs)),**fixed_arguments,"fun":func} for cargs in lpar]
+  with concurrent.futures.ProcessPoolExecutor(max_workers=num_cores) as executor:
+    vres = list(map(wrap_func_dic, all_dict))
+  pindex = vres.index(max(vres))
+  params = lpar[pindex]
+  return params
 
   ###We return the value which maximize the function
 

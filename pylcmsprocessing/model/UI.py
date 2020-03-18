@@ -3,6 +3,7 @@ import yaml
 import os
 import xml.etree.ElementTree as ET
 import model.output_handler as oh
+import model.parameters_handler as ph
 import multiprocessing
 
 
@@ -56,35 +57,33 @@ class UI:
     def generate_MZmine_XML(self,path_xml=None):
         if path_xml is None:
             path_xml = self.output.getFile(cr.OUT["ADAP"]["XML_MODEL"])
-        raw_yaml = None
-        with open(self.path_yaml, 'r') as stream:
-            raw_yaml = yaml.safe_load(stream)
+        pfh = ph.ParametersFileHandler(self.path_yaml)
         PATH_XML = os.path.join("data",cr.ALGORITHMS_TABLE["ADAP"][2])
         tree = ET.parse(PATH_XML)
         root = tree.getroot()
 
         ###Centroidization noise level MS1
-        root[1][2][0][0].text=str(raw_yaml['peakpicking']['noise_level_ms1']['value'])
+        root[1][2][0][0].text=str(pfh[('peakpicking','noise_level_ms1')]['value'])
         ###Centroidization noise level MS2
-        root[2][2][0][0].text=str(raw_yaml['peakpicking']['noise_level_ms2']['value'])
+        root[2][2][0][0].text=str(pfh[('peakpicking','noise_level_ms2')]['value'])
 
         ###Mass traces construction
-        root[3][3].text=str(raw_yaml['peakpicking']['traces_construction']['min_scan']['value'])
-        root[3][4].text=str(raw_yaml['peakpicking']['noise_level_ms1']['value'])
-        root[3][5].text=str(raw_yaml['peakpicking']['noise_level_ms1']['value'])
-        root[3][6][1].text=str(raw_yaml['peakpicking']['traces_construction']['ppm']['value'])
-        root[3][6][0].text=str(raw_yaml['peakpicking']['traces_construction']['dmz']['value'])
+        root[3][3].text=str(pfh[('peakpicking','traces_construction','min_scan')]['value'])
+        root[3][4].text=str(pfh[('peakpicking','noise_level_ms1')]['value'])
+        root[3][5].text=str(pfh[('peakpicking','noise_level_ms1')]['value'])
+        root[3][6][1].text=str(pfh[('peakpicking','traces_construction','ppm')]['value'])
+        root[3][6][0].text=str(pfh[('peakpicking','traces_construction','dmz')]['value'])
 
         ###Peak deconvolution
-        root[4][2][5][0].text=str(raw_yaml['peakpicking']['peaks_deconvolution']['SN']['value'])
-        root[4][2][5][2].text=str(raw_yaml['peakpicking']['peaks_deconvolution']['noise_level']['value'])
-        root[4][2][5][3].text=str(raw_yaml['peakpicking']['peaks_deconvolution']['coefficient_area_threshold']['value'])
-        root[4][2][5][4][0].text=str(raw_yaml['peakpicking']['peaks_deconvolution']['peak_width_min']['value'])
-        root[4][2][5][4][1].text=str(raw_yaml['peakpicking']['peaks_deconvolution']['peak_width_max']['value'])
-        root[4][2][5][5][0].text=str(raw_yaml['peakpicking']['peaks_deconvolution']['rt_wavelet_min']['value'])
-        root[4][2][5][5][1].text=str(raw_yaml['peakpicking']['peaks_deconvolution']['rt_wavelet_max']['value'])
-        root[4][4].text=str(raw_yaml['peakpicking']['peaks_deconvolution']['ms2_mz_tol']['value'])
-        root[4][5].text=str(raw_yaml['peakpicking']['peaks_deconvolution']['ms2_rt_tol']['value'])
+        root[4][2][5][0].text=str(pfh[('peakpicking','peaks_deconvolution','SN')]['value'])
+        root[4][2][5][2].text=str(pfh[('peakpicking','peaks_deconvolution','noise_level')]['value'])
+        root[4][2][5][3].text=str(pfh[('peakpicking','peaks_deconvolution','coefficient_area_threshold')]['value'])
+        root[4][2][5][4][0].text=str(pfh[('peakpicking','peaks_deconvolution','peak_width_min')]['value'])
+        root[4][2][5][4][1].text=str(pfh[('peakpicking','peaks_deconvolution','peak_width_max')]['value'])
+        root[4][2][5][5][0].text=str(pfh[('peakpicking','peaks_deconvolution','rt_wavelet_min')]['value'])
+        root[4][2][5][5][1].text=str(pfh[('peakpicking','peaks_deconvolution','rt_wavelet_max')]['value'])
+        root[4][4].text=str(pfh[('peakpicking','peaks_deconvolution','ms2_mz_tol')]['value'])
+        root[4][5].text=str(pfh[('peakpicking','peaks_deconvolution','ms2_rt_tol')]['value'])
 
         ###We write the XML file somewhere
         tree.write(path_xml)

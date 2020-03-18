@@ -88,8 +88,11 @@ if __name__=="__main__":
     #We put a message if the output is not here.
 # THE sample database is always calculated before doing any processing
     PATH_DB = "/temp_processing_db.sqlite"
+    #DB_STORAGE store db to rpevent lock during optmization.
+    DB_STORAGE = "/db_storage"
     if "CLUSTER" in os.environ:
         PATH_DB = os.path.join(OUTPUT_DIR,"temp_processing_db.sqlite")
+        DB_STORAGE = os.path.join(OUTPUT_DIR, "temp_optim","db_storage")
     # LOG = "/log.txt"
     #Procesinf of the pipeline eventually.
     path_save_db = os.path.join(OUTPUT_DIR,"processing_db.sqlite")
@@ -115,15 +118,18 @@ if __name__=="__main__":
         if "NOPTIM" in os.environ:
             num_iter = int(num_iter)
         PATH_OPTIM = os.path.join(OUTPUT_DIR, "temp_optim")
-        if not os.path.isdir(PATH_OPTIM):
-            os.makedirs(PATH_OPTIM)
+        if not os.path.isdir(DB_STORAGE):
+            os.makedirs(DB_STORAGE)
 
         ###We optimize the parameters
-        par_opt = ParametersOptimizer(exp, PATH_OPTIM, nrounds=num_iter, input_par=None)
+        par_opt = ParametersOptimizer(exp, PATH_OPTIM,DB_STORAGE, nrounds=num_iter, input_par=None)
         if "OPTIM" not in os.environ or os.environ["OPTIM"]=="LIPO":
-            par_opt.optimize_parameters(vui.path_yaml, optimizer="LIPO", max_call=num_iter,initial_points = 3)
+            par_opt.optimize_parameters(vui.path_yaml, optimizer=os.environ["OPTIM"], max_call=num_iter,initial_points = 3,num_cores=num_cpus)
         elif os.environ["OPTIM"]=="random":
-            par_opt.optimize_parameters(vui.path_yaml, optimizer="random", num_points=num_iter, num_cores=1)
+            par_opt.num_workers=1
+            par_opt.optimize_parameters(vui.path_yaml, optimizer=os.environ["OPTIM"], num_points=num_iter, num_cores=num_cpus)
+        elif os.environ["OPTIM"]=="bbd":
+            par_opt.optimize_parameters(vui.path_yaml, optimizer=os.environ["OPTIM"], num_cores=num_cpus)
         else:
             raise Exception("Unknown optimizer")
 

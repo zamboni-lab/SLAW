@@ -74,7 +74,7 @@ class ParametersFileHandler:
 
     def write_parameters(self,path):
         with open(path, 'w') as outfile:
-            yaml.dump(path, outfile, default_flow_style=False)
+            yaml.dump(self.dic, outfile, default_flow_style=False)
 
 if __name__=="__main__":
     PATH_PARAMS = "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/parameters_set.yaml"

@@ -17,7 +17,7 @@ import common.tools as ct
 from model.UI import UI
 
 ###Function used to optimize the paramters
-def create_temp_directory(path_exp,params_archive,*argv):
+def create_temp_directory(path_exp,params_archive,dir_db,*argv):
     '''
     :param argv: The arguments ot be hashed
     :return: A triplet containing the hash of the paramters, the experiemnt directory and the paramters name
@@ -28,8 +28,8 @@ def create_temp_directory(path_exp,params_archive,*argv):
     temp_dir = os.path.join(path_exp,str(hash_val))
     os.makedirs(temp_dir, exist_ok=True)
     stored_param = os.path.join(params_archive,"param_"+str(hash_val)+".yaml")
-    temp_db = os.path.join(temp_dir,"processing_db.sqlite")
-    temp_save_db = os.path.join(temp_dir,"save_processing_db.sqlite")
+    temp_db = os.path.join(dir_db,"processing_db_"+str(hash_val)+".sqlite")
+    temp_save_db = os.path.join(temp_dir,"save_processing_db_"+str(hash_val)+".sqlite")
     stored_xml = os.path.join(params_archive,"xml_"+str(hash_val)+".xml")
     return hash_val,temp_dir,temp_db,temp_save_db,stored_param,stored_xml
 
@@ -48,13 +48,14 @@ def convert_val(x):
 # def peak_picking_alignment_scoring(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14,fixed_params):
 def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noise_level_ms2,peakpicking__traces_construction__ppm,
                                    peakpicking__traces_construction__dmz,peakpicking__traces_construction__min_scan,
-                                   peakpicking__peaks_deconvolution__SN,peakpicking__peaks_deconvolution__peak_width_min,
+                                   peakpicking__peaks_deconvolution__SN,peakpicking__peaks_deconvolution__noise_level,
+                                   peakpicking__peaks_deconvolution__peak_width_min,peakpicking__peaks_deconvolution__peak_width_max,
                                    peakpicking__peaks_deconvolution__rt_wavelet_min,peakpicking__peaks_deconvolution__rt_wavelet_max,
-                                   peakpicking__peaks_deconvolution__coefficient_area_threshold,grouping__ppm,grouping__drt,grouping__dmz,
-                                   grouping__alpha,grouping__num_references,fixed_params):
+                                   peakpicking__peaks_deconvolution__coefficient_area_threshold,grouping__ppm,
+                                   grouping__drt,grouping__dmz,grouping__alpha,grouping__num_references,fixed_params,**kwargs):
     args_refs = locals()
     del args_refs["fixed_params"]
-
+    del args_refs["kwargs"]
     def is_processed(stored_param, summary_table):
         if not os.path.isfile(summary_table):
             return False, 0
@@ -71,11 +72,13 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
             if isinstance(x[0], np.float64):
                 return float(x.item())
             return x.item()
+        if type(x) is np.float64:
+            return float(x)
         return x
 
     # p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14=params
-    DIR_TEMP,STORAGE_YAML,SUMMARY_YAML,num_cpus,polarity,path_samples,initial_yaml=fixed_params
-    call_list = [DIR_TEMP,STORAGE_YAML]+list(args_refs.values())
+    DIR_TEMP,STORAGE_YAML,STORAGE_DB,SUMMARY_YAML,num_cpus,polarity,path_samples,initial_yaml=fixed_params
+    call_list = [DIR_TEMP,STORAGE_YAML,STORAGE_DB]+list(args_refs.values())
     ###we create the directory andget the path which will be used in the data.
     hash_val,OUTPUT_DIR,PATH_DB,PATH_SAVE_DB,stored_param,stored_xml = create_temp_directory(*call_list)
 
@@ -90,29 +93,20 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
     ####We load the orginial yaml file
     parameters = ph.ParametersFileHandler(initial_yaml)
     for k in args_refs.keys():
-        parameters[k] = args_refs[k]
-    ##We update the parameters to reflect the rest of the data
-    # raw_yaml["peakpicking"]["noise_level_ms1"]["value"]=float(convert_val(peakpicking_noise_level_ms1))
-    # raw_yaml["peakpicking"]["noise_level_ms2"]["value"]=float(convert_val(peakpicking_noise_level_ms2))
-    # raw_yaml["peakpicking"]["traces_construction"]["ppm"]["value"]=float(convert_val(peakpicking_traces_construction_ppm))
-    # raw_yaml["peakpicking"]["traces_construction"]["dmz"]["value"]=float(convert_val(peakpicking_traces_construction_dmz))
-    # raw_yaml["peakpicking"]["traces_construction"]["min_scan"]["value"]=int(convert_val(peakpicking_traces_construction_min_scan))
-    # raw_yaml["peakpicking"]["peaks_deconvolution"]["SN"]["value"]=float(convert_val(peakpicking_peaks_deconvolution_SN))
-    # raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width_min"]["value"]=float(convert_val(peakpicking_peaks_deconvolution_peak_width_min))
-    # raw_yaml["peakpicking"]["peaks_deconvolution"]["rt_wavelet_min"]["value"]=float(convert_val(peakpicking_peaks_deconvolution_rt_wavelet_min))
-    # raw_yaml["peakpicking"]["peaks_deconvolution"]["rt_wavelet_max"]["value"]=float(convert_val(peakpicking_peaks_deconvolution_rt_wavelet_max))
-    # raw_yaml["peakpicking"]["peaks_deconvolution"]["coefficient_area_threshold"]["value"]=float(convert_val(peakpicking_peaks_deconvolution_coefficient_area_threshold))
+        parameters[k] = convert_val(args_refs[k])
+        #
+    ###The numbver of scans is handled separately as it is an integer.
+    parameters["peakpicking__traces_construction__min_scan"] =convert_val(args_refs["peakpicking__traces_construction__min_scan"])
+
     ###We dump the yaml
     parameters.write_parameters(stored_param)
-
-    PATH_DB = os.path.join(OUTPUT_DIR,"temp_processing"+str(hash_val)+"_db.sqlite")
-    PATH_SAVE_DB = os.path.join(OUTPUT_DIR,"processing_db.sqlite")
     PATH_XML = os.path.join(OUTPUT_DIR,"temp_par"+str(hash_val)+".xml")
 
     exp = me.Experiment(PATH_DB,save_db = PATH_SAVE_DB,reset=False)
     ###We create the UI
-    vui = UI(OUTPUT_DIR, path_samples, polarity=polarity, mass_spec="Exactive", num_workers=num_cpus, path_yaml=stored_param)
-    vui.generate_yaml_files(cr.DATA["YAML"])
+    vui = UI(OUTPUT_DIR, path_samples, polarity=polarity, mass_spec="Exactive", num_workers=num_cpus,
+             path_yaml=stored_param)
+    # vui.generate_yaml_files(cr.DATA["YAML"])
     ###The output database is generated.
     vui.generate_MZmine_XML(path_xml=PATH_XML)
     exp.initialise_database(num_cpus, OUTPUT_DIR, polarity, path_samples, ["ADAP"], 1)
@@ -155,7 +149,7 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
         to_join=["path_parameters","score"]+list(args_refs.keys())
         joined_summary = ",".join(to_join)
         with open(SUMMARY_YAML, "w") as ff:
-            ff.write(joined_summary)
+            ff.write(joined_summary+"\n")
 
     with open(SUMMARY_YAML,"a") as ff:
         ff.write(to_write)
@@ -164,7 +158,7 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
     return vscore
 
 class ParametersOptimizer:
-    def __init__(self,exp,output,nrounds=10,input_par=None):
+    def __init__(self,exp,output,db_storage,nrounds=10,input_par=None):
         if input_par is None:
             input_par = cr.DATA["YAML"]
         self.input_par = input_par
@@ -172,6 +166,7 @@ class ParametersOptimizer:
         self.nrounds=nrounds
         # At the initialisation a temp directory for the output is created.
         self.path_exp=os.path.join(self.output,"temp_exp")
+        self.dir_db=db_storage
         os.makedirs(self.path_exp, exist_ok=True)
         self.params_archive=os.path.join(self.output,"parameters")
         os.makedirs(self.params_archive, exist_ok=True)
@@ -189,7 +184,7 @@ class ParametersOptimizer:
     def select_samples(self,num_files=None):
         if num_files is None:
             # As many as worker to speed up the peakpicking process
-            num_files = max(self.num_workers-1,1)
+            num_files = max(self.num_workers-1,4)
         if len(self.samples) < num_files:
             num_files = len(self.samples)
         sel_samples = sample(self.samples,num_files)
@@ -225,13 +220,14 @@ class ParametersOptimizer:
             self.temp_yaml = self.input_par
 
         # Paramters which are always fixed.
-        fixed_params = self.path_exp, self.params_archive, self.path_summary, self.num_workers, self.polarity, self.path_samples, self.temp_yaml
+        fixed_params = self.path_exp, self.params_archive, self.dir_db, self.path_summary,\
+                       self.num_workers, self.polarity, self.path_samples, self.temp_yaml
         dic_fixed = {"fixed_params":fixed_params}
 
         ###We fix the paramter which are not yet fixed
         for ll in all_parameters:
             if ll not in to_optimize:
-                dic_fixed[ll]=pfh[ll]
+                dic_fixed[ll]=pfh[ll]["value"]
 
         # we optimize the peakpicking
         voptim = optim_func(lb,ub,peak_picking_alignment_scoring,fixed_arguments=dic_fixed,**kwargs)

@@ -46,7 +46,6 @@ message("Beginning grouping using metric, ",VAL_INTENSITY)
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
 all_peaktables <- dbGetQuery(dbb, "SELECT output_ms FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1'")[, 1]
 dbDisconnect(dbb)
-print(all_peaktables)
 
 ##mz and rt are always stored
 lam <- LCMSAlignerModelFromDirectory(all_peaktables,

@@ -902,6 +902,7 @@ alignPeaktable <-
         span = span,
         lim = lim
       )
+    message("Corrected")
     cpeaktable <- lcc$peaktable
     ###We reorder the two peaktables
     opeaktable <- order(cpeaktable[,"mz"])
