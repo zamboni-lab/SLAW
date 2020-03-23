@@ -1,6 +1,6 @@
 
 fitLoess <- function(x,y,span=0.4){
-  rloess <- loess(y~x,span = span)
+  rloess <- suppressWarnings(loess(y~x,span = span))
   ###we return the model
   return(rloess)
 }
@@ -61,7 +61,7 @@ ransacLoess <- function(tdata,max_iter=100,fitting_point=floor(nrow(tdata)*0.1),
   while(nits < max_iter){
     ###We sample a ramdon numbr of data points
     sel_points <- sample.int(ndata,fitting_point)
-
+    nits <- nits+1
     ###We fit the model
     current_model <- fitLoess(tdata$x[sel_points],tdata$y[sel_points],span=span)
     my <- max(tdata$y[sel_points])
@@ -70,9 +70,7 @@ ransacLoess <- function(tdata,max_iter=100,fitting_point=floor(nrow(tdata)*0.1),
     vpred <- tryCatch(predict(current_model,seqx),error=function(e) return(NA))
     if(length(vpred)==1&&is.na(vpred)) next
     vpred <- vpred[!is.na(vpred)]
-    if(any(vpred>my)){
-      next
-    }
+    if(any(vpred>my)) next
 
     ###We calculate the distance for all the points
     current_distance <- tryCatch(calculateDistance(current_model,tdata$x,tdata$y),error=function(e){return(NA)})
@@ -101,7 +99,6 @@ ransacLoess <- function(tdata,max_iter=100,fitting_point=floor(nrow(tdata)*0.1),
         bpoints <- sel_points
       }
     }
-    nits <- nits+1
   }
   if(graphical){
     best_model <- tryCatch(plotModel(best_model,tdata,binliers,bpoints),error=function(e){return(NA)})

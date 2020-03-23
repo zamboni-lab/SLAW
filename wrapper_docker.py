@@ -13,7 +13,7 @@ import time
 sys.path.append('/pylcmsprocessing')
 from pylcmsprocessing.model.UI import UI
 from pylcmsprocessing.model.experiment import Experiment
-from pylcmsprocessing.model.optimization import ParametersOptimizer
+from pylcmsprocessing.model.optimize_parameters import ParametersOptimizer
 from pylcmsprocessing.common.references import DATA
 
 if __name__=="__main__":

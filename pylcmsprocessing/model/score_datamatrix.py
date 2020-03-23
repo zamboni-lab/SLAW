@@ -9,10 +9,16 @@ class scorerDataMatrix:
         self.path = path
         if not os.path.exists(self.path):
             raise Exception("Datamatrix "+self.path+" does not exists")
-        self.data = pd.read_csv(path,header=0)
+        if os.path.exists(path):
+            self.data = pd.read_csv(path,header=0)
+        else:
+            self.data=None
 
     ####Score a data mnatrix
     def score_datamatrix(self,num_skipped=1):
+        if self.data is None:
+            return -1.0
+
         cnames = [cc for cc in self.data.columns if cc.startswith("int")]
         num_sample = len(cnames)
 

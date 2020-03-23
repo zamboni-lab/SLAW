@@ -187,7 +187,11 @@ LCMSAlignerModelFromDirectory <-
            bpp=NULL,
            graphical=FALSE,
            ...) {
+    if(length(directory)==1){
     message("Processing of directory ", directory, ".")
+    }else{
+      message("Processing of ", length(directory), " files.")
+    }
     if(is.null(maxAlign)) maxAlign <- 100000
     if(is.null(bpp)) bpp <- bpparam()
 

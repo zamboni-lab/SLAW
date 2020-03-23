@@ -157,6 +157,8 @@ extractWellBehavedPeaksManyFiles <- function(lar,peaktables,
 
   tab_clustering <- tab_clustering[(tab_clustering[,2]>rt_spe[1])&
                                      (tab_clustering[,2]<rt_spe[2]),,drop=FALSE]
+  
+  if(nrow(tab_clustering)>n_clusters){
 
   meanv <- apply(tab_clustering,2,mean)
   sdv <- apply(tab_clustering,2,sd)
@@ -174,6 +176,8 @@ extractWellBehavedPeaksManyFiles <- function(lar,peaktables,
   ggp <- ggplot(dtf,aes(x=rt,y=mz,color=as.factor(dtf$cluster)))+geom_point()+
     xlab("Retention time")+ylab("m/z")+theme(legend.position = "none")
     if(graphical)  plot(ggp)
+  
+  }
 
   row.names(btab) <- NULL
   bfiles <-   c(0,cumsum(sapply(peaktables,nrow)))
@@ -314,14 +318,18 @@ extractWellBehavedPeaksManyFiles <- function(lar,peaktables,
     },cov_mat=cov_mat,centroids=centroids,peaks=x)
     return(like)
   }
-
+  
+  mean_rt <-  sapply(sel_peaks,function(x){mean(x[,2])})
+  clusters <- rep(0,length(sel_peaks))
+  if(nrow(tab_clustering)>n_clusters){
   clusters <- sapply(sel_peaks,calc_likehood,mn=meanv,sdn=sdv,
          cov_mat=gmm$covariance_matrices,centroids=gmm$centroids,simplify=FALSE)
-
   clusters <- sapply(clusters,which.max)
-
   ##Low intensities points are put in theri own cluster
-  mean_rt <-  sapply(sel_peaks,function(x){mean(x[,2])})
+  }else{
+    n_clusters <- 0
+  }
+  
   clusters[mean_rt<rt_spe[1]] <- n_clusters+1
   clusters[mean_rt>rt_spe[2]] <- n_clusters+2
 

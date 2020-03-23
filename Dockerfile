@@ -9,6 +9,7 @@ FROM adelabriere/basis_workflow
 
 RUN pip3 uninstall -y numpy
 RUN pip3 install numpy==1.17
+RUN pip3 install sklearn statsmodels
 
 
 ##The copying is always a file.

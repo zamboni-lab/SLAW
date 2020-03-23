@@ -354,7 +354,8 @@ alignToModel.density <- function(lam, peaktable,bw = 10,binSize = 0.01, maxFeatu
 
   },MoreArgs=list(ref_peaks=ref_peaks,peaktable=peaktable,
                   bw=bw,maxFeatures=maxFeatures,vrt=vrt,
-                  densFrom=densFrom,densTo=densTo,densN),BPPARAM = bpp)
+                  densFrom=densFrom,densTo=densTo,densN),
+  BPPARAM = bpp,SIMPLIFY = FALSE)
 
 
   # ####We only keep the best group
@@ -902,7 +903,6 @@ alignPeaktable <-
         span = span,
         lim = lim
       )
-    message("Corrected")
     cpeaktable <- lcc$peaktable
     ###We reorder the two peaktables
     opeaktable <- order(cpeaktable[,"mz"])
