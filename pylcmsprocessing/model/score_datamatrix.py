@@ -7,8 +7,6 @@ import os
 class scorerDataMatrix:
     def __init__(self,path):
         self.path = path
-        if not os.path.exists(self.path):
-            raise Exception("Datamatrix "+self.path+" does not exists")
         if os.path.exists(path):
             self.data = pd.read_csv(path,header=0)
         else:

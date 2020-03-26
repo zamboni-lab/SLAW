@@ -11,7 +11,7 @@ import pandas as pd
 import model.experiment as me
 import common.references as cr
 import model.score_datamatrix as ms
-import model.optimizer as mlp
+import model.optimization.sampling as mos
 import model.parameters_handler as ph
 import common.tools as ct
 from model.UI import UI
@@ -77,7 +77,9 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
         return x
 
     # p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14=params
-    DIR_TEMP,STORAGE_YAML,STORAGE_DB,SUMMARY_YAML,num_cpus,polarity,path_samples,initial_yaml=fixed_params
+    DIR_TEMP,STORAGE_YAML,STORAGE_DB,SUMMARY_YAML,num_cpus,polarity,path_samples,initial_yaml,parallel=fixed_params
+    if parallel:
+        num_cpus=1
     call_list = [DIR_TEMP,STORAGE_YAML,STORAGE_DB]+list(args_refs.values())
     ###we create the directory andget the path which will be used in the data.
     hash_val,OUTPUT_DIR,PATH_DB,PATH_SAVE_DB,stored_param,stored_xml = create_temp_directory(*call_list)
@@ -135,7 +137,10 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
         ###We authorize 1 jump
         vscore = msd.score_datamatrix(1)
     except Exception:
-        subprocess.call("rm -r " + OUTPUT_DIR)
+        try:
+            subprocess.call("rm -r " + OUTPUT_DIR)
+        except Exception:
+            pass
         return -1
 
     ###We write the score in the table
@@ -157,13 +162,20 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
     shutil.rmtree(OUTPUT_DIR)
     return vscore
 
+
+def parse_optim_option(string):
+    sampler,optimizer = string.split("_")
+    return mos.getSampler(sampler),mos.getOptimizer(optimizer)
+
+
+
+
 class ParametersOptimizer:
-    def __init__(self,exp,output,db_storage,nrounds=10,input_par=None):
+    def __init__(self,exp,output,db_storage,num_workers=1,input_par=None):
         if input_par is None:
             input_par = cr.DATA["YAML"]
         self.input_par = input_par
         self.output = output
-        self.nrounds=nrounds
         # At the initialisation a temp directory for the output is created.
         self.path_exp=os.path.join(self.output,"temp_exp")
         self.dir_db=db_storage
@@ -175,7 +187,7 @@ class ParametersOptimizer:
         self.path_summary = os.path.join(self.output,"summary_par.csv")
         self.temp_polarity = os.path.join(self.output,"polarity.csv")
         self.polarity = exp.get_polarity()
-        self.num_workers = exp.get_workers()
+        self.num_workers = num_workers
         self.samples = exp.get_query("SELECT path FROM samples")
         self.path_db = exp.db
         self.temp_yaml = os.path.join(self.output,"temp_yaml.yaml")
@@ -205,23 +217,30 @@ class ParametersOptimizer:
         subprocess.call(cli, shell=True, env=os.environ.copy())
 
 
-    def do_optimize_parameters(self,optimizer="LIPO",**kwargs):
-        ###We read the standar doptimization interval eventually
-        optim_func = mlp.get_optimizers(optimizer)
+    def do_optimize_parameters(self,optim_string="bbd_rsm",num_points=50,**kwargs):
 
+        ### We get the optimization algorithm.
+        sampler,optimizer = parse_optim_option(optim_string)
+        sampler = sampler()
+        optimizer = optimizer()
+
+        ## Reading parameters to optimize and ranges
         pfh = ph.ParametersFileHandler(self.temp_yaml)
         to_optimize = pfh.get_optimizable_parameters(string=True)
         all_parameters = pfh.get_parameters()
+
+        ##We get the bounds of the optimizable parameters.
         lb = [x[0] for x in to_optimize.values()]
         ub = [x[1] for x in to_optimize.values()]
+        bounds = mos.bounds(lb,ub)
 
         ###if the yaml has not been optimize we create the first value
         if not os.path.isfile(self.temp_yaml):
             self.temp_yaml = self.input_par
 
         # Paramters which are always fixed.
-        fixed_params = self.path_exp, self.params_archive, self.dir_db, self.path_summary,\
-                       self.num_workers, self.polarity, self.path_samples, self.temp_yaml
+        fixed_params = (self.path_exp, self.params_archive, self.dir_db, self.path_summary,\
+                       self.num_workers, self.polarity, self.path_samples, self.temp_yaml, sampler.is_parallel())
         dic_fixed = {"fixed_params":fixed_params}
 
         ###We fix the paramter which are not yet fixed
@@ -230,22 +249,28 @@ class ParametersOptimizer:
                 dic_fixed[ll]=pfh[ll]["value"]
 
         # we optimize the peakpicking
-        voptim = optim_func(lb,ub,peak_picking_alignment_scoring,fixed_arguments=dic_fixed,**kwargs)
+        soptim = mos.samplingOptimizer(sampler, optimizer, bounds, fixed_arguments=dic_fixed)
+        voptim = soptim.optimize(peak_picking_alignment_scoring, num_points=num_points, num_cores=self.num_workers)
                          #LIPO algoirhtm  ,max_call=self.nrounds,initial_points=3,)
         final_dic = dic_fixed
-        for io in range(len(voptim)):
-            final_dic[to_optimize[io]] = convert_val(voptim[io])
+        for io,ik in zip(range(len(voptim)),to_optimize.keys()):
+            final_dic[ik] = convert_val(voptim[io])
         # The best paramters is stroed
         self.best_par = final_dic
 
     def export_best_parameters(self,outpath):
         pfh = ph.ParametersFileHandler(self.input_par)
+        print(self.best_par)
         for k in self.best_par:
+            if k == "fixed_params":
+                continue
             pfh[k] = convert_val(self.best_par[k])
+            print(k,convert_val(self.best_par[k]),type(convert_val(self.best_par[k])))
+
         pfh.write_parameters(outpath)
 
 
-    def optimize_parameters(self,output_par,optimizer="LIPO",**kwargs):
+    def optimize_parameters(self,output_par,optimizer="lipo_rsm",num_points=100,**kwargs):
         ##Supplementary arugment for LIPO
         # max_call=self.nrounds,initial_points=3
         ##Supplementary for random sampling
@@ -254,6 +279,6 @@ class ParametersOptimizer:
         self.select_samples()
         print("Finished initial parameters estimation")
         print("Optimizing remaining parameters")
-        self.do_optimize_parameters(optimizer=optimizer,**kwargs)
+        self.do_optimize_parameters(optim_string=optimizer,num_points=num_points)
         print("Finished  optimization")
         self.export_best_parameters(output_par)

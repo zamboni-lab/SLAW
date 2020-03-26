@@ -114,24 +114,17 @@ if __name__=="__main__":
     if not os.path.exists(vui.path_yaml):
         vui.generate_yaml_files()
         vui.initialize_yaml_polarity(PATH_YAML, pol)
-        num_iter = 100
+        num_points = 100
         if "NOPTIM" in os.environ:
-            num_iter = int(num_iter)
+            num_points = int(os.environ["NOPTIM"])
         PATH_OPTIM = os.path.join(OUTPUT_DIR, "temp_optim")
         if not os.path.isdir(DB_STORAGE):
             os.makedirs(DB_STORAGE)
 
         ###We optimize the parameters
-        par_opt = ParametersOptimizer(exp, PATH_OPTIM,DB_STORAGE, nrounds=num_iter, input_par=None)
-        if "OPTIM" not in os.environ or os.environ["OPTIM"]=="LIPO":
-            par_opt.optimize_parameters(vui.path_yaml, optimizer=os.environ["OPTIM"], max_call=num_iter,initial_points = 3,num_cores=num_cpus)
-        elif os.environ["OPTIM"]=="random":
-            par_opt.num_workers=1
-            par_opt.optimize_parameters(vui.path_yaml, optimizer=os.environ["OPTIM"], num_points=num_iter, num_cores=num_cpus)
-        elif os.environ["OPTIM"]=="bbd":
-            par_opt.optimize_parameters(vui.path_yaml, optimizer=os.environ["OPTIM"], num_cores=num_cpus)
-        else:
-            raise Exception("Unknown optimizer")
+        par_opt = ParametersOptimizer(exp, PATH_OPTIM,DB_STORAGE,num_workers=num_cpus, input_par=None)
+        par_opt.optimize_parameters(vui.path_yaml, optimizer=os.environ["OPTIM"],
+                                    num_points=num_points, num_cores=num_cpus)
 
     if not os.path.isfile(PATH_XML):
         vui.generate_MZmine_XML(path_xml=PATH_XML)

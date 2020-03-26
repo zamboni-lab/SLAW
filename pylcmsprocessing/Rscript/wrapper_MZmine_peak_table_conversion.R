@@ -37,7 +37,7 @@ convPeakTableFromPath <-  function(pt){
   peaktable <-  read.table(pt,header=TRUE,sep=",",stringsAsFactors = FALSE)
   peaktable <- tryCatch(convertPeakTable(peaktable),error=function(e){return(NA)})
 
-  if(is.na(peaktable)) return(NULL)
+  if(length(peaktable)==1 && is.na(peaktable)) return(NULL)
   ###The file is written in place.
   write.table(peaktable,file = pt,row.names = FALSE,sep = ",")
   return(NULL)
