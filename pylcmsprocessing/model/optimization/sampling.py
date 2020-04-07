@@ -10,11 +10,11 @@ SAMPLER = ["random","bbd","lipo"]
 def getSampler(name="lipo"):
     if name == "random":
         return uniformBoundedSampler
-    elif name=="bbd":
+    elif name == "bbd":
         return bbdSampler
     elif name=="lipo":
         return lipoSampler
-    return lipoSampler
+    return bbdSampler
 
 OPTIMIZER = ["max","rsm"]
 def getOptimizer(name="rsm"):
@@ -199,7 +199,7 @@ class uniformBoundedSampler(boundedSampler):
 ## BDD sampling ##
 ##################
 
-def do_bbd(lb, ub, func, num_cores=None, fixed_arguments=None):
+def do_bbd(lb, ub, func, num_cores=1, fixed_arguments=None):
         '''
         :param constraints: a scipy.optimize.Bounds object
         :param func: The function ot be optimized
@@ -221,10 +221,11 @@ def do_bbd(lb, ub, func, num_cores=None, fixed_arguments=None):
         for it in range(ndim):
             bbd[:, it] = bbd[:, it] * (ub[it] - lb[it]) / 2 + (ub[it] + lb[it]) / 2
         lpar = bbd.tolist()
-
+        print("Using ",num_cores," parameters")
         ###We reshape the data frame in a list of dictionnary
         all_dict = [{**dict(zip(to_optimize, cargs)), **fixed_arguments, "fun": func} for cargs in lpar]
         list_for_numpy = [cargs for cargs in zip(*lpar)]
+
         with concurrent.futures.ProcessPoolExecutor(max_workers=num_cores) as executor:
             vres = list(executor.map(wrap_func_dic, all_dict))
         # vres = list(map(wrap_func_dic, all_dict))
@@ -236,7 +237,7 @@ class bbdSampler(boundedSampler):
         self.parallel=True
         super().__init__()
 
-    def sample_points(self,bounds,func,num_points,num_cores=None,fixed_arguments=None):
+    def sample_points(self,bounds,func,num_points,num_cores=1,fixed_arguments=None):
         points,values = do_bbd(bounds.lower_bound(), bounds.upper_bound() , func, num_cores=num_cores,
                                fixed_arguments=fixed_arguments)
         return points,values

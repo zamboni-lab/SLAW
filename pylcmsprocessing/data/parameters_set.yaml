@@ -45,28 +45,32 @@ peakpicking:
       priority: HIGH
       description: Float. The min feature height for a deconvoluted peak to be kept.
       value: 200000
-    peak_width_min:
+    peak_width:
       priority: ESSENTIAL
-      description: Float. The minimum width of a peak in minutes. This parameter is highly dependent of you chromatography setup.
-      value: 0.02
-    peak_width_max:
-      priority: ESSENTIAL
-      description: Float. The maximum width of a peak in minutes. This parameter is highly dependent of you chromatography setup.
-      value: 0.1
-    rt_wavelet_min:
-      priority: LOW
-      description: Float. The minimum width the considered wavelet.
-      value: 0.005
-      range:
-        - 0.0001
-        - 0.01
-    rt_wavelet_max:
-      priority: LOW
-      description: Float. The maximum width the considered wavelet.
-      value: 0.01
-      range:
-        - 0.0005
+      description: Floats. The minimum and maximum width of a peak in minutes. This parameter is highly dependent of you chromatography setup.
+      value:
         - 0.02
+        - 0.1
+      range:
+        min:
+          - 0.015
+          - 0.15
+        max:
+          - 0.07
+          - 0.3
+    rt_wavelet:
+      priority: ESSENTIAL
+      description: Floats. Float. The minimum and width width the wavelets used for peak detection.
+      value:
+        - 0.0005
+        - 0.005
+      range:
+        min:
+          - 0.0001
+          - 0.01
+        max:
+          - 0.0005
+          - 0.02
     coefficient_area_threshold:
       priority: LOW
       description: Float. Coefficient over area filtering for ADAP.

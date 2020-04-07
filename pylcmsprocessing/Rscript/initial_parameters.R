@@ -22,6 +22,7 @@ PATH_DB <- args[1]
 INITIAL_PAR <- args[2]
 OUTPUT_PAR <- args[3]
 NUM_CORES <- as.numeric(args[4])
+num_sel <- max(10,2*NUM_CORES)
 
 
 ##Fixed parameters
@@ -48,8 +49,15 @@ get_os <- function() {
 
 ####We get a list of all the raw files.
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
-raw_files <- dbGetQuery(dbb, "SELECT path FROM samples")[, 1]
+raw_files <- dbGetQuery(dbb, "SELECT path FROM samples WHERE types='QC'")[, 1]
+if(length(raw_files)==0) raw_files <- dbGetQuery(dbb, "SELECT path FROM samples WHERE types='sample'")[, 1]
 dbDisconnect(dbb)
+
+
+if(num_sel>length(raw_files)){
+  num_sel <- length(raw_files)
+}
+raw_files <- sample(raw_files,num_sel)
 
 bpp <- NULL
 if (get_os() == "win") {
@@ -186,9 +194,13 @@ polarity <- estimated_par[3]
 
 ##We read the initial parameter estimation
 params <- yaml.load_file(INITIAL_PAR)
-params$peakpicking$peaks_deconvolution$peak_width_min$value <- estimated_par[1]/60
-params$peakpicking$peaks_deconvolution$peak_width_max$value <- estimated_par[2]/60
-params$peakpicking$traces_construction$min_scan$value <- as.integer(estimated_par[3])
+bmin <- estimated_par[1]/60
+bmax <- estimated_par[2]/60
+params$peakpicking$peaks_deconvolution$peak_width$value <- c(bmin,bmax)
+bbmin <- bmin*0.5
+if(bbmin<0.01) bbmin <- 0.01
+params$peakpicking$peaks_deconvolution$peak_width$range$min <- c(bbmin,bmin*c(3))
+params$peakpicking$peaks_deconvolution$peak_width$range$max <- bmax*c(0.5,3)
 write_yaml(params,OUTPUT_PAR)
 
 

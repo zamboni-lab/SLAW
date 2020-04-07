@@ -2,8 +2,8 @@ import common.references as cr
 import yaml
 import os
 import xml.etree.ElementTree as ET
-import model.output_handler as oh
-import model.parameters_handler as ph
+import model.helper.output_handler as oh
+import model.helper.parameters_handler as ph
 import multiprocessing
 
 
@@ -78,10 +78,10 @@ class UI:
         root[4][2][5][0].text=str(pfh[('peakpicking','peaks_deconvolution','SN')]['value'])
         root[4][2][5][2].text=str(pfh[('peakpicking','peaks_deconvolution','noise_level')]['value'])
         root[4][2][5][3].text=str(pfh[('peakpicking','peaks_deconvolution','coefficient_area_threshold')]['value'])
-        root[4][2][5][4][0].text=str(pfh[('peakpicking','peaks_deconvolution','peak_width_min')]['value'])
-        root[4][2][5][4][1].text=str(pfh[('peakpicking','peaks_deconvolution','peak_width_max')]['value'])
-        root[4][2][5][5][0].text=str(pfh[('peakpicking','peaks_deconvolution','rt_wavelet_min')]['value'])
-        root[4][2][5][5][1].text=str(pfh[('peakpicking','peaks_deconvolution','rt_wavelet_max')]['value'])
+        root[4][2][5][4][0].text=str(pfh[('peakpicking','peaks_deconvolution','peak_width')]['value'][0])
+        root[4][2][5][4][1].text=str(pfh[('peakpicking','peaks_deconvolution','peak_width')]['value'][1])
+        root[4][2][5][5][0].text=str(pfh[('peakpicking','peaks_deconvolution','rt_wavelet')]['value'][0])
+        root[4][2][5][5][1].text=str(pfh[('peakpicking','peaks_deconvolution','rt_wavelet')]['value'][1])
         root[4][4].text=str(pfh[('peakpicking','peaks_deconvolution','ms2_mz_tol')]['value'])
         root[4][5].text=str(pfh[('peakpicking','peaks_deconvolution','ms2_rt_tol')]['value'])
 

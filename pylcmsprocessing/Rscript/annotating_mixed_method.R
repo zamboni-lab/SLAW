@@ -498,7 +498,7 @@ annotateCliques <- function(cliques,
       main_adducts = main_adducts,
       ionization_mode = ionization_mode,
       val_int = val_int),
-      BPPARAM = bpp
+      BPPARAM = bpp,SIMPLIFY = FALSE
     )
 
   totfeat <- 1
@@ -1014,7 +1014,10 @@ groupFeatures <-
     } else{
       cut_rts[length(cut_rts)] <- cut_rts[length(cut_rts)] + 1
     }
-    if(length(cut_rts)==2) cut_rts <- c(cut_rts,cut_rts[length(cut_rts)])
+    if(length(cut_rts)==2){
+      cut_rts <- c(cut_rts,number_features+1)
+    }
+    sink(NULL)
 
     ###WE update the cliaues vector at every step
     cliques <- vector(mode = "list", length = 10000)
@@ -1022,10 +1025,13 @@ groupFeatures <-
     size <- rep(0L, nrow(dm))
     ###The first id needs to be -1
     current_id <- as.integer(-1)
+    
+    tlist <- list()
+    
     ##We update all the cliques.
     for (i in seq(1, length(cut_rts) - 2)) {
       message("Processing batch ",i)
-      # message("Variables:",cut_rts[i],"-",cut_rts[i+2],"current cliques size is ",length(cliques))
+      message("Variables:",cut_rts[i],"-",cut_rts[i+2],"current cliques size is ",length(cliques))
       sel_idx <- ort[cut_rts[i]:cut_rts[i + 2]]
       anclique <- createNetworkMultifiles(
         dm[sel_idx, , drop = FALSE],
@@ -1042,14 +1048,15 @@ groupFeatures <-
       sink(file="/dev/null")
       anclique <- computeCliques(anclique, 1e-5, TRUE)
       sink(NULL)
+      # browser()
       ###We correct the index for subselection.
       for (ic in seq_along(anclique@cliques)) {
         anclique@cliques[[ic]] <- sel_idx[anclique@cliques[[ic]]]
       }
-
+      tlist[[i]] <- list(cliques, anclique@cliques, assignments, size, current_id)
+      saveRDS(tlist,file = "/output/save_cliques.rds")
       cliques <-
         mergeCliques(cliques, anclique@cliques, assignments, size, current_id)
-
     }
 
     ###We convert the cliques ID back to the unsorted point
@@ -1102,6 +1109,26 @@ groupFeatures <-
 
 ####Actual processing in the pipeline.
 args <- commandArgs(trailingOnly = TRUE)
+# print(args)
+
+
+library(stringr)
+# args <- c(
+#   "/output/datamatrices/datamatrix_7bbbdfd8150cffa0393412d02891dc87.csv",                 
+#   "/output/processing_db.sqlite",                                                    
+#   "/output/datamatrices/annotated_peaktable_7bbbdfd8150cffa0393412d02891dc87_full.csv", 
+#   "/output/datamatrices/annotated_peaktable_7bbbdfd8150cffa0393412d02891dc87_reduced.csv",
+#   "9",                                                                                    
+#   "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/xcms_raw_model.RData",                                          
+#   "/output/adducts.csv",                                                             
+#   "/output/main_adducts.csv",                                                        
+#   "negative",                                                                            
+#   "15.0",                                                                                
+#   "0.01",                                                                                 
+#   "50",                                                                                   
+#   "2",                                                                                    
+#   "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/Rscript/cliques_matching.cpp")
+# args <- str_replace(args,"/output","E:/dev/workflow_debug/annotation_bug")
 
 PATH_DATAMATRIX <- args[1]
 PATH_DB <- args[2]
@@ -1146,7 +1173,8 @@ dm <- dm[vdetect, , drop = FALSE]
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
 raw_files <- dbGetQuery(dbb, "SELECT path FROM samples WHERE level='MS1'")[, 1]
 dbDisconnect(dbb)
- # raw_files <- str_replace(raw_files,pattern = "/sauer1",replacement = "U:")
+# raw_files <- str_replace(raw_files,pattern = "/sauer1",replacement = "U:")
+# raw_files <- str_replace(raw_files,pattern = "/input",replacement = "E:/dev/workflow_debug/annotation_bug/mzml")
 
 ####Selecting the msot intense files
 val_int <- apply(dm[, ..posIntensities], 2, sum, na.rm = TRUE)
@@ -1163,7 +1191,7 @@ if (get_os() == "win") {
 } else{
   bpp <- MulticoreParam(workers = min(NUM_CORES, 4),progressbar=TRUE)
 }
-# bpp <- SerialParam(progressbar=TRUE)
+bpp <- SerialParam(progressbar=TRUE)
 
 opened_raw_files <- sapply(raw_files,readMSData, mode = "onDisk")
 

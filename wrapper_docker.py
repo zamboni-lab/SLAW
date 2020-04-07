@@ -6,20 +6,20 @@ import sys
 import psutil
 import math
 import shutil
-import time
-
 
 ##We import the module of python processing.
 sys.path.append('/pylcmsprocessing')
-from pylcmsprocessing.model.UI import UI
+from pylcmsprocessing.model.helper.UI import UI
 from pylcmsprocessing.model.experiment import Experiment
-from pylcmsprocessing.model.optimize_parameters import ParametersOptimizer
-from pylcmsprocessing.common.references import DATA
+from pylcmsprocessing.model.steps.optimize_parameters import ParametersOptimizer
+from pylcmsprocessing.model.helper.parameters_handler import ParametersFileHandler
+from pylcmsprocessing.common.time_evaluation import Timer
 
 if __name__=="__main__":
 ##Two thing to check the number of CPUs and the ocnsumed meory eventually.
     ###We determine the amount of memory allocated to each process
-    time_start = time.clock()
+    timer = Timer()
+    timer.store_point("wstart")
     avail_memory = (psutil.virtual_memory()[1] >> 20)
     ###We allocate the memory to each process
     num_cpus = multiprocessing.cpu_count()-1
@@ -87,12 +87,15 @@ if __name__=="__main__":
     #If the yaml parameter file already exist we just read it, else. we don t read it
     #We put a message if the output is not here.
 # THE sample database is always calculated before doing any processing
-    PATH_DB = "/temp_processing_db.sqlite"
-    #DB_STORAGE store db to rpevent lock during optmization.
-    DB_STORAGE = "/db_storage"
-    if "CLUSTER" in os.environ:
-        PATH_DB = os.path.join(OUTPUT_DIR,"temp_processing_db.sqlite")
-        DB_STORAGE = os.path.join(OUTPUT_DIR, "temp_optim","db_storage")
+    PATH_DB = os.path.join(OUTPUT_DIR, "temp_processing_db.sqlite")
+    DB_STORAGE = os.path.join(OUTPUT_DIR, "temp_optim", "db_storage")
+
+    if os.path.isdir("/sauer1"):
+        PATH_DB = "/temp_processing_db.sqlite"
+        DB_STORAGE = "/db_storage"
+
+
+
     # LOG = "/log.txt"
     #Procesinf of the pipeline eventually.
     path_save_db = os.path.join(OUTPUT_DIR,"processing_db.sqlite")
@@ -107,36 +110,48 @@ if __name__=="__main__":
     pol = exp.guess_polarity(INPUT)
     print("Polarity detected: " + exp.polarity)
     exp.initialise_database(num_cpus, OUTPUT_DIR, pol, INPUT, ["ADAP"], 1, path_ms2=path_ms2)
+    timer.store_point("winitialisation")
+    timer.print_point("winitialisation")
     vui = UI(OUTPUT_DIR, INPUT, polarity=os.environ["POLARITY"], mass_spec="Exactive", num_workers=num_cpus,
          path_yaml=PATH_YAML)
 
     ###In all case the first table is generated.
     if not os.path.exists(vui.path_yaml):
+        ###We just create a an empty yaml file
         vui.generate_yaml_files()
         vui.initialize_yaml_polarity(PATH_YAML, pol)
-        num_points = 100
-        if "NOPTIM" in os.environ:
-            num_points = int(os.environ["NOPTIM"])
-        PATH_OPTIM = os.path.join(OUTPUT_DIR, "temp_optim")
-        if not os.path.isdir(DB_STORAGE):
-            os.makedirs(DB_STORAGE)
+        print("Parameters file generated please tune the parameers and or parameters range before optimization.")
+        exit(0)
+    else:
+        ph = ParametersFileHandler(vui.path_yaml)
+        if not ph.is_optimized():
+            vui.generate_yaml_files()
+            vui.initialize_yaml_polarity(PATH_YAML, pol)
+            num_points = 100
+            if "NOPTIM" in os.environ:
+                num_points = int(os.environ["NOPTIM"])
+            PATH_OPTIM = os.path.join(OUTPUT_DIR, "temp_optim")
+            if not os.path.isdir(DB_STORAGE):
+                os.makedirs(DB_STORAGE)
 
-        ###We optimize the parameters
-        par_opt = ParametersOptimizer(exp, PATH_OPTIM,DB_STORAGE,num_workers=num_cpus, input_par=None)
-        par_opt.optimize_parameters(vui.path_yaml, optimizer=os.environ["OPTIM"],
-                                    num_points=num_points, num_cores=num_cpus)
+            ###We optimize the parameters
+            par_opt = ParametersOptimizer(exp, PATH_OPTIM,DB_STORAGE,num_workers=num_cpus, input_par=PATH_YAML)
+            par_opt.optimize_parameters(vui.path_yaml, optimizer=os.environ["OPTIM"],
+                                        num_points=num_points, num_cores=num_cpus)
+            timer.store_point("woptimization")
+            timer.print_point("woptimization")
 
     if not os.path.isfile(PATH_XML):
         vui.generate_MZmine_XML(path_xml=PATH_XML)
         print("An ADAP batch file has been generated in the "+OUTPUT_DIR+" directory, you ca use it to refine peakpicking parameters using MZmine.")
-        # print("A parameters.txt file has been generated in the "+OUTPUT_DIR+" directory, please complete it and rerun the docker.")
 
     exp.initialise_database(num_cpus,OUTPUT_DIR,vui.polarity,INPUT,["ADAP"], 1)
     exp.building_inputs_single_processing(PATH_XML)
     exp.run("/MZmine-2.52-Linux",int(num_cpus),log = LOG)
     exp.correct_conversion()
     exp.post_processing_peakpicking()
-    time_peakpicking = time.clock()
+    timer.store_point("wpeakpicking")
+    timer.print_point("wpeakpicking")
 
     ###We always read the yaml paramters file.
     with open(vui.path_yaml, 'r') as stream:
@@ -155,14 +170,15 @@ if __name__=="__main__":
         ms2_mz_tol = float(raw_yaml["peakpicking"]['peaks_deconvolution']["ms2_mz_tol"]["value"]),
         ms2_rt_tol = float(raw_yaml["peakpicking"]['peaks_deconvolution']["ms2_rt_tol"]["value"]),
         log=LOG)
-    time_grouping = ()
-    polarity = raw_yaml["ion_annotation"]["polarity"]["value"]
-    main_adducts_str=raw_yaml["ion_annotation"]["main_adducts_"+polarity]["value"]
-    adducts_str = raw_yaml["ion_annotation"]["adducts_"+polarity]["value"]
+    timer.store_point("walignment")
+    timer.print_point("walignment")
+    main_adducts_str=raw_yaml["ion_annotation"]["main_adducts_"+exp.polarity]["value"]
+    adducts_str = raw_yaml["ion_annotation"]["adducts_"+exp.polarity]["value"]
     successfully_processed = exp.annotate_ions(int(raw_yaml["ion_annotation"]["num_files"]["value"]),float(raw_yaml["ion_annotation"]["ppm"]["value"]),
         float(raw_yaml["ion_annotation"]["dmz"]["value"]),min_filter=raw_yaml["ion_annotation"]["min_filter"]["value"],
                 adducts=adducts_str,main_adducts=main_adducts_str, max_workers=num_cpus)
-    time_annotation = time.clock()
+    timer.store_point("wannotation")
+    timer.print_point("wannotation")
     if successfully_processed:
         exp.post_processing(PATH_TARGET)
         exp.clean()

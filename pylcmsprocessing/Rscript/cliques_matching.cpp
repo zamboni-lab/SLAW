@@ -18,13 +18,10 @@ List resize( const List& x, int n ){
 // [[Rcpp::export]]
 List mergeCliques(List cliques,List new_cliques,IntegerVector assignment,IntegerVector size, IntegerVector maxCliques){
   int max_clique = maxCliques[0];
-//We convert all the lcique to set because it is easier.
-
-  //We build a percentage of progress
   for(int i=0;i<new_cliques.size();i++){
 
     NumericVector cc = new_cliques[i];
-    if(cc.size()<=1){
+    if(cc.size()<=0){
       continue;
     }
     
@@ -55,7 +52,6 @@ List mergeCliques(List cliques,List new_cliques,IntegerVector assignment,Integer
   cliques[max_clique] = cc;
   //We add the lement to the lcique list if necessary.
   }
-
   //We create a new index vector.
 
   std::vector<std::vector<int> > res_cpp;
@@ -82,6 +78,7 @@ List mergeCliques(List cliques,List new_cliques,IntegerVector assignment,Integer
         cliques_counter++;
       }
       res_cpp[idx_list[a]].push_back(i+1);
+      assignment[i] = idx_list[a]+1;
     }
     //We add the element to the clique
   }
@@ -94,11 +91,11 @@ List mergeCliques(List cliques,List new_cliques,IntegerVector assignment,Integer
     res[i] = temp;
   }
 
-  for(auto it=assignment.begin();it!=assignment.end();it++){
-    if(IntegerVector::is_na(*it)) continue;
-    //+1 for R compatibilty
-    *it = idx_list[*it]+1;
-  }
-  maxCliques[0]=max_clique+1;
+  // for(auto it=assignment.begin();it!=assignment.end();it++){
+  //   if(IntegerVector::is_na(*it)) continue;
+  //   //+1 for R compatibilty
+  //   *it = idx_list[*it]+1;
+  // }
+  maxCliques[0]=cliques_counter+1;
   return(res);
 }

@@ -2,14 +2,37 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="84dbd36f-9766-4ce4-bf5b-1769fdcb59a6" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/pylcmsprocessing/common/time_evaluation.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pylcmsprocessing/model/helper/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pylcmsprocessing/model/steps/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/wrapper_MZmine_peak_table_conversion.R" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/wrapper_MZmine_peak_table_conversion.R" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/limits_optimizer.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/annotating_mixed_method.R" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/annotating_mixed_method.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/cliques_matching.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/cliques_matching.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/initial_parameters.R" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/initial_parameters.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/common/references.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/common/references.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/batch_adap_2_52_modif.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/batch_adap_2_52_old.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/batch_savgol.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/parameters_set.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/parameters_set.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/to_optimize.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/to_optimize_adap.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/UI.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/helper/UI.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/annotating_adducts_isotopes.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/steps/annotating_adducts_isotopes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/comparing_evaluation.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/helper/comparing_evaluation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/evaluating.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/steps/evaluating.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/experiment.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/experiment.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/grouping.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/steps/grouping.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/inputbuilder.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/helper/inputbuilder.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/optimizer.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/optimizer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/sampling.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/sampling.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/optimize_parameters.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/optimize_parameters.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/rsm.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/rsm.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/score_datamatrix.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/score_datamatrix.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/optimize_parameters.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/steps/optimize_parameters.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/output_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/helper/output_handler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/parallel_runner.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/helper/parallel_runner.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/parameters.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/helper/parameters.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/parameters_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/helper/parameters_handler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/peakpicking.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/steps/peakpicking.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/post_processing.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/steps/post_processing.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/score_datamatrix.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/score_datamatrix.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/wrapper_docker.py" beforeDir="false" afterPath="$PROJECT_DIR$/wrapper_docker.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -48,12 +71,14 @@
       <recent name="C:\Users\dalexis\Documents\python\lcmsprocessing\pylcmsprocessing\common" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\dalexis\Documents\dev\lcmsprocessing_docker\pylcmsprocessing\model\helper" />
+      <recent name="C:\Users\dalexis\Documents\dev\lcmsprocessing_docker\pylcmsprocessing\model\steps" />
       <recent name="C:\Users\dalexis\Documents\dev\lcmsprocessing_docker\pylcmsprocessing\model\optimization" />
+      <recent name="C:\Users\dalexis\Documents\dev\lcmsprocessing_docker\pylcmsprocessing\common" />
       <recent name="C:\Users\dalexis\Documents\dev\lcmsprocessing_docker\pylcmsprocessing\model" />
-      <recent name="C:\Users\dalexis\Documents\python\lcmsprocessing\pylcmsprocessing\data" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python.time_evaluation">
     <configuration name="LIPO" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="lcmsprocessing" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -75,8 +100,30 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="time_evaluation" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="lcmsprocessing" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="C:\Users\dalexis\Documents\dev\lcmsprocessing_docker\pylcmsprocessing\common\time_evaluation.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.time_evaluation" />
         <item itemvalue="Python.LIPO" />
       </list>
     </recent_temporary>
@@ -99,6 +146,22 @@
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state x="740" y="275" key="FileChooserDialogImpl/0.0.1920.1040@0.0.1920.1040" timestamp="1585042376294" />
+    <state width="1877" height="282" key="GridCell.Tab.0.bottom" timestamp="1585471314287">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1877" height="282" key="GridCell.Tab.0.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1585471314287" />
+    <state width="1877" height="282" key="GridCell.Tab.0.center" timestamp="1585471314287">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1877" height="282" key="GridCell.Tab.0.center/0.0.1920.1040@0.0.1920.1040" timestamp="1585471314287" />
+    <state width="1877" height="282" key="GridCell.Tab.0.left" timestamp="1585471314286">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1877" height="282" key="GridCell.Tab.0.left/0.0.1920.1040@0.0.1920.1040" timestamp="1585471314285" />
+    <state width="1877" height="282" key="GridCell.Tab.0.right" timestamp="1585471314287">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1877" height="282" key="GridCell.Tab.0.right/0.0.1920.1040@0.0.1920.1040" timestamp="1585471314287" />
     <state x="656" y="344" key="com.intellij.ide.util.TipDialog" timestamp="1584995185066">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>

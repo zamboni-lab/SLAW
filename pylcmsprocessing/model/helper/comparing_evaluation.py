@@ -1,7 +1,5 @@
-import common.references as cr
 import common.tools as ct
 import os
-import common
 
 
 class evaluationComparator():

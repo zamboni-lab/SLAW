@@ -2,7 +2,7 @@ import common.references as cr
 import common.tools as ct
 import os
 import common
-import model.output_handler as oh
+import model.helper.output_handler as oh
 
 
 class IonAnnotater:

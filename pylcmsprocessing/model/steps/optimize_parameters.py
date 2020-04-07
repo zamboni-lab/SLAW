@@ -10,11 +10,11 @@ import pandas as pd
 
 import model.experiment as me
 import common.references as cr
-import model.score_datamatrix as ms
+import model.optimization.score_datamatrix as ms
 import model.optimization.sampling as mos
-import model.parameters_handler as ph
+import model.helper.parameters_handler as ph
 import common.tools as ct
-from model.UI import UI
+from model.helper.UI import UI
 
 ###Function used to optimize the paramters
 def create_temp_directory(path_exp,params_archive,dir_db,*argv):
@@ -41,6 +41,8 @@ def convert_val(x):
         if isinstance(x[0], np.float64):
             return float(x.item())
         return x.item()
+    elif type(x) is np.float64:
+        return float(x.item())
     return x
 
 
@@ -49,8 +51,10 @@ def convert_val(x):
 def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noise_level_ms2,peakpicking__traces_construction__ppm,
                                    peakpicking__traces_construction__dmz,peakpicking__traces_construction__min_scan,
                                    peakpicking__peaks_deconvolution__SN,peakpicking__peaks_deconvolution__noise_level,
-                                   peakpicking__peaks_deconvolution__peak_width_min,peakpicking__peaks_deconvolution__peak_width_max,
-                                   peakpicking__peaks_deconvolution__rt_wavelet_min,peakpicking__peaks_deconvolution__rt_wavelet_max,
+                                   peakpicking__peaks_deconvolution__peak_width__const,
+                                   peakpicking__peaks_deconvolution__peak_width__add,
+                                   peakpicking__peaks_deconvolution__rt_wavelet__const,
+                                   peakpicking__peaks_deconvolution__rt_wavelet__add,
                                    peakpicking__peaks_deconvolution__coefficient_area_threshold,grouping__ppm,
                                    grouping__drt,grouping__dmz,grouping__alpha,grouping__num_references,fixed_params,**kwargs):
     args_refs = locals()
@@ -77,7 +81,7 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
         return x
 
     # p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14=params
-    DIR_TEMP,STORAGE_YAML,STORAGE_DB,SUMMARY_YAML,num_cpus,polarity,path_samples,initial_yaml,parallel=fixed_params
+    DIR_TEMP,STORAGE_YAML,STORAGE_DB,SUMMARY_YAML,num_cpus,polarity,path_samples,initial_yaml,parallel,scorer=fixed_params
     if parallel:
         num_cpus=1
     call_list = [DIR_TEMP,STORAGE_YAML,STORAGE_DB]+list(args_refs.values())
@@ -94,11 +98,12 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
 
     ####We load the orginial yaml file
     parameters = ph.ParametersFileHandler(initial_yaml)
-    for k in args_refs.keys():
-        parameters[k] = convert_val(args_refs[k])
-        #
+    l_values = [convert_val(ll) for ll in args_refs.values()]
+
+    parameters.set_all_parameters(list(args_refs.keys()),list(l_values))
+
     ###The numbver of scans is handled separately as it is an integer.
-    parameters["peakpicking__traces_construction__min_scan"] =convert_val(args_refs["peakpicking__traces_construction__min_scan"])
+    parameters["peakpicking__traces_construction__min_scan"] =int(convert_val(args_refs["peakpicking__traces_construction__min_scan"]))
 
     ###We dump the yaml
     parameters.write_parameters(stored_param)
@@ -133,9 +138,10 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
     datamatrices = exp.get_datamatrix()
     path_datamatrix = datamatrices[0][0]
     try:
-        msd = ms.scorerDataMatrix(path_datamatrix)
+        msd = ms.get_scorer(scorer)
+        msd = msd(path_datamatrix)
         ###We authorize 1 jump
-        vscore = msd.score_datamatrix(1)
+        vscore = msd.score_datamatrix()
     except Exception:
         try:
             subprocess.call("rm -r " + OUTPUT_DIR)
@@ -158,17 +164,18 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
 
     with open(SUMMARY_YAML,"a") as ff:
         ff.write(to_write)
-    ##After each evaluation we remove the the directory.
-    shutil.rmtree(OUTPUT_DIR)
+    ##After each evaluation we remove the the directory if possible
+    try:
+        shutil.rmtree(OUTPUT_DIR)
+    except OSError:
+        print("Directory ",OUTPUT_DIR," could not be removed.")
+        pass
     return vscore
 
 
 def parse_optim_option(string):
-    sampler,optimizer = string.split("_")
-    return mos.getSampler(sampler),mos.getOptimizer(optimizer)
-
-
-
+    sampler,optimizer,scorer = string.split("_")
+    return mos.getSampler(sampler),mos.getOptimizer(optimizer),scorer
 
 class ParametersOptimizer:
     def __init__(self,exp,output,db_storage,num_workers=1,input_par=None):
@@ -188,7 +195,9 @@ class ParametersOptimizer:
         self.temp_polarity = os.path.join(self.output,"polarity.csv")
         self.polarity = exp.get_polarity()
         self.num_workers = num_workers
-        self.samples = exp.get_query("SELECT path FROM samples")
+        self.samples = exp.get_query("SELECT path FROM samples WHERE types='QC'")
+        if len(self.samples)==0:
+            self.samples = exp.get_query("SELECT path FROM samples WHERE types='sample'")
         self.path_db = exp.db
         self.temp_yaml = os.path.join(self.output,"temp_yaml.yaml")
 
@@ -196,7 +205,7 @@ class ParametersOptimizer:
     def select_samples(self,num_files=None):
         if num_files is None:
             # As many as worker to speed up the peakpicking process
-            num_files = max(self.num_workers-1,4)
+            num_files = 15
         if len(self.samples) < num_files:
             num_files = len(self.samples)
         sel_samples = sample(self.samples,num_files)
@@ -220,7 +229,7 @@ class ParametersOptimizer:
     def do_optimize_parameters(self,optim_string="bbd_rsm",num_points=50,**kwargs):
 
         ### We get the optimization algorithm.
-        sampler,optimizer = parse_optim_option(optim_string)
+        sampler,optimizer,scorer = parse_optim_option(optim_string)
         sampler = sampler()
         optimizer = optimizer()
 
@@ -240,7 +249,7 @@ class ParametersOptimizer:
 
         # Paramters which are always fixed.
         fixed_params = (self.path_exp, self.params_archive, self.dir_db, self.path_summary,\
-                       self.num_workers, self.polarity, self.path_samples, self.temp_yaml, sampler.is_parallel())
+                       self.num_workers, self.polarity, self.path_samples, self.temp_yaml, sampler.is_parallel(), scorer)
         dic_fixed = {"fixed_params":fixed_params}
 
         ###We fix the paramter which are not yet fixed
@@ -260,13 +269,13 @@ class ParametersOptimizer:
 
     def export_best_parameters(self,outpath):
         pfh = ph.ParametersFileHandler(self.input_par)
-        print(self.best_par)
-        for k in self.best_par:
-            if k == "fixed_params":
-                continue
-            pfh[k] = convert_val(self.best_par[k])
-            print(k,convert_val(self.best_par[k]),type(convert_val(self.best_par[k])))
-
+        ll_values = [convert_val(ll) for ll in self.best_par.values()]
+        pfh.set_all_parameters(list(self.best_par.keys()), ll_values)
+        # for k in self.best_par:
+        #     if k == "fixed_params":
+        #         continue
+        #     pfh[k] = convert_val(self.best_par[k])
+        pfh.dic["optimized"] = True
         pfh.write_parameters(outpath)
 
 

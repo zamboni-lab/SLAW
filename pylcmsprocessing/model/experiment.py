@@ -4,17 +4,17 @@ import os
 import glob
 import common.references as cr
 import common.tools as ct
-import model.output_handler as oh
-import model.parameters as params
+import model.helper.output_handler as oh
+import model.helper.parameters as params
 import random
-import model.inputbuilder as ib
-import model.parallel_runner as pr
-import model.peakpicking as mp
-import model.grouping as mg
-import model.evaluating as me
-import model.comparing_evaluation as mce
-import model.annotating_adducts_isotopes as mai
-import model.post_processing as pp
+import model.helper.inputbuilder as ib
+import model.helper.parallel_runner as pr
+import model.steps.peakpicking as mp
+import model.steps.grouping as mg
+import model.steps.evaluating as me
+import model.helper.comparing_evaluation as mce
+import model.steps.annotating_adducts_isotopes as mai
+import model.steps.post_processing as pp
 import pandas as pd
 import shutil
 
@@ -649,8 +649,10 @@ class Experiment:
     #Annotations
     #Parallelism is handled by R always a single trhead in this case
     def annotate_ions(self, nfiles, ppm, dmz, adducts=None, main_adducts=None, max_workers=2, min_filter = 2):
+        print("adducts is",adducts)
         num_workers = self.get_workers()
         polarity = self.get_polarity()
+        print("polarity is",polarity)
         #We create all the grouper eventually
         self.open_db()
         c = self.conn.cursor()
