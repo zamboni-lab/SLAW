@@ -2,38 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="84dbd36f-9766-4ce4-bf5b-1769fdcb59a6" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/pylcmsprocessing/common/time_evaluation.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pylcmsprocessing/model/helper/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pylcmsprocessing/model/steps/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/annotating_mixed_method.R" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/annotating_mixed_method.R" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/cliques_matching.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/cliques_matching.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/initial_parameters.R" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/initial_parameters.R" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/common/references.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/common/references.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/batch_adap_2_52_modif.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/batch_adap_2_52_old.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/batch_savgol.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/parameters_set.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/parameters_set.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/to_optimize.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/to_optimize_adap.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/UI.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/helper/UI.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/annotating_adducts_isotopes.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/steps/annotating_adducts_isotopes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/comparing_evaluation.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/helper/comparing_evaluation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/evaluating.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/steps/evaluating.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/experiment.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/experiment.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/grouping.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/steps/grouping.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/inputbuilder.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/helper/inputbuilder.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/optimizer.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/optimizer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/sampling.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/sampling.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/optimize_parameters.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/steps/optimize_parameters.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/output_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/helper/output_handler.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/parallel_runner.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/helper/parallel_runner.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/parameters.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/helper/parameters.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/parameters_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/helper/parameters_handler.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/peakpicking.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/steps/peakpicking.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/post_processing.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/steps/post_processing.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/score_datamatrix.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/score_datamatrix.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wrapper_docker.py" beforeDir="false" afterPath="$PROJECT_DIR$/wrapper_docker.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/steps/optimize_parameters.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/steps/optimize_parameters.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -166,10 +138,10 @@
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state x="656" y="344" key="com.intellij.ide.util.TipDialog/0.0.1920.1040@0.0.1920.1040" timestamp="1584995185066" />
-    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup" timestamp="1585130350819">
+    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup" timestamp="1586264876599">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup/0.0.1920.1040@0.0.1920.1040" timestamp="1585130350819" />
+    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup/0.0.1920.1040@0.0.1920.1040" timestamp="1586264876599" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

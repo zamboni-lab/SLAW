@@ -46,11 +46,13 @@ class samplingOptimizer:
         first = True
         ###We always test the best point
         while first or (current_best_value-global_best_value)/global_best_value > (relative_increase) and num_its < max_its:
+            print("Iteration:",num_its)
             first = False
             ###We restrain thge constraints using the newly determined best points
             self.bounds.contract_bound(current_best_point, contraction=contraction, extension=extension,
                                      extreme=0.02, only_positive=True)
             self.sampler.sample(bounds=self.bounds,func=func,num_cores=num_cores,num_points=num_points,fixed_arguments=self.fixed_arguments)
+            print("Sampled iter",num_its)
             current_best_point, current_best_value = self.optimizer.get_maximum(self.sampler.get_points(), self.sampler.get_values())
             if current_best_value>global_best_value:
                 global_best_point = current_best_point

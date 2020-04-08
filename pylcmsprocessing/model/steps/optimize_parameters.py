@@ -141,7 +141,9 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
         msd = ms.get_scorer(scorer)
         msd = msd(path_datamatrix)
         ###We authorize 1 jump
+        print("Scoring:",SUMMARY_YAML)
         vscore = msd.score_datamatrix()
+        print("Finisehd scoring:",SUMMARY_YAML)
     except Exception:
         try:
             subprocess.call("rm -r " + OUTPUT_DIR)
