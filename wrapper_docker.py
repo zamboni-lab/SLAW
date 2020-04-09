@@ -140,11 +140,12 @@ if __name__=="__main__":
                                         num_points=num_points, num_cores=num_cpus)
             timer.store_point("woptimization")
             timer.print_point("woptimization")
+            ###If there was optimiz\ation we have ot reset the otpoimization proces
+            exp.reset_processing()
 
     if not os.path.isfile(PATH_XML):
         vui.generate_MZmine_XML(path_xml=PATH_XML)
         print("An ADAP batch file has been generated in the "+OUTPUT_DIR+" directory, you ca use it to refine peakpicking parameters using MZmine.")
-
     exp.initialise_database(num_cpus,OUTPUT_DIR,vui.polarity,INPUT,["ADAP"], 1)
     exp.building_inputs_single_processing(PATH_XML)
     exp.run("/MZmine-2.52-Linux",int(num_cpus),log = LOG)

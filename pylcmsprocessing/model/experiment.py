@@ -361,6 +361,14 @@ class Experiment:
                 builder = ib.MZMineBuilder(alg, self.db, self.output, alg[0])
                 builder.build_inputs_single_parameter_set(xml_file)
 
+    def reset_processing(self):
+        query = "DELETE FROM processing"
+        self.open_db()
+        c = self.conn.cursor()
+        self.conn.execute(query).fetchall()
+        self.close_db()
+
+
     def building_inputs_evaluations(self):
         algs = self.get_query("SELECT * FROM algorithms")
         for alg in algs:

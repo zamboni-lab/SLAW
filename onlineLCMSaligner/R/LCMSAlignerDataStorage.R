@@ -111,9 +111,6 @@ setMethod("buildDataMatrix", "LCMSAlignerDataStorage", function(object,
   block_files <- getBlocksFiles(object, subsample)
 
 
-  all_blocks <- sapply(block_files,extractSubDataMatrix,subsample=subsample,subvariable=subvariable,simplify=FALSE)
-
-
   ###We remove the rest of the values
   block <- extractSubDataMatrix(block_files[1], subsample, subvariable)
   sel_vars <- match(summary_vars,colnames(block))
