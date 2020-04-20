@@ -30,7 +30,6 @@ getIntensityPos <- function(dm) {
 }
 
 
-
 ###Convert a data matrix in an output similar to XCMS output
 ### For clique MS
 convertToCliqueMS <- function(dm,
@@ -932,6 +931,9 @@ buildDataMatrixSimplified <-
     write_col <- TRUE
     ### This is done for every batch
     for (i in 1:(length(seq_line) - 1)) {
+      ##We get the range of the datamatrix to load.
+      
+      
       sel_idx <- seq_line[i]:(seq_line[i + 1] - 1)
       vannot <- sapply(annot[sel_idx], function(an, dm, cnames) {
         refv <- an[1, "ref_feature"]
@@ -1026,7 +1028,7 @@ groupFeatures <-
     ###The first id needs to be -1
     current_id <- as.integer(-1)
     
-    tlist <- list()
+    # tlist <- list()
     
     ##We update all the cliques.
     for (i in seq(1, length(cut_rts) - 2)) {
@@ -1053,8 +1055,8 @@ groupFeatures <-
       for (ic in seq_along(anclique@cliques)) {
         anclique@cliques[[ic]] <- sel_idx[anclique@cliques[[ic]]]
       }
-      tlist[[i]] <- list(cliques, anclique@cliques, assignments, size, current_id)
-      saveRDS(tlist,file = "/output/save_cliques.rds")
+      # tlist[[i]] <- list(cliques, anclique@cliques, assignments, size, current_id)
+      # saveRDS(tlist,file = "/output/save_cliques.rds")
       cliques <-
         mergeCliques(cliques, anclique@cliques, assignments, size, current_id)
     }
@@ -1134,7 +1136,7 @@ PATH_DATAMATRIX <- args[1]
 PATH_DB <- args[2]
 PATH_OUTPUT_FULL <- args[3]
 PATH_OUTPUT_SIMPLE <- args[4]
-NUM_CORES <- ceiling(as.numeric(args[5]) / 2)
+NUM_CORES <- max(as.numeric(args[5])-1,1)
 PATH_MODEL <- args[6]
 PATH_ADDUCTS <- args[7]
 PATH_MAIN_ADDUCTS <- args[8]
@@ -1142,7 +1144,7 @@ POLARITY <- args[9]
 PPM <-  as.numeric(args[10])
 DMZ <-  as.numeric(args[11])
 ###We peak the FILE_USED most intense files.
-FILES_USED <- min(as.numeric(args[12]), 25)
+FILES_USED <- min(as.numeric(args[12]), 25,NUM_CORES*2)
 FILTER_NUMS <- max(1, as.numeric(args[13]))
 PATH_MATCHING <- args[14]
 NUM_BY_BATCH <- 7000
@@ -1151,14 +1153,40 @@ if (length(args) == 15) {
 }
 
 ##reading data matrices
-dm <- fread(PATH_DATAMATRIX, header = TRUE, sep = ",")
 
-posIntensities <- getIntensityPos(dm)
-num_detect <-
-  apply(dm[, ..posIntensities, drop = FALSE], 1, function(x) {
-    sum(!is.na(x))
-  })
+# PATH_DATAMATRIX <- "C:/Users/dalexis/Documents/dev/docker_sing_output/test/datamatrices/datamatrix_dbbd3baaecc783af267ec80c8d4eed03.csv"
 
+lints <- list()
+ldetect <- list()
+
+BY_LINE <- 2000
+
+counter <- 1
+
+sdata <- fread(PATH_DATAMATRIX, header = TRUE, sep = ",",skip=0,nrows = BY_LINE)
+cnames <- colnames(sdata)
+posIntensities <- getIntensityPos(sdata)
+
+val_int <- rep(0,length(posIntensities))
+while(nrow(sdata)==BY_LINE){
+  sdata <- tryCatch(fread(PATH_DATAMATRIX, header = FALSE, sep = ",",skip=BY_LINE*(counter-1)+1,nrows = BY_LINE),
+                   error=function(e) return(NA))
+  if(length(sdata)==1) break
+  colnames(sdata) <- cnames
+  ldetect[[counter]] <- sdata[["num_detection"]]
+  int <- apply(sdata[,..posIntensities],1,mean,na.rm=TRUE)
+  lints[[counter]] <- int
+  val_int <- val_int+apply(sdata[,..posIntensities],2,sum,na.rm=TRUE)
+  
+  counter <- counter+1
+  
+}
+
+###We rebuild the whole vector
+num_detect <- unlist(ldetect)
+val_int_var <- unlist(lints)
+
+##We read the data matrix by batch
 vdetect <- num_detect >= FILTER_NUMS
 ###We only keep the fitting ammount of features.
 while (sum(vdetect) > 200000) {
@@ -1166,24 +1194,19 @@ while (sum(vdetect) > 200000) {
   vdetect <- num_detect >= FILTER_NUMS
 }
 
-# message("Retained ", sum(vdetect), " signals on ", nrow(dm))
-dm <- dm[vdetect, , drop = FALSE]
-
 ###Reading the raw files
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
-raw_files <- dbGetQuery(dbb, "SELECT path FROM samples WHERE level='MS1'")[, 1]
+#raw_files <- dbGetQuery(dbb, "SELECT path FROM samples WHERE level='MS1'")[, 1]
+raw_files <- dbGetQuery(dbb, "SELECT path FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")[, 1]
+
 dbDisconnect(dbb)
-# raw_files <- str_replace(raw_files,pattern = "/sauer1",replacement = "U:")
-# raw_files <- str_replace(raw_files,pattern = "/input",replacement = "E:/dev/workflow_debug/annotation_bug/mzml")
 
 ####Selecting the msot intense files
-val_int <- apply(dm[, ..posIntensities], 2, sum, na.rm = TRUE)
 sel_files <-
   order(val_int, decreasing = TRUE)[1:min(FILES_USED, length(val_int))]
 raw_files <- raw_files[sel_files]
 
 
-val_int_var <- apply(dm[, ..posIntensities], 1, mean, na.rm = TRUE)
 ###Setting up the parallel processing
 bpp <- NULL
 if (get_os() == "win") {
@@ -1213,18 +1236,18 @@ base_sample <-
             simplify = TRUE)[, 1]
 
 ##Give the posaition of raw_file on the data matrix
-cnames <- colnames(dm)
-cnames <- str_sub(cnames, 5, -5)
-vav <- adist(base_sample, cnames)
-match_files <- apply(vav, 1, which.min)
+match_files <- posIntensities
 
 # match_files <- sapply(base_sample,function(x,vref){which(endsWith(vref,suffix=x))},vref=colnames(dm),simplify=TRUE)
 
-
+kcnames <- c("mz", "rt","min_mz","max_mz","min_rt","max_rt","mean_peakwidth",cnames[posIntensities[sel_files]])
+dm <- fread(PATH_DATAMATRIX, header = TRUE, sep = ",", select = kcnames)
+dm <- dm[vdetect, , drop = FALSE]
+val_int_var <- val_int_var[vdetect]
 ###If the software is crashing we divied the number of feature by 2 eventually
 annot <-
   groupFeatures(
-    dm[, c("mz", "rt","min_mz","max_mz","min_rt","max_rt","mean_peakwidth",colnames(dm)[posIntensities[sel_files]]), with=FALSE],
+    dm,
     val_int_var,
     raw_files,
     opened_raw_files,
@@ -1241,6 +1264,10 @@ annot <-
     path_matching = PATH_MATCHING,
     bbp = bpp
   )
+
+###Reread the full data frame 
+rm(dm)
+dm <- fread(PATH_DATAMATRIX, header = TRUE, sep = ",")
 
 ###If the file already exists at this step we erase it
 if(file.exists(PATH_OUTPUT_SIMPLE)) file.remove(PATH_OUTPUT_SIMPLE)

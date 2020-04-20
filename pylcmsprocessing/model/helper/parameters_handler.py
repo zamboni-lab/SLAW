@@ -1,7 +1,4 @@
 import yaml
-import numpy as np
-import common.references as cr
-
 
 def recur_node(x,path=None,all_args=None):
     if all_args is None:
@@ -123,13 +120,55 @@ class ParametersFileHandler:
         ###speicifically handle the range parameters
         return to_optimize
 
+    def get_optimizable_parameters_values(self,string=True):
+        to_optimize = {}
+        for path in self.param_path:
+            val = self[path]
+            if "range" in val:
+                if path in self.ranges:
+                    const_key = path+(ParametersFileHandler.SUFFIX_CONST,)
+                    add_key = path+(ParametersFileHandler.SUFFIX_ADD,)
+                    const_val = val["value"][0]
+                    add_val = val["value"][1]-val["value"][0]
+                    pconst = const_key
+                    padd = add_key
+                    if string:
+                        pconst = ParametersFileHandler.SEP.join(pconst)
+                        padd = ParametersFileHandler.SEP.join(padd)
+                    else:
+                        pconst = tuple(pconst)
+                        padd = tuple(padd)
+                    to_optimize[pconst]=const_val
+                    to_optimize[padd]=add_val
+                else:
+                    ppath = path
+                    if string:
+                        ppath = ParametersFileHandler.SEP.join(ppath)
+                    else :
+                        ppath = tuple(path)
+                    to_optimize[ppath]=val["value"]
+        ###speicifically handle the range parameters
+        return to_optimize
+
     def get_parameters(self,string=True):
         to_optim = self.get_optimizable_parameters(string=False)
         lpar = [pp for pp in self.param_path if pp not in self.ranges and pp not in to_optim]
-        lapr = lpar + list(to_optim.keys())
+        lpar = lpar + list(to_optim.keys())
         if string:
             return [ParametersFileHandler.SEP.join(pp) for pp in lpar]
-        return lapr
+        return lpar
+
+    def get_parameters_values(self,string=True):
+        to_optim = self.get_optimizable_parameters_values(string=False)
+        supp_par = [pp for pp in self.param_path if pp not in self.ranges and pp not in to_optim]
+        val_list = list(to_optim.values())
+        key_list = list(to_optim.keys())+supp_par
+        val_list = val_list+[self[key]["value"] for key in supp_par]
+
+        if string:
+            key_list = [ParametersFileHandler.SEP.join(key) for key in key_list]
+        dic_par = dict(zip(key_list,val_list))
+        return dic_par
 
     def write_parameters(self,path):
         with open(path, 'w') as outfile:

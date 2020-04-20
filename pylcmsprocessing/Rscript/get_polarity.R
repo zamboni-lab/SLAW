@@ -15,6 +15,8 @@ if( pol==1 || pol=="1" || startsWith(tolower(pol),"pos")){
   pol <- "negative"
 }
 
+###We check if there is a term
+
 f <- file(OUTPUT,"w")
 writeLines(pol,con=f)
 close(f)

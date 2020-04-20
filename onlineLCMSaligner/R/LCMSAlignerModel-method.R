@@ -241,7 +241,10 @@ alignToModel.density <- function(lam, peaktable,bw = 10,binSize = 0.01, maxFeatu
 
   ref_peaks <- lam@peaks[lam@order_peaks,c("mz","rt","num"),drop=FALSE]
 
-  peaktable <- fortifyPeaktable(peaktable,lam@references)
+  max_len <- nrow(peaktable)
+  peaktable <- fortifyPeaktableIndex(peaktable,lam@references)
+  vindex <- peaktable[[2]]
+  peaktable <- peaktable[[1]]
   if (!is.matrix(peaktable)) {
     peaktable <- as.matrix(peaktable)
   }
@@ -251,7 +254,7 @@ alignToModel.density <- function(lam, peaktable,bw = 10,binSize = 0.01, maxFeatu
   if (!is.matrix(peaktable) & !is.data.frame(peaktable)){
     stop("'peaks' has to be a 'matrix' or a 'data.frame'!")
   }
-  groupindex <- rep(NA_real_,nrow(peaktable))
+  groupindex <- rep(NA_real_,max_len)
 
   cost_function <- function(x,y,mzCost,rtCost){
     sum(abs(x-y)/c(mzCost,rtCost))
@@ -402,7 +405,7 @@ alignToModel.density <- function(lam, peaktable,bw = 10,binSize = 0.01, maxFeatu
   ##If there is any NA we remove it (TODEBUG LATER)
   # vapp <- vapp[!is.na(vapp[,1]),,drop=FALSE]
   # vapp <- vapp[!duplicated(vapp[,1]),]
-  groupindex[vapp[,1]] <- vapp[,2]
+  groupindex[vindex[vapp[,1]]] <- vapp[,2]
   ###We just return the index
   return(groupindex)
 }
@@ -922,7 +925,7 @@ alignPeaktable <-
       if(lam@references@parameters$aligner_type=="density"){
         #####The bwe is always 2 times the retention time ost
         vmatch <- alignToModel.density(lam, cpeaktable,bw = lam@references@parameters$rt_dens,
-                                       binSize = lam@references@parameters$dmz*2,
+                                       binSize = lam@references@parameters$dmz,
                                        maxFeatures = 50, sleep = 0,
                                        mzCost = lam@references@parameters$dmz,
                                        rtCost = lam@references@parameters$rt, bpp = bpp)
@@ -934,9 +937,16 @@ alignPeaktable <-
       vmatch <- rep(NA_real_,nrow(peaktable))
     }
     ###We can then change the match vector to the non sorted coordinates
-    vmatch[!is.na(vmatch)] <- lam@order_peaks[vmatch[!is.na(vmatch)]]
+    pfound <- !is.na(vmatch)
+    vmatch[pfound] <- lam@order_peaks[vmatch[pfound]]
 
-
+    ##We check if there is a major difference between the mapped feature and the rest
+    if(any(pfound)){
+    tdm <- cbind(lam@peaks[vmatch[pfound],1],cpeaktable[pfound,1])
+    tdm <- apply(tdm,1,function(x){diff(range(x))})
+    if(any(tdm>lam@references@parameters$dmz)) browser()
+    }
+    
     lam <- addPeaktableToModel(lam, peaktable, cpeaktable, vmatch,id_sample = id,supp_data=supp_data)
 
     lam@order_peaks <- order(lam@peaks[,1])
@@ -1203,10 +1213,10 @@ make_raw_name <- function(x){
 #'
 #' @examples
 #' print("example to be put here")
-setMethod("buildDataMatrix","LCMSAlignerModel",function(object,subsample=NULL,subvariable=NULL,
+exportDataMatrix <- function(object,path,subsample=NULL,subvariable=NULL,
                                                         quant_var="int", add_summary=TRUE,
                                                         summary_vars= c("peakwidth","rt","rt_cor",
-                                                                        "right_on_left_assymetry")){
+                                                                        "right_on_left_assymetry"),max_memory=2000){
   if(is.null(subsample)){
     subsample <- 1:length(object@files)
   }
@@ -1223,18 +1233,40 @@ setMethod("buildDataMatrix","LCMSAlignerModel",function(object,subsample=NULL,su
     #pf <- match(subvariable,object@peaks$id)
   mzs <- object@peaks$mz[subvariable]
   rts <- object@peaks$rt[subvariable]
+  
+  all_order <- order(mzs,rts,decreasing = FALSE)
+  
   names_cols <- paste(quant_var,basename(fnames),sep="_")
-  dmat <- buildDataMatrix(object@storage,subsample=subsample,
-                          subvariable=subvariable,max_sample=length(object@files),
-                          quant_var=quant_var,summary_vars=summary_vars,name_samples = names_cols,
-                          bpp =object@references@bpp)
-  # colnames(dmat) <- names_cols
-  cnames <- colnames(dmat)
-  dmat <- cbind(mzs,rts,dmat)
-  colnames(dmat) <- c("mz","rt",cnames)
-  dmat <- dmat[order(dmat[,"mz"],dmat[,"rt"],decreasing=FALSE),,drop=FALSE]
-  return(dmat)
-})
+  
+  
+  ###We split the data matrix to avoid filling the memoery too fast
+  ##matrix size = 216+8*num_elemnts bytes
+  BATCH_SIZE <- 20000
+  chunks <- seq(1,length(mzs),by=BATCH_SIZE)
+  if(chunks[length(chunks)]!=length(mzs)){
+    chunks <- c(chunks,length(mzs))
+  }
+  chunks[length(chunks)] <- chunks[length(chunks)]+1
+  
+  for(ic in 1:(length(chunks)-1)){
+    sub_idx <- chunks[ic]:(chunks[ic+1]-1)
+  
+    dmat <- buildDataMatrix.datatable(object@storage,subsample=subsample,
+                            subvariable=subvariable[all_order][sub_idx],max_sample=length(object@files),
+                            quant_var=quant_var,summary_vars=summary_vars,name_samples = names_cols,
+                            bpp =object@references@bpp)
+    # colnames(dmat) <- names_cols
+    cnames <- colnames(dmat)
+    dmat <- cbind(mzs[all_order][sub_idx],rts[all_order][sub_idx],dmat)
+    colnames(dmat) <- c("mz","rt",cnames)
+    ###We know write the data
+    if(ic==1){
+      write_dgCMatrix_csv(dmat, path,chunk_size = 2000,replace_old = 0.0,replace_new = NA, append = FALSE)
+    }else{
+      write_dgCMatrix_csv(dmat, path,chunk_size = 2000,replace_old = 0.0,replace_new = NA, append = TRUE)
+    }
+  }
+}
 
 
 

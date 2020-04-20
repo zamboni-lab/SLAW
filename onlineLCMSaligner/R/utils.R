@@ -36,7 +36,6 @@ extendMatrixCol <- function(mm,idx){
 
 
 mztol <- function(mz,ppm,dmz){
-  if((!is.numeric(mz))|(!is.numeric(ppm))) browser()
   return(max(mz*ppm/1e6,dmz))
 }
 
@@ -104,6 +103,19 @@ fortifyPeaktable <- function(peaktable,lar,supp_data=character(0),removeDuplicat
   return(peaktable[selv,c(vpar[["col_mz"]],vpar[["col_rt"]],vpar[["col_int"]],vm),drop=FALSE])
 }
 
+fortifyPeaktableIndex <- function(peaktable,lar,supp_data=character(0),removeDuplicate=TRUE){
+  ###A duplicate is found when two column have the same mass and retention time 
+  ids <- paste(sprintf("%0.3f",peaktable[,1]),"-",sprintf("%0.2f",peaktable[,2]))
+  
+  selv <- !duplicated(ids)
+  
+  vm <- match(supp_data,colnames(peaktable))
+  vm <- vm[!is.na(vm)]
+  vpar <- params(lar)
+  return(list(peaktable[selv,c(vpar[["col_mz"]],vpar[["col_rt"]],vpar[["col_int"]],vm),drop=FALSE],
+         which(selv)))
+}
+
 get_os <- function() {
   if (.Platform$OS.type == "windows") {
     return("win")
@@ -122,3 +134,65 @@ generateID <- function(lid,ndigits=3){
   # ff <- paste("%0.",ndigits,"f",sep="")
   return(paste(sprintf("%.f",mz*10^ndigits),sprintf("%.f",rt*10^ndigits),sample.int(10000,size=1),sep="_"))
 }
+
+write_dgCMatrix_csv <- function(mat,
+                                filename,
+                                chunk_size = 1000,
+                                replace_old="NONE",replace_new=NA,
+                                append = FALSE) {
+  
+  #library(Matrix)
+  #library(data.table)
+  
+  # Transpose so retrieval of "rows" is much faster
+  mat <- Matrix::t(mat)
+  
+  # Row names
+  row_names <- colnames(mat)
+  
+  # gene names are now columns
+  col_names <- rownames(mat)
+  
+  n_row <- ncol(mat)
+  n_col <- length(col_names)
+  
+  n_chunks <- floor(n_row/chunk_size)
+  
+  # Initial chunk
+  chunk <- 1
+  chunk_start <- 1 + chunk_size * (chunk - 1)
+  chunk_end <- chunk_size * chunk
+  chunk_mat <- t(as.matrix(mat[,chunk_start:chunk_end]))
+  if(replace_old!="NONE"){
+    chunk_mat[chunk_mat==replace_old] <- replace_new
+  }
+  
+  chunk_df <- as.data.frame(chunk_mat)
+  
+  data.table::fwrite(chunk_df, file = filename, append = append)
+  
+  # chunkation over chunks
+  if(n_chunks>=2){
+    for(chunk in 2:n_chunks) {
+      chunk_start <- 1 + chunk_size * (chunk - 1)
+      chunk_end <- chunk_size * chunk
+      chunk_mat <- t(as.matrix(mat[,chunk_start:chunk_end]))
+      if(replace_old!="NONE"){
+        chunk_mat[chunk_mat==replace_old] <- replace_new
+      }
+      chunk_df <- as.data.frame(chunk_mat)
+      data.table::fwrite(chunk_df, file = filename, append = T)
+    }
+  }
+  
+  # Remaining samples
+  chunk_start <- (n_chunks*chunk_size + 1)
+  chunk_end <- n_row
+  chunk_mat <- t(as.matrix(mat[,chunk_start:chunk_end]))
+  if(replace_old!="NONE"){
+    chunk_mat[chunk_mat==replace_old] <- replace_new
+  }
+  chunk_df <- as.data.frame(chunk_mat)
+  data.table::fwrite(chunk_df, file = filename, append = T)
+}
+

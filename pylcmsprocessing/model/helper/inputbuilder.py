@@ -79,7 +79,7 @@ class MZMineBuilder(inputBuilder):
 
         try:
             ctuple = (1, 1, xml_file, hash_val, "", "", "", "", "", "", "", "")
-            c.execute("""INSERT INTO peakpicking VALUES (?,?,?,?,?,?,?,?,?,?,?, ?)""", ctuple)
+            c.execute("""INSERT INTO peakpicking VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""", ctuple)
         except sqlite3.IntegrityError as e:
             pass
 
@@ -95,9 +95,9 @@ class MZMineBuilder(inputBuilder):
             ###If the algorithm does not exist we skip
             ###We try to insert it
             try:
-                ctuple = (pid, 1, int(row[1]), row[2], row[3], row[4], row[5], 1)
+                ctuple = (pid, 1, int(row[1]), row[2], row[3], row[4], row[5], 1, 1)
                 pid += 1
-                c.execute("""INSERT INTO processing VALUES (?,?,?,?,?,?,?,?)""", ctuple)
+                c.execute("""INSERT INTO processing VALUES (?,?,?,?,?,?,?,?,?)""", ctuple)
                 counter_to_process += 1
             except sqlite3.IntegrityError as e:
                 counter_processed += 1

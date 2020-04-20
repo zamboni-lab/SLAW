@@ -39,17 +39,17 @@ if __name__=="__main__":
         if not "MEMORY" in os.environ:
             memory_by_core = avail_memory/num_cpus
 
-    if "LSB_MAX_NUM_PROCESSORS" in os.environ:
+    if "LSB_MAX_NUM_PROCESSORS" in os.environ and int(os.environ["LSB_MAX_NUM_PROCESSORS"])<num_cpus:
         num_cpus = int(os.environ["LSB_MAX_NUM_PROCESSORS"])
 
-    if "NCORES" in os.environ:
+    if "NCORES" in os.environ and int(os.environ["NCORES"])<num_cpus:
         num_cpus = int(os.environ["NCORES"])
 
     if "MEMORY" in os.environ:
         memory_by_core = int(os.environ["MEMORY"])
 
     ###We set the JAVA option for the peak picking evnetually
-    os.environ["JAVA_OPTS"] = "-Xms"+str(math.floor(memory_by_core/2))+"m -Xmx"+str(math.floor(memory_by_core))+"m"
+    os.environ["JAVA_OPTS"] = "-Xms"+str(math.floor(memory_by_core/2))+"m -Xmx"+str(math.floor(memory_by_core)-200)+"m"
     ##We output System information
     print("Total memory available: "+str(avail_memory)+" and "+str( multiprocessing.cpu_count())+" cores. The workflow will use "+str(math.floor(memory_by_core))+ " Mb by cores on "+str(num_cpus)+" cores.")
 
@@ -148,7 +148,7 @@ if __name__=="__main__":
         print("An ADAP batch file has been generated in the "+OUTPUT_DIR+" directory, you ca use it to refine peakpicking parameters using MZmine.")
     exp.initialise_database(num_cpus,OUTPUT_DIR,vui.polarity,INPUT,["ADAP"], 1)
     exp.building_inputs_single_processing(PATH_XML)
-    exp.run("/MZmine-2.52-Linux",int(num_cpus),log = LOG)
+    exp.run("/MZmine-2.52-Linux",int(num_cpus*3),log = LOG)
     exp.correct_conversion()
     exp.post_processing_peakpicking()
     timer.store_point("wpeakpicking")
@@ -182,4 +182,4 @@ if __name__=="__main__":
     timer.print_point("wannotation")
     if successfully_processed:
         exp.post_processing(PATH_TARGET)
-        exp.clean()
+        #exp.clean()

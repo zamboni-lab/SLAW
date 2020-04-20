@@ -146,7 +146,6 @@ addFields = NULL)
 
 args <- commandArgs(trailingOnly = TRUE)
 
-print(args)
 # args <- c("U:/users/Alexis/data/all_2mins/res_neg_2/processing_db.sqlite",
 #           "4","E:/fused_mgf.mgf","E:/out_csv.csv","E:/tmp_rename_csv.csv")
 # 
@@ -219,8 +218,6 @@ rtt <- RTree(vmat)
 vmgf <- bplapply(PATH_MSMS,readMgfData,BPPARAM = bpp)
 
 #### Building a summary table
-message("VMGF",vmgf)
-print(vmgf)
 tab_summary <- sapply(vmgf,function(x){header(x)[,c(2,3)]},simplify=FALSE)
 tab_summary <- mapply(tab_summary,seq_along(vmgf),FUN=function(x,y){
     cnames <- colnames(x)
@@ -305,8 +302,6 @@ if(seq_cut[length(seq_cut)]!=nrow(dmm)){
 
 ###We then write the file to the data by batch
 for(i in 1:(length(seq_cut)-1)){
-    print(i)
-
     firstLine <- seq_cut[i]
     lastLine <- seq_cut[i+1]-1
 
@@ -349,6 +344,6 @@ for(i in 1:(length(seq_cut)-1)){
 }
 
 ###We then rename and remove the file.
-file.rename(PATH_DATAMATRIX,TEMP_FILE_SWITCHING)
-file.rename(TEMP_LOCATION,PATH_DATAMATRIX)
-file.remove(TEMP_FILE_SWITCHING)
+a <- file.rename(PATH_DATAMATRIX,TEMP_FILE_SWITCHING)
+a <- file.rename(TEMP_LOCATION,PATH_DATAMATRIX)
+a <- file.remove(TEMP_FILE_SWITCHING)

@@ -111,7 +111,7 @@ if (file.exists(opt$summary)) {
   }else{
     path_dir <- opt$directory
   }
-  paths <- normalizePath(list.files(path_dir, full.names = TRUE,pattern=".mzML"))
+  paths <- normalizePath(list.files(path_dir, full.names = TRUE,pattern=".mzX?ML"))
 
   expected_paths <- tsummary[[opt$summarypath]]
   vm <- match(basename(expected_paths), basename(paths))
@@ -137,14 +137,14 @@ if (file.exists(opt$summary)) {
     mDilQCs <- !is.na(vmatch)
 
   }else{
-    types <- rep("sample",nrow(tsummary))
+    types <- rep("sample",length(paths))
   }
 
 } else{
   if(dir.exists(opt$mzml)){
-      paths <- normalizePath(list.files(opt$mzml, full.names = TRUE,pattern=".mzML"))
+      paths <- normalizePath(list.files(opt$mzml, full.names = TRUE,pattern=".mzX?ML"))
   }else{
-    paths <- normalizePath(list.files(opt$directory, full.names = TRUE,pattern=".mzML"))
+    paths <- normalizePath(list.files(opt$directory, full.names = TRUE,pattern=".mzX?ML"))
   }
   types <- rep("sample",length(paths))
   replicates <-  rep(1, length(paths))

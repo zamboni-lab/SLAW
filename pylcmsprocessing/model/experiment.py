@@ -302,6 +302,7 @@ class Experiment:
           hash TEXT NOT NULL,
           output_ms TEXT NOT NULL,
           output_ms2 TEXT NOT NULL,
+          valid INTEGER,
           step INTEGER NOT NULL,
           CONSTRAINT fk_peakpicking
           FOREIGN KEY (peakpicking)
@@ -405,12 +406,14 @@ class Experiment:
         c.execute("SELECT * FROM processing WHERE output_ms!='NOT PROCESSED'")
 
         ###We modify it to
-
+        num_incorrect_files = 0
+        tot_files = 0
         while True:
             rows = c.fetchmany(batch_size)
             if not rows: break
             peakpickings = [mp.PeakPickingMZmine(row, pmzmine) for row in rows]
             need_processing = [x.need_computing() for x in peakpickings]
+            processing = 0
             while any(need_processing):
                 ####Peak picking
                 clis = [x.command_line_processing(hide=False) for x in peakpickings if x.need_computing()]
@@ -428,7 +431,23 @@ class Experiment:
                 cline = "Rscript " + pjoin + " " + path_temp + " " + str(self.get_workers(open=False))
                 subprocess.call(cline, shell=True)
                 need_processing = [not os.path.exists(row[5]) for row in rows]
-        print("Peak picking finished")
+                processing += 1
+                if processing >= 2:
+                    break
+                tot_files += len(rows)
+            if processing >=2:
+                num_incorrect_files += sum(need_processing)
+                ###Now we jus thave to update the peak table
+                for irow in range(len(need_processing)):
+                    row = rows[irow]
+                    if need_processing[irow]:
+                        pid = row[0]
+                        update_query = self.update_query_construction("processing","id",str(pid),"valid","0")
+                        c.execute(update_query)
+                ##The ids of thes
+
+                #path_output = self.output.getFile(cr.OUT["INCORRECT_FILES"])
+        print("Peak picking finished",num_incorrect_files,"files not processed on a total of",tot_files)
         self.close_db()
 
     ###Try to correct he MZmine ocrrection in case processing was interrupted
@@ -436,7 +455,7 @@ class Experiment:
         path_temp = self.output.getFile(cr.TEMP["CONVERSION"])
         self.open_db()
         c = self.conn.cursor()
-        c.execute("SELECT output_ms FROM processing WHERE output_ms!='NOT PROCESSED'")
+        c.execute("SELECT output_ms FROM processing WHERE output_ms!='NOT PROCESSED' AND valid=1")
         processings = c.fetchall()
         p_conversion = os.path.join(ct.find_rscript(), "wrapper_MZmine_peak_table_conversion.R ")
         to_convert = [x[0] + "\n" for x in processings if not is_converted(x[0])]
@@ -456,7 +475,7 @@ class Experiment:
         ###We rename the peaktable to get more meaningful names.
         self.open_db()
         c = self.conn.cursor()
-        c.execute("SELECT id,output_ms,output_ms2 FROM processing WHERE output_ms!='NOT PROCESSED'")
+        c.execute("SELECT id,output_ms,output_ms2 FROM processing WHERE output_ms!='NOT PROCESSED' AND valid=1")
         all_peaktable = c.fetchall()
         c.execute("SELECT path FROM samples WHERE level='MS1'")
         all_samples = c.fetchall()
@@ -575,11 +594,7 @@ class Experiment:
             ###name of file
             self.open_db()
             c = self.conn.cursor()
-            flists = c.execute("SELECT output_ms FROM processing WHERE peakpicking = " + str(pp[0]))
-            flists = [f[0] for f in flists]
             ###getting samples
-            nlists = c.execute("SELECT path FROM samples WHERE level='MS1'")
-            nlists = [os.path.basename(nn[0]) for nn in nlists]
             ppg = mg.OnlineGrouper(pp,self.db,dir_blocks, dir_alignment,
             dir_datamatrix, intensity, mztol, ppm, rttol, n_ref, alpha,
                                    ms2_mz_tol,ms2_rt_tol,path_fused_msms,
@@ -657,10 +672,8 @@ class Experiment:
     #Annotations
     #Parallelism is handled by R always a single trhead in this case
     def annotate_ions(self, nfiles, ppm, dmz, adducts=None, main_adducts=None, max_workers=2, min_filter = 2):
-        print("adducts is",adducts)
         num_workers = self.get_workers()
         polarity = self.get_polarity()
-        print("polarity is",polarity)
         #We create all the grouper eventually
         self.open_db()
         c = self.conn.cursor()

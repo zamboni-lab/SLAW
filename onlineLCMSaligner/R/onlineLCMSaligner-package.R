@@ -16,6 +16,7 @@
 #' @importFrom tools md5sum
 #' @importFrom Matrix Matrix
 #' @importFrom ClusterR GMM
+#' @importFrom data.table fread fwrite
 #' @importFrom lpSolve lp.transport
 #' @useDynLib onlineLCMSaligner, .registration = TRUE 
 #' @name onlineLCMSaligner-package

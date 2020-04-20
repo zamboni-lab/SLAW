@@ -7,10 +7,11 @@ from random import sample
 import subprocess
 import numpy as np
 import pandas as pd
+import time
 
 import model.experiment as me
 import common.references as cr
-import model.optimization.score_datamatrix as ms
+import model.optimization.score_experiment as ms
 import model.optimization.sampling as mos
 import model.helper.parameters_handler as ph
 import common.tools as ct
@@ -123,7 +124,10 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
         exp.correct_conversion()
         exp.post_processing_peakpicking()
     except Exception:
-        subprocess.call("rm -r " + OUTPUT_DIR)
+        try:
+            subprocess.call("rm -r " + OUTPUT_DIR)
+        except Exception:
+            pass
         # shutil.rmtree(OUTPUT_DIR)
         return -1
 
@@ -139,34 +143,52 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
     path_datamatrix = datamatrices[0][0]
     try:
         msd = ms.get_scorer(scorer)
-        msd = msd(path_datamatrix)
+        msd = msd(exp)
         ###We authorize 1 jump
-        print("Scoring:",SUMMARY_YAML)
-        vscore = msd.score_datamatrix()
-        print("Finisehd scoring:",SUMMARY_YAML)
-    except Exception:
+        vscore = msd.score(output=OUTPUT_DIR)
+    except Exception as e:
+        print(e)
         try:
             subprocess.call("rm -r " + OUTPUT_DIR)
         except Exception:
             pass
-        return -1
+        finally:
+            ###We write the score in the table
+            to_join = list(args_refs.values())
+            to_join = [str(pp) for pp in to_join]
+            to_write = stored_param + "," + str(-1) +","+",".join(to_join) + "\n"
 
+            ###We wrtie the header if it is the first one.
+            if not os.path.isfile(SUMMARY_YAML):
+                ##We write the path name.
+                to_join = ["path_parameters", "score"] + list(args_refs.keys())
+                joined_summary = ",".join(to_join)
+                with open(SUMMARY_YAML, "w") as ff:
+                    ff.write(joined_summary + "\n")
+
+            with open(SUMMARY_YAML, "a") as ff:
+                ff.write(to_write)
+        ###In all case we write the parameter in
+        return -1
     ###We write the score in the table
     to_join = list(args_refs.values())
     to_join = [str(pp) for pp in to_join]
-    to_write = stored_param+","+str(vscore)+",".join(to_join)+"\n"
+    to_write = stored_param + "," + str(vscore) +","+",".join(to_join) + "\n"
 
     ###We wrtie the header if it is the first one.
     if not os.path.isfile(SUMMARY_YAML):
         ##We write the path name.
-        to_join=["path_parameters","score"]+list(args_refs.keys())
+        to_join = ["path_parameters", "score"] + list(args_refs.keys())
         joined_summary = ",".join(to_join)
         with open(SUMMARY_YAML, "w") as ff:
-            ff.write(joined_summary+"\n")
+            ff.write(joined_summary + "\n")
 
-    with open(SUMMARY_YAML,"a") as ff:
+    with open(SUMMARY_YAML, "a") as ff:
         ff.write(to_write)
-    ##After each evaluation we remove the the directory if possible
+
+
+    ##Waiting 1s for safety reason
+    time.sleep(1)
     try:
         shutil.rmtree(OUTPUT_DIR)
     except OSError:
@@ -176,8 +198,8 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
 
 
 def parse_optim_option(string):
-    sampler,optimizer,scorer = string.split("_")
-    return mos.getSampler(sampler),mos.getOptimizer(optimizer),scorer
+    psampler,poptimizer,pscorer,gsampler,goptimizer,gscorer = string.split("_")
+    return mos.getSampler(psampler),mos.getOptimizer(poptimizer),pscorer,mos.getSampler(gsampler),mos.getOptimizer(goptimizer),gscorer
 
 class ParametersOptimizer:
     def __init__(self,exp,output,db_storage,num_workers=1,input_par=None):
@@ -202,12 +224,14 @@ class ParametersOptimizer:
             self.samples = exp.get_query("SELECT path FROM samples WHERE types='sample'")
         self.path_db = exp.db
         self.temp_yaml = os.path.join(self.output,"temp_yaml.yaml")
+        shutil.copy(input_par,self.temp_yaml)
+
 
     # Select the smaples ot optimize evetually.
     def select_samples(self,num_files=None):
         if num_files is None:
             # As many as worker to speed up the peakpicking process
-            num_files = 15
+            num_files = 10
         if len(self.samples) < num_files:
             num_files = len(self.samples)
         sel_samples = sample(self.samples,num_files)
@@ -228,44 +252,72 @@ class ParametersOptimizer:
         subprocess.call(cli, shell=True, env=os.environ.copy())
 
 
+    ###Thoe optimization is always two steps
     def do_optimize_parameters(self,optim_string="bbd_rsm",num_points=50,**kwargs):
 
         ### We get the optimization algorithm.
-        sampler,optimizer,scorer = parse_optim_option(optim_string)
-        sampler = sampler()
-        optimizer = optimizer()
+        psampler,poptimizer,pscorer,gsampler,goptimizer,gscorer = parse_optim_option(optim_string)
+        psampler = psampler()
+        poptimizer = poptimizer()
+        gsampler = gsampler()
+        goptimizer = goptimizer()
 
         ## Reading parameters to optimize and ranges
         pfh = ph.ParametersFileHandler(self.temp_yaml)
         to_optimize = pfh.get_optimizable_parameters(string=True)
-        all_parameters = pfh.get_parameters()
+        ###Parameterd are split between peakpciking and grouping
+        to_optimize_peakpicking = {ll:to_optimize[ll] for ll in to_optimize if ll.startswith("peakpicking")}
+        to_optimize_grouping = {ll:to_optimize[ll] for ll in to_optimize if ll.startswith("grouping")}
+        all_parameters = pfh.get_parameters_values()
 
         ##We get the bounds of the optimizable parameters.
-        lb = [x[0] for x in to_optimize.values()]
-        ub = [x[1] for x in to_optimize.values()]
-        bounds = mos.bounds(lb,ub)
+        lb_peakpicking = [x[0] for x in to_optimize_peakpicking.values()]
+        ub_peakpicking = [x[1] for x in to_optimize_peakpicking.values()]
+
+        lb_grouping = [x[0] for x in to_optimize_grouping.values()]
+        ub_grouping = [x[1] for x in to_optimize_grouping.values()]
+
+        bounds_peakpicking = mos.bounds(lb_peakpicking,ub_peakpicking,list(to_optimize_peakpicking.keys()))
+        bounds_grouping = mos.bounds(lb_grouping,ub_grouping,list(to_optimize_grouping.keys()))
 
         ###if the yaml has not been optimize we create the first value
         if not os.path.isfile(self.temp_yaml):
             self.temp_yaml = self.input_par
 
         # Paramters which are always fixed.
-        fixed_params = (self.path_exp, self.params_archive, self.dir_db, self.path_summary,\
-                       self.num_workers, self.polarity, self.path_samples, self.temp_yaml, sampler.is_parallel(), scorer)
-        dic_fixed = {"fixed_params":fixed_params}
+        fixed_params_peakpicking = (self.path_exp, self.params_archive, self.dir_db, self.path_summary,\
+                       self.num_workers, self.polarity, self.path_samples, self.temp_yaml, psampler.is_parallel(), pscorer)
+        fixed_params_grouping = (self.path_exp, self.params_archive, self.dir_db, self.path_summary,\
+                       self.num_workers, self.polarity, self.path_samples, self.temp_yaml, gsampler.is_parallel(), gscorer)
+        dic_fixed_peakpicking = {"fixed_params":fixed_params_peakpicking}
+        dic_fixed_grouping = {"fixed_params":fixed_params_grouping}
+
+        ###We fix the paramters which will not be optimized
+        for ll in all_parameters:
+            if ll not in to_optimize_peakpicking:
+                dic_fixed_peakpicking[ll] = all_parameters[ll]
 
         ###We fix the paramter which are not yet fixed
         for ll in all_parameters:
-            if ll not in to_optimize:
-                dic_fixed[ll]=pfh[ll]["value"]
+            if ll not in to_optimize_grouping:
+                dic_fixed_grouping[ll] = all_parameters[ll]
 
-        # we optimize the peakpicking
-        soptim = mos.samplingOptimizer(sampler, optimizer, bounds, fixed_arguments=dic_fixed)
-        voptim = soptim.optimize(peak_picking_alignment_scoring, num_points=num_points, num_cores=self.num_workers)
-                         #LIPO algoirhtm  ,max_call=self.nrounds,initial_points=3,)
-        final_dic = dic_fixed
-        for io,ik in zip(range(len(voptim)),to_optimize.keys()):
-            final_dic[ik] = convert_val(voptim[io])
+        # print("dic_fixed_pp:",dic_fixed_peakpicking)
+        # We first optimize the peakpicking
+        psoptim = mos.samplingOptimizer(psampler, poptimizer, bounds_peakpicking, fixed_arguments=dic_fixed_peakpicking)
+        pvoptim = psoptim.optimize(peak_picking_alignment_scoring, num_points=num_points, num_cores=self.num_workers)
+        print("Peakpicking optimization finished.")
+
+        # THe best peakpicking parameters are inject into the grouping parameters.
+        for ik in pvoptim:
+            dic_fixed_grouping[ik] = convert_val(pvoptim[ik])
+
+        gsoptim = mos.samplingOptimizer(gsampler, goptimizer, bounds_grouping, fixed_arguments=dic_fixed_grouping)
+        gvoptim = gsoptim.optimize(peak_picking_alignment_scoring, num_points=num_points, num_cores=self.num_workers)
+        print("Grouping optimization finished.")
+        final_dic = dic_fixed_grouping
+        for ik in gvoptim:
+            final_dic[ik] = convert_val(gvoptim[ik])
         # The best paramters is stroed
         self.best_par = final_dic
 

@@ -8,7 +8,7 @@ class Grouper:
     def __init__(self,row,temp,out,files,names,intensity,mztol,rttol):
         self.hash = row[3]
         self.temp = temp
-        self.output_data=os.path.join(out,"datamatrix_"+self.hash+".csv")
+        self.output_data=os.path.join(out,"datamatrix_"+intensity+"_"+self.hash+".csv")
         self.output_idx=os.path.join(out,"index_"+self.hash+".txt")
         self.files=files
         self.names=names

@@ -129,6 +129,7 @@ if (length(need_computing) != 0) {
       hash = as.character(all_hash),
       output_ms = rep("NOT PROCESSED", num_files),
       output_ms2 = all_path,
+      valid = as.integer(rep(1, num_files)),
       step = as.integer(rep(1, num_files))
     )
   

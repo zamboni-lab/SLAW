@@ -45,7 +45,8 @@ OUT={"DB":"processing.sqlite",
      },
      "EIC":"hdf5/eics.hdf5",
      "PARAMETERS":"parameters.yaml",
-     "PYTHON_SCRIPT":"processing.py"
+     "PYTHON_SCRIPT":"processing.py",
+     "INCORRECT_FILES":"invalidMZML.txt"
 }
 
 

@@ -265,13 +265,18 @@ LCMSAlignerModelFromDirectory <-
                               lim = max_cor, graphical = graphical, bpp = bpp)
       }
       ## we initilaize the clusteritng
-      lam@clustering <- 1:nrow(lam@peaks)
     }
+    lam@clustering <- 1:nrow(lam@peaks)
     ###We initialize the
 
     ##We do the ifnal clustering mode
     if(nrow(lam@data)!=0){
-      lam <- saveAligner(lam, path_model,supp_data=supp_data)
+      #lam <- saveAligner(lam, path_model,supp_data=supp_data)
+      ##We save a copy
+      path_model_new <- strsplit(path_model,"\\.")[[1]]
+      path_model_new[2] <- paste("old",path_model_new[2],sep="")
+      path_model_new <- paste(path_model_new,collapse=".")
+      lam <- saveAligner(lam, path_model_new,supp_data=supp_data)
     }
     if(nrow(lam@peaks)==length(lam@clustering)){
       if(clustering){
@@ -419,6 +424,11 @@ LCMSAlignerModelFromDirectoryByBatch <-
     ##We do the ifnal clustering mode
     if(nrow(lam@data)!=0){
       lam <- saveAligner(lam, path_model,supp_data=supp_data)
+      # path_model_new <- path_model
+      # path_model_new <- strsplit(path_model_new,split = "\\.")[[1]]
+      # path_model_new[2] <- paste("old",path_model_new[2],sep="")
+      # path_model_new <- paste(path_model_new,collapse=".")
+      # lam <- saveAligner(lam, path_model_new,supp_data=supp_data)
     }
     if(nrow(lam@peaks)==length(lam@clustering)){
       if(clustering){
