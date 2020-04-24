@@ -24,10 +24,11 @@ def ff2n(n):
     return 2 * fullfact([2] * n) - 1
 
 def bbdesign(n, center=None):
-    assert n>= 3, 'Number of variables must be at least 3'
+    if n == 1:
+        return np.array([[-1.0],[1.0],[0.0]])
 
     # First, compute a factorial DOE with 2 parameters
-    H_fact = ff2n(2)
+    H_fact = ff2n(n)
     # Now we populate the real DOE with this DOE
 
     # We made a factorial design on each pair of dimensions
@@ -51,5 +52,5 @@ def bbdesign(n, center=None):
             center = n
 
     H = np.c_[H.T, repeat_center(n, center).T].T
-
+    H = np.unique(H,axis=0)
     return H

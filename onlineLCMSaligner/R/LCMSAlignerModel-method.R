@@ -1230,6 +1230,10 @@ exportDataMatrix <- function(object,path,subsample=NULL,subvariable=NULL,
   if(is.null(subvariable)){
     subvariable <- 1:nrow(object@peaks)
   }
+  if(is.logical(subvariable)){
+    subvariable <- which(subvariable)
+  }
+  
     #pf <- match(subvariable,object@peaks$id)
   mzs <- object@peaks$mz[subvariable]
   rts <- object@peaks$rt[subvariable]

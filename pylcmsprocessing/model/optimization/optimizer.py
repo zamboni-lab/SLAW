@@ -7,7 +7,10 @@ class maxOptimizer:
   def __init__(self):
     pass
 
-  def get_maximum(self, points, values):
+  def get_maximum(self, points, values, removed = -1.0):
+    bool = [val!=removed for val in values]
+    points = points[bool]
+    values = [values[idx] for idx in range(len(values)) if bool[idx]]
     pindex = values.index(max(values))
     return points[pindex, :], values[pindex]
 
@@ -65,5 +68,10 @@ def find_approximate_maximum(points, values):
 class rsmOptimizer:
   def __init__(self):
     pass
-  def get_maximum(self, points, values):
+  def get_maximum(self, points, values, removed=-1.0):
+    ##We removed the forbbiden values
+    bool = [val!=removed for val in values]
+    points = points[bool]
+    values = [values[idx] for idx in range(len(values)) if bool[idx]]
+
     return find_approximate_maximum(points, values)

@@ -565,7 +565,7 @@ class Experiment:
         print("Grouping finished")
 
 
-    def group_online(self,intensity="intensity",
+    def group_online(self,intensity="int",
     ppm = 15,mztol=0.007,rttol=0.02,n_ref = 150,
                      ms2_mz_tol=0.01,ms2_rt_tol=0.05,
                      alpha = 0.1,log=None):
@@ -771,6 +771,20 @@ class Experiment:
             if len(clis) > 0:
                 runner.run(clis, silent=True)
         print("Diagnosis figures printed")
+
+    ###change the path on an experiment to
+    def rebase_experiment(self,path_db):
+        vconn = sqlite3.connect(path_db)
+        c = vconn.cursor()
+
+        self.open_db()
+        cnew = self.conn.cursor()
+        res = vconn.execute("SELECT id,output_ms,valid FROM processing").fetchall()
+        vconn.close()
+        for idx, path, valid in res:
+            query = ''' UPDATE processing SET output_ms = ? , valid = ? WHERE id = ?'''
+            cnew.execute(query, (path, valid, idx))
+        self.close_db()
 
     def clean(self):
         ###We clena the files only if the ions have been correctly annotated.

@@ -162,6 +162,9 @@ write_dgCMatrix_csv <- function(mat,
   chunk <- 1
   chunk_start <- 1 + chunk_size * (chunk - 1)
   chunk_end <- chunk_size * chunk
+  if(chunk_end>ncol(mat)){
+    chunk_end <- ncol(mat)
+  }
   chunk_mat <- t(as.matrix(mat[,chunk_start:chunk_end]))
   if(replace_old!="NONE"){
     chunk_mat[chunk_mat==replace_old] <- replace_new
@@ -170,6 +173,9 @@ write_dgCMatrix_csv <- function(mat,
   chunk_df <- as.data.frame(chunk_mat)
   
   data.table::fwrite(chunk_df, file = filename, append = append)
+  if(chunk_end < (chunk_size * chunk)){
+    return(NULL)
+  }
   
   # chunkation over chunks
   if(n_chunks>=2){
@@ -188,6 +194,9 @@ write_dgCMatrix_csv <- function(mat,
   # Remaining samples
   chunk_start <- (n_chunks*chunk_size + 1)
   chunk_end <- n_row
+  if(chunk_start>chunk_end){
+    return(NULL)
+  }
   chunk_mat <- t(as.matrix(mat[,chunk_start:chunk_end]))
   if(replace_old!="NONE"){
     chunk_mat[chunk_mat==replace_old] <- replace_new

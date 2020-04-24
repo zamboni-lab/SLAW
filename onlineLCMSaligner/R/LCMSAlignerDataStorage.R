@@ -21,7 +21,7 @@ LCMSAlignerDataStorage <- function(path, force = TRUE) {
 
 storeData <- function(data, filename) {
   ####We write the data to a file
-  write.table(data,
+  fwrite(data,
               file = filename,
               row.names = FALSE,
               sep = ",")
@@ -61,9 +61,11 @@ extractSubDataMatrix.data.table <- function(path, subsample, subvariable) {
     fread(path,
                header = TRUE,
                sep = ",")
+  
   psel <-
     (vtable[, "id"] %in% subvariable) &
     (vtable[, "sample"] %in% subsample)
+  
   return(vtable[sample %in% subsample & id %in% subvariable,])
 }
 
@@ -302,7 +304,6 @@ buildDataMatrix.datatable <- function(object,
   for (ff in block_files) {
     ###We read the block
     block <- extractSubDataMatrix.data.table(ff, subsample, subvariable)
-    
     tff <- function(x,var_quant){
       return(c(max(x[, ..var_quant])))
     }

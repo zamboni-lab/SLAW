@@ -94,6 +94,11 @@ if __name__=="__main__":
         PATH_DB = "/temp_processing_db.sqlite"
         DB_STORAGE = "/db_storage"
 
+    if "FOPTIM" in os.environ:
+        num_optim = int(os.environ["FOPTIM"])
+    else:
+        num_optim = 5
+
 
 
     # LOG = "/log.txt"
@@ -137,7 +142,7 @@ if __name__=="__main__":
             ###We optimize the parameters
             par_opt = ParametersOptimizer(exp, PATH_OPTIM,DB_STORAGE,num_workers=num_cpus, input_par=PATH_YAML)
             par_opt.optimize_parameters(vui.path_yaml, optimizer=os.environ["OPTIM"],
-                                        num_points=num_points, num_cores=num_cpus)
+                                        num_points=num_points,num_files =num_optim,num_cores=num_cpus)
             timer.store_point("woptimization")
             timer.print_point("woptimization")
             ###If there was optimiz\ation we have ot reset the otpoimization proces
@@ -161,8 +166,8 @@ if __name__=="__main__":
     ###If there is an MS2 folder we process it
     if "MS2" in os.environ:
         exp.extract_ms2(noise_level=float(raw_yaml["peakpicking"]["noise_level_ms2"]["value"]))
-
-    exp.group_online(intensity=str(raw_yaml["grouping"]["extracted_quantity"]["value"]),
+    intensity = str(raw_yaml["grouping"]["extracted_quantity"]["value"])
+    exp.group_online(intensity=intensity,
         ppm = float(raw_yaml["grouping"]["ppm"]["value"]),
         mztol=float(raw_yaml["grouping"]["dmz"]["value"]),
         rttol=float(raw_yaml["grouping"]["drt"]["value"]),

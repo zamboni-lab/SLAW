@@ -6,19 +6,11 @@
       <change beforePath="$PROJECT_DIR$/onlineLCMSaligner_0.1.0.tar.gz" beforeDir="false" afterPath="$PROJECT_DIR$/onlineLCMSaligner_0.1.0.tar.gz" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/annotating_mixed_method.R" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/annotating_mixed_method.R" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/construct_peaktable_online.R" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/construct_peaktable_online.R" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/createSQLiteexperiment.R" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/createSQLiteexperiment.R" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/extractingMGFfromMZML.R" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/extractingMGFfromMZML.R" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/fusing_msms_spectra.R" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/fusing_msms_spectra.R" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/get_polarity.R" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/get_polarity.R" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/common/references.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/common/references.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/parameters_set.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/parameters_set.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/experiment.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/experiment.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/helper/inputbuilder.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/helper/inputbuilder.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/helper/parameters_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/helper/parameters_handler.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/optimizer.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/optimizer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/rsm.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/rsm.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/sampling.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/sampling.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/score_datamatrix.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/score_experiment.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/steps/grouping.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/steps/grouping.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/score_experiment.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/score_experiment.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/steps/optimize_parameters.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/steps/optimize_parameters.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/wrapper_docker.py" beforeDir="false" afterPath="$PROJECT_DIR$/wrapper_docker.py" afterDir="false" />
     </list>
@@ -150,10 +142,18 @@
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state width="1877" height="282" key="GridCell.Tab.0.right/0.0.1920.1040@0.0.1920.1040" timestamp="1586793683721" />
+    <state x="461" y="162" key="SettingsEditor" timestamp="1587452092215">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="461" y="162" key="SettingsEditor/0.0.1920.1040@0.0.1920.1040" timestamp="1587452092215" />
     <state x="656" y="344" key="com.intellij.ide.util.TipDialog" timestamp="1586932459440">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state x="656" y="344" key="com.intellij.ide.util.TipDialog/0.0.1920.1040@0.0.1920.1040" timestamp="1586932459440" />
+    <state x="610" y="135" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser" timestamp="1587477467781">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="610" y="135" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser/0.0.1920.1040@0.0.1920.1040" timestamp="1587477467781" />
     <state x="623" y="225" width="672" height="678" key="search.everywhere.popup" timestamp="1586264876599">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
@@ -166,11 +166,6 @@
           <url>file://$PROJECT_DIR$/pylcmsprocessing/Rscript/wrapper_MZmine_peak_table_conversion.R</url>
           <line>36</line>
           <option name="timeStamp" value="1" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/pylcmsprocessing/model/steps/optimize_parameters.py</url>
-          <line>222</line>
-          <option name="timeStamp" value="2" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

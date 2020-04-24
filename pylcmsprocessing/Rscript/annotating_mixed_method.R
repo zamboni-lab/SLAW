@@ -13,6 +13,8 @@ suppressWarnings(suppressMessages(library(Rcpp, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(InterpretMSSpectrum, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
 
+options(error=traceback)
+
 get_os <- function() {
   if (.Platform$OS.type == "windows") {
     return("win")

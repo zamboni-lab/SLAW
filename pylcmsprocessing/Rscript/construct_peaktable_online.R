@@ -1,5 +1,7 @@
 ###online version using the onlineLCMSaligner method
 
+options(error=traceback)
+
 suppressWarnings(suppressMessages(library(RSQLite,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
 suppressWarnings(suppressMessages(library(DBI,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
 suppressWarnings(suppressMessages(library(onlineLCMSaligner,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
@@ -53,7 +55,7 @@ lam <- LCMSAlignerModelFromDirectory(all_peaktables,
                        output=PATH_BLOCKS,save_interval=15,
                        num_file=20,num_peaks=NUM_REF,col_int=VAL_INTENSITY,reset = FALSE,
                        ppm = MZPPM, dmz=MZTOL,rt = RTTOL,rt_dens=RTTOL/2,n_clusters=10,
-                       supp_data=c("peakwidth","SN","right_on_left_assymetry"),ransac_l1=ALPHA_RT,
+                       supp_data=c("peakwidth","SN","right_on_left_assymetry","height","intensity"),ransac_l1=ALPHA_RT,
                       max_cor=RTTOL*3,clustering=FALSE)
 
 ###We always remove single peaks.
@@ -67,7 +69,7 @@ if(!file.exists(OUTFIGURE)){
 
 ###We always filter out the peaks detected only once.
 
-  vexp <- exportDataMatrix(lam,path=PATH_OUT_DATAMATRIX,subvariable=which(lam@peaks$num>=2),summary_vars=c("mz","rt","rt_cor","peakwidth","SN","right_on_left_assymetry"))
+  vexp <- exportDataMatrix(lam,path=PATH_OUT_DATAMATRIX,quant_var = VAL_INTENSITY,subvariable=which(lam@peaks$num>=2),summary_vars=c("mz","rt","rt_cor","peakwidth","SN","right_on_left_assymetry"))
   message("Alignment done")
 }else{
   message("Data matrix already exists alignement won t be performed: ",PATH_OUT_DATAMATRIX)

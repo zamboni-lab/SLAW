@@ -10,14 +10,12 @@ import subprocess
 
 
 def get_scorer(name):
-    print("name:",name,":")
     if name=="ipopeak":
         return PeakpickingScorerIPO
     if name=="ipoalign":
         return AlignmentScorerIPO
     if name=="groupcv":
         return reproducibleCVscorer
-    print("DEFAULT")
     return reproducibleCVscorer
 
 
@@ -43,7 +41,7 @@ class PeakpickingScorerIPO(ExperimentScorer):
         val = 0
         for path in all_peaktables:
             if not os.path.exists(path):
-                return -1
+                return -1.0
             vdata = pd.read_csv(path,header=0,sep=",")
             MASS_C13 = 1.003355
             MASS_CH3 = 15.023475
@@ -116,8 +114,9 @@ class AlignmentScorerIPO(ExperimentScorer):
         # dir_datamatrix = dir_datamatrix.replace("/output", output, 1)
         path_fig = self.exp.output.getFile(cr.OUT["FIGURES"]["RT_DEV"])
         # path_fig = path_fig.replace("/output", output, 1)
+        hdat = "rt_cor"
         ppg = mg.OnlineGrouper(fake_pp, self.exp.db, dir_blocks, dir_alignment,
-                               dir_datamatrix, "rt", 0.01, 15, 0.01, 150, 0.01,
+                               dir_datamatrix, hdat, 0.01, 15, 0.01, 150, 0.01,
                               0.05, 0.05, "NONE",
                                "NONE", "NONE", 1, path_fig)
         cli = ppg.command_line_aligning()
@@ -129,20 +128,18 @@ class AlignmentScorerIPO(ExperimentScorer):
             return -1.0,-1.0
 
         tdata = pd.read_csv(dm_path, header=0)
-        cnames = [cc for cc in tdata.columns if cc.startswith("int")]
+        print(tdata)
+        cnames = [cc for cc in tdata.columns if cc.startswith(hdat)]
         num_sample = len(cnames)
 
         rt_tab = tdata[cnames]
-        val = rt_tab.apply(lambda x: np.nanmean(x-np.nanmedian(x)), axis=1)
+        val = rt_tab.apply(lambda x: np.absolute(np.nanmean(x-np.nanmedian(x))), axis=1)
         ARTS = np.nanmean(val)
         RCS = 1/ARTS
 
-        ###We now just have ot load the datamatrix
-        path_dm = self.exp.get_datamatrix()[0][0]
-        dm = pd.read_csv(path_dm,header=0,sep=",")
-
-        rps = np.sum((dm.num_detection == len(cnames)) & (dm.total_detection == dm.num_detection))
-        total_peaks = dm.shape[0]
+        thresh_val = floor(len(cnames)*0.8)
+        rps = np.sum((tdata.num_detection > thresh_val) & (tdata.total_detection == tdata.num_detection))
+        total_peaks = tdata.shape[0]
         GS = (rps**2)/total_peaks
         ###We just have to comnpare the column
 

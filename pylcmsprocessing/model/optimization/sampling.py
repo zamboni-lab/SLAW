@@ -35,23 +35,24 @@ class samplingOptimizer:
         self.sampler=sampler
         self.optimizer=optimizer
 
+    ## @DEBUG is supposed to finish
     def optimize(self,func,num_points=100,relative_increase = 0.02,
-                 max_its=3,contraction = 0.5, extension = 0.1,num_cores=1):
+                 max_its=4,contraction = 0.8, extension = 0.1,num_cores=1):
         ###We add some points
         global_best_point = None
         global_best_value = 0.01
-        num_its = 0
+        num_its = 1
         self.sampler.sample(bounds=self.bounds,func=func,num_cores=num_cores,num_points=num_points,fixed_arguments=self.fixed_arguments)
         current_best_point,current_best_value = self.optimizer.get_maximum(self.sampler.get_points(),self.sampler.get_values())
         first = True
         ###We always test the best point
-        while first or (current_best_value-global_best_value)/global_best_value > (relative_increase) and num_its < max_its:
+        while (first and num_its < max_its) or (current_best_value-global_best_value)/global_best_value > (relative_increase) and num_its < max_its:
             first = False
             ###We restrain thge constraints using the newly determined best points
             self.bounds.contract_bound(current_best_point,self.sampler.get_names(),contraction=contraction, extension=extension,
                                      extreme=0.02, only_positive=True)
             self.sampler.sample(bounds=self.bounds,func=func,num_cores=num_cores,num_points=num_points,fixed_arguments=self.fixed_arguments)
-            current_best_point, current_best_value = self.optimizer.get_maximum(self.sampler.get_points(), self.sampler.get_values())
+            current_best_point, current_best_value = self.optimizer.get_maximum(self.sampler.get_points(), self.sampler.get_values(),removed=-1.0)
             num_its += 1
 
         ##We pick the bset sampled points
@@ -86,8 +87,6 @@ class bounds:
         tnlb = self.lb.copy()
         tnub = self.ub.copy()
         crange = {k:(self.ub[k] - self.lb[k]) / 2 for k in self.lb}
-        print("crange",crange)
-        print("best_point",best_point)
         key_list = list(self.lb.keys())
         for ip in range(len(names)):
             key = names[ip]
@@ -149,8 +148,8 @@ class boundedSampler:
 
     def get_values(self):
         sub_l = [y for x in self.values for y in x]
-        if not sub_l[0] is float:
-            res = np.concatenate(sub_l)
+        if not isinstance(sub_l[0],float) and not isinstance(sub_l[0],int):
+            res = np.stack(sub_l)
             return list(np.sum(np.apply_along_axis(lambda x: ((x - np.mean(x)) / np.std(x)), 0, res), axis=1))
         else:
             return sub_l
@@ -171,7 +170,7 @@ def wrap_func_dic(x):
 
 
 
-def do_uniform_random_sampling(lb,ub,func,num_points=1000,num_cores = None,fixed_arguments=None):
+def do_uniform_random_sampling(lb,ub,func,num_points=1000,num_cores = None,fixed_arguments=None, add_center=True):
   '''
   :param constraints: a scipy.optimize.Bounds object
   :param func: The function ot be optimized
@@ -199,7 +198,13 @@ def do_uniform_random_sampling(lb,ub,func,num_points=1000,num_cores = None,fixed
   dic_arg = {}
 
   for k in to_optimize:
-    par_seq = np.random.uniform(lb[k], ub[k], num_points)
+    if add_center:
+        mid_point =  (ub[k]+lb[k])/2
+        par_seq = np.random.uniform(lb[k], ub[k], num_points-1)
+        par_seq=np.append(par_seq,mid_point)
+    else:
+        par_seq = np.random.uniform(lb[k], ub[k], num_points)
+
     dic_arg[k] = par_seq
 
   optimized_args = [dict(zip(dic_arg.keys(),[dic_arg[x][idx] for x in dic_arg])) for idx in range(num_points)]

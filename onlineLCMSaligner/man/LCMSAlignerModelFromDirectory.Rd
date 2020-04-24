@@ -8,6 +8,7 @@ LCMSAlignerModelFromDirectory(
   directory,
   path_model,
   output,
+  col_int = "intensity",
   save_interval = 5,
   num_file = 10,
   reset = FALSE,
