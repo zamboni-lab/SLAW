@@ -5,7 +5,6 @@
 #' Online alignment of LC-MS files
 #'
 #' @docType package
-#' @importFrom ggplot2 ggplot aes geom_point geom_histogram xlab ylab xlim ylim theme
 #' @importFrom gghighlight gghighlight
 #' @import viridis
 #' @import rtree

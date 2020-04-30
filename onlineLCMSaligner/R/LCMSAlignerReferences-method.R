@@ -173,9 +173,7 @@ extractWellBehavedPeaksManyFiles <- function(lar,peaktables,
   dtf <- data.frame(mz=tab_clustering[,1]*sdv[1]+meanv[1],rt=tab_clustering[,2]*sdv[2]+meanv[2],
                     cluster = apply(gmm$Log_likelihood,1,which.max))
 
-  ggp <- ggplot(dtf,aes(x=rt,y=mz,color=as.factor(dtf$cluster)))+geom_point()+
-    xlab("Retention time")+ylab("m/z")+theme(legend.position = "none")
-    if(graphical)  plot(ggp)
+    if(graphical)  plot(dtf$rt,dtf$mz,ylab="m/z",xlab="Retention time",col=as.factor(dtf$cluster),pch=16)
   
   }
 
@@ -234,7 +232,7 @@ extractWellBehavedPeaksManyFiles <- function(lar,peaktables,
   ###we correct for the cumulative sum
 
   ####We calculate the distance to the most neighbouring point.
-  inter_distances <- bpmapply(peaktables,tocalculate,bfiles[1:(length(bfiles)-1)],FUN=function(pt,ct,correction,k,
+  inter_distances <- mapply(peaktables,tocalculate,bfiles[1:(length(bfiles)-1)],FUN=function(pt,ct,correction,k,
                                                                                              fdist){
     library(rtree)
     ct <- ct-correction
@@ -247,11 +245,11 @@ extractWellBehavedPeaksManyFiles <- function(lar,peaktables,
       setdiff(x,y)
     },SIMPLIFY = FALSE)
 
-    vmap <- calcDistance(pt,tpt,kneigh,vfun=fdist)
+    vmap <- onlineLCMSaligner:::calcDistance(pt,tpt,kneigh,vfun=fdist)
 
     # vmap <- mapply(split(tpt,1:nrow(tpt)),kneigh,FUN=calcDistance,MoreArgs=list(peaktable=pt),SIMPLIFY = FALSE)
     return(vmap)
-  },BPPARAM = bpp,MoreArgs = list(k=k+1,fdist=createDistance(lar)),SIMPLIFY = FALSE)
+  },MoreArgs = list(k=k+1,fdist=createDistance(lar)),SIMPLIFY = FALSE)
 
   ####We  reformat all the data to allow a processing despit some missing samples
   idxv <- split(1:length(class_check),f = as.factor(class_check))
@@ -270,7 +268,7 @@ extractWellBehavedPeaksManyFiles <- function(lar,peaktables,
 
 
   ###We compute the minmmum distance of each cluster
-  max_intra_dist <- bplapply(neighbors,function(x,peaktable,fdist){
+  max_intra_dist <- lapply(neighbors,function(x,peaktable,fdist){
     # sel <- split(peaktable[x,,drop=FALSE],1:length(x))
 
     to_calc <- combn(x,2)
@@ -281,7 +279,7 @@ extractWellBehavedPeaksManyFiles <- function(lar,peaktables,
 
     max(vdist)
 
-  },peaktable=btab[,c(1,2,3)],fdist=fdist,BPPARAM = bpp)
+  },peaktable=btab[,c(1,2,3)],fdist=fdist)
   max_intra_dist <- do.call(c,max_intra_dist)
   vratio <- as.numeric(reformatted_inter_distances)/as.numeric(max_intra_dist)
   o_ratio <- order(vratio,decreasing=TRUE)
@@ -371,11 +369,7 @@ extractWellBehavedPeaksManyFiles <- function(lar,peaktables,
 # options(scipen = 0.0001)
 
 setMethod("plot","LCMSAlignerReferences",function(x,y=NULL){
-  xo <- x@peaks
-  ggp <- ggplot(data.frame(xo),mapping = aes(x=rt,y=mz,color=xo[,x@parameters$col_int]))+geom_point()+
-    viridis:::scale_color_viridis(name="log(Int)",trans="log",labels=function(x) format(x, scientific = TRUE,digits=3))
-  plot(ggp)
-  return(invisible(ggp))
+  df <- 2
 })
 
 getBoxLimit <- function(lar,model_peak){

@@ -14,9 +14,10 @@ def get_scorer(name):
         return PeakpickingScorerIPO
     if name=="ipoalign":
         return AlignmentScorerIPO
-    if name=="groupcv":
+    if name=="cvalign":
         return reproducibleCVscorer
-    return reproducibleCVscorer
+    if name=="expalign":
+        return exponentialScorer
 
 
 class ExperimentScorer:
@@ -27,8 +28,19 @@ class ExperimentScorer:
     def score(self,output):
         print("Need to be implemented")
 
+    def require_alignement(self):
+        return
 
-class PeakpickingScorerIPO(ExperimentScorer):
+class PeakpickingScorer(ExperimentScorer):
+    def require_alignement(self):
+        return False
+
+class AlignmentScorer(ExperimentScorer):
+    def require_alignement(self):
+        return True
+
+
+class PeakpickingScorerIPO(PeakpickingScorer):
     def __init__(self,exp):
         self.exp = exp
     def score(self,output,ppm=10,tol_rt=0.015):
@@ -102,7 +114,7 @@ class PeakpickingScorerIPO(ExperimentScorer):
             val += RP**2/(all_peaks-LIP)
         return val
 
-class AlignmentScorerIPO(ExperimentScorer):
+class AlignmentScorerIPO(AlignmentScorer):
     def score(self,output):
         ###We build a data matrix with all tthe retention time
         fake_pp = ("","","","temphash")
@@ -146,7 +158,51 @@ class AlignmentScorerIPO(ExperimentScorer):
         return RCS,GS
 
 
-class reproducibleCVscorer(ExperimentScorer):
+def modif_exp(x,alpha=2):
+    return (np.exp(1-alpha*(0.5-x))-np.exp(1-alpha/2))/(np.exp(1+alpha/2)-np.exp(1-alpha/2))
+
+class exponentialScorer(AlignmentScorer):
+    def score(self, output, alpha = 2):
+        ###We build a data matrix with all tthe retention time
+        fake_pp = ("", "", "", "temphash")
+        dir_blocks = self.exp.output.getDir(cr.TEMP["GROUPING"]["BLOCKS"])
+        # dir_blocks = dir_blocks.replace("/output",output,1)
+        dir_alignment = self.exp.output.getFile(cr.TEMP["GROUPING"]["ALIGNMENT"])
+        # dir_alignment = dir_alignment.replace("/output", output, 1)
+        dir_datamatrix = self.exp.output.getDir(cr.OUT["DATAMATRIX"])
+        # dir_datamatrix = dir_datamatrix.replace("/output", output, 1)
+        path_fig = self.exp.output.getFile(cr.OUT["FIGURES"]["RT_DEV"])
+        # path_fig = path_fig.replace("/output", output, 1)
+        hdat = "rt_cor"
+        ppg = mg.OnlineGrouper(fake_pp, self.exp.db, dir_blocks, dir_alignment,
+                               dir_datamatrix, hdat, 0.01, 15, 0.01, 150, 0.01,
+                               0.05, 0.05, "NONE",
+                               "NONE", "NONE", 1, path_fig)
+        cli = ppg.command_line_aligning()
+        dm_path = ppg.get_output_datamatrix()
+
+        ###The data matrix  is creconstructed as the alignment is done already.
+        subprocess.call(cli, shell=True, timeout=900)
+        if not os.path.exists(dm_path):
+            return -1.0, -1.0
+
+        tdata = pd.read_csv(dm_path, header=0)
+        print(tdata)
+        cnames = [cc for cc in tdata.columns if cc.startswith(hdat)]
+        num_sample = len(cnames)
+
+        rt_tab = tdata[cnames]
+        val = rt_tab.apply(lambda x: np.absolute(np.nanmean(x - np.nanmedian(x))), axis=1)
+        ARTS = np.nanmean(val)
+        RCS = 1 / ARTS
+
+        summed_probas = np.sum(modif_exp(tdata.num_detection / len(cnames)))**2/tdata.shape[0]
+        ###We just have to comnpare the column
+
+        return RCS, summed_probas
+
+
+class reproducibleCVscorer(AlignmentScorer):
 
     def score(self,output,num_skipped=1):
         path_dm = self.exp.get_datamatrix()[0][0]

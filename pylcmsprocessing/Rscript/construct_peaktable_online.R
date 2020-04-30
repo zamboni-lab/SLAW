@@ -56,7 +56,7 @@ lam <- LCMSAlignerModelFromDirectory(all_peaktables,
                        num_file=20,num_peaks=NUM_REF,col_int=VAL_INTENSITY,reset = FALSE,
                        ppm = MZPPM, dmz=MZTOL,rt = RTTOL,rt_dens=RTTOL/2,n_clusters=10,
                        supp_data=c("peakwidth","SN","right_on_left_assymetry","height","intensity"),ransac_l1=ALPHA_RT,
-                      max_cor=RTTOL*3,clustering=FALSE)
+                      max_cor=RTTOL*3,clustering=TRUE)
 
 ###We always remove single peaks.
 if(!file.exists(OUTFIGURE)){

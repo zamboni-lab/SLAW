@@ -120,24 +120,6 @@ updateFeatureInfos <- function(lam, peaks, pos) {
 }
 
 
-updateFeatureInfosByBatch <- function(lam, peaks, pos) {
-  vp <- by(cbind(peaks,pos),INDICES = pos,FUN = function(x){
-    c(sum(x[,1]*x[,3])/sum(x[,3]),sum(x[,2]*x[,3])/sum(x[,3]),nrow(x),x[1,ncol(x)])
-  })
-  vp <- do.call(rbind,vp)
-
-  lam@peaks[vp[,4], "num"] <- (lam@peaks[vp[,4], "num"] + vp[,3])
-  lam@peaks[vp[,4], "current_num"] <- (lam@peaks[vp[,4], "current_num"] + vp[,3])
-
-  lam@peaks[vp[,4], 1] <-
-    (lam@peaks[vp[,4], 1] * (lam@peaks[vp[,4], "num"] - vp[,3]) + vp[,1]) /
-    (lam@peaks[vp[,4], "num"])
-
-  lam@peaks[vp[,4], 2] <-
-    (lam@peaks[vp[,4], 2] * (lam@peaks[vp[,4], "num"] - vp[,3]) + vp[,2]) /
-    (lam@peaks[vp[,4], "num"])
-  return(lam)
-}
 
 #'
 #' #' Insert a feature into the information table.
@@ -400,6 +382,12 @@ alignToModel.density <- function(lam, peaktable,bw = 10,binSize = 0.01, maxFeatu
            vsize=vsize,BPPARAM = bpp)
   vapp <- do.call(rbind,vapp)
 
+  vtest <- tryCatch(nrow(vapp),error=function(e){
+    return(NA)
+  })
+  if(is.na(vtest)){
+    print(vapp)
+  }
   if(nrow(vapp)==0) return(groupindex)
 
   ##If there is any NA we remove it (TODEBUG LATER)
@@ -410,35 +398,23 @@ alignToModel.density <- function(lam, peaktable,bw = 10,binSize = 0.01, maxFeatu
   return(groupindex)
 }
 
-
-
-alignToModelByBatch.density <- function(lam, peaktables,bw = 10,binSize = 0.01, maxFeatures = 50,
-                                 sleep = 0, mzCost = 0.005, rtCost = 0.05, bpp = NULL){
-
+alignToModelByBatch.density <- function(lam, peaktable,bw = 10,binSize = 0.01, maxFeatures = 50,
+                                        sleep = 0, mzCost = 0.005, rtCost = 0.05, bpp = NULL){
+  
   ref_peaks <- lam@peaks[lam@order_peaks,c("mz","rt","num"),drop=FALSE]
-
-
-  ###peaktable has already been fortified
-  vmap <- mapply(peaktables,as.list(seq_along(peaktables)),FUN=function(x,y){
-    cnames <- colnames(x)
-    cnames <- c(cnames,"sample")
-    x <- cbind(as.matrix(x),rep(y,nrow(x)))
-    colnames(x) <- cnames
-    return(x)
-  },SIMPLIFY = FALSE)
-
-
-  copy_peaktable <- peaktable <- do.call(rbind,vmap)
+  
+  max_index <- nrow(ref_peaks)+1
+  
   opeaktable <- order(peaktable[,"mz"],decreasing=FALSE)
-
+  
   peaktable <- peaktable[opeaktable,,drop=FALSE]
-
+  
   groupindex <- rep(NA_real_,nrow(peaktable))
   cost_function <- function(x,y,mzCost,rtCost){
     sum(abs(x-y)/c(mzCost,rtCost))
   }
   cost_function <- Vectorize(cost_function)
-
+  
   colt <- c("time","rt")
   vrt <- match(colt,colnames(peaktable))
   vrt <- colnames(peaktable)[vrt[!sapply(vrt,is.na)][1]]
@@ -446,23 +422,34 @@ alignToModelByBatch.density <- function(lam, peaktables,bw = 10,binSize = 0.01, 
   if (!all(.reqCols %in% colnames(peaktable)))
     stop("Required columns ", paste0("'", .reqCols[!.reqCols %in%
                                                      colnames(peaktable)], "'", collapse = ", "), " not found in 'peaktable' parameter")
-
+  
   # peakOrder <- order(peaktable[, "mz"])
   rownames(peaktable) <- NULL
   rtRange <- range(peaktable[, vrt])
   mass <- seq(peaktable[1, "mz"], peaktable[nrow(peaktable), "mz"] + binSize,
               by = binSize/2)
-
+  
   ####We find the greatest higher integer.
   masspos <- xcms:::findEqualGreaterM(peaktable[, "mz"], mass)
   masspos[masspos>nrow(peaktable)] <- 0
-
+  
   massposmod <- xcms:::findEqualGreaterM(ref_peaks[, 1], mass)
   massposmod[massposmod>nrow(lam@peaks)] <- 0
-
+  
   ##We select the interesting to facillitate parallel computations.
   sel_idx <- which((masspos[3:length(mass)]-masspos[1:(length(mass)-2)])>0)
-
+  
+  ##We increase the last bin to include the last point
+  if(masspos[2+sel_idx[length(sel_idx)]]==nrow(peaktable)){
+    masspos[2+sel_idx[length(sel_idx)]] <- nrow(peaktable)+1
+  }
+  
+  ##We increase the last bin to include the last point
+  if((massposmod[2+sel_idx[length(sel_idx)]]!=0) &
+    (massposmod[2+sel_idx[length(sel_idx)]]==nrow(ref_peaks))){
+    massposmod[2+sel_idx[length(sel_idx)]] <- nrow(ref_peaks)+1
+  }
+  
   ###Initialisation of the group matrix.
   densFrom <- rtRange[1] - 3 * bw
   densTo <- rtRange[2] + 3 * bw
@@ -475,23 +462,31 @@ alignToModelByBatch.density <- function(lam, peaktables,bw = 10,binSize = 0.01, 
                    (massposmod[1:(length(massposmod)-2)])[sel_idx],
                    (massposmod[3:length(massposmod)])[sel_idx]-1,
                    FUN=function(startIdx,endIdx,startIdxMod,endIdxMod,peaktable,ref_peaks,
-                                bw,maxFeatures,vrt,densFrom,densTo,densN){
+                                bw,maxFeatures,vrt,densFrom,densTo,densN,max_idx){
                      if ((endIdx - startIdx) < 0)
                        return(matrix(0,nrow=0,ncol=2))
+                     
+                     ##In this case ther can still be peak which are put in ther own groups
+                     ref <- TRUE
                      if ((endIdxMod - startIdxMod) < 0)
-                       return(matrix(0,nrow=0,ncol=2))
-
+                       ref <- FALSE
+                     
                      curMat <- peaktable[startIdx:endIdx, , drop = FALSE]
-                     subModel <- ref_peaks[startIdxMod:endIdxMod, , drop = FALSE]
-
+                     
+                     if(ref) subModel <- ref_peaks[startIdxMod:endIdxMod, , drop = FALSE]
+                     
                      ###We generate the density for the model
                      den <- density(curMat[, vrt], bw = bw, from = densFrom,
                                     to = densTo, n = densN)
-
+                     
                      ###We generate the density of the model
-                     denModel <- density(subModel[,2], bw = bw, from = densFrom,
-                                         to = densTo, n = densN,weights = subModel[,3])
-                     deny <- den$y*nrow(curMat)+sum(subModel[,3])*denModel$y
+                     if(ref){
+                       denModel <- density(subModel[,2], bw = bw, from = densFrom,
+                                           to = densTo, n = densN,weights = subModel[,3])
+                       deny <- den$y*nrow(curMat)+sum(subModel[,3])*denModel$y
+                     }else{
+                       deny <- den$y
+                     }
                      maxy <- NULL
                      maxden <- max(deny)
                      snum <- 0
@@ -508,51 +503,90 @@ alignToModelByBatch.density <- function(lam, peaktables,bw = 10,binSize = 0.01, 
                        deny[grange[1]:grange[2]] <- 0
                        peaktable_idx <- which(curMat[, vrt] >= den$x[grange[1]] &
                                                 curMat[, vrt] <= den$x[grange[2]])
-
+                       
                        ###We get the number of group which are matched together eventually.
-                       ref_idx <- which(subModel[, 2] >= den$x[grange[1]] &
-                                          subModel[, 2] <= den$x[grange[2]])
+                       if(ref){
+                         ref_idx <- which(subModel[, 2] >= den$x[grange[1]] &
+                                            subModel[, 2] <= den$x[grange[2]])
+                       }
                        snum <- snum + 1
                        num <- num + 1
-
+                       
                        ###Case where on of the catheogry is missing under the density.
-                       if((length(peaktable_idx)==0)|(length(ref_idx)==0)) next
+                       if(length(peaktable_idx)==0) next
                        #We update the value.
-
+                       
                        ###for each sample we select the closest retention time.
-                       selm <- sapply(curMat[peaktable_idx,2],function(x,ref){which.min(abs(ref-x))},
-                                      ref=subModel[ref_idx,2])
-
-
-                       vres[[num_feat]] <- matrix(c(startIdx+peaktable_idx-1,startIdxMod+ref_idx[selm]-1),
-                                                  ncol=2,byrow=FALSE)
+                       if(ref && (length(ref_idx)>0)){
+                         selm <- sapply(curMat[peaktable_idx,2],function(x,ref){which.min(abs(ref-x))},
+                                        ref=subModel[ref_idx,2])
+                         
+                         
+                         vres[[num_feat]] <- matrix(c(startIdx+peaktable_idx-1,startIdxMod+ref_idx[selm]-1),
+                                                    ncol=2,byrow=FALSE)
+                       }else{
+                         vres[[num_feat]] <- matrix(c(startIdx+peaktable_idx-1,rep(max_idx+snum,length(peaktable_idx))),
+                                                    ncol=2,byrow=FALSE)
+                       }
                        num_feat <- num_feat+1
                      }
-
+                     
                      if(num_feat>1){
                        return(do.call(rbind,vres[1:num_feat]))
                      }else{
                        return(matrix(0,nrow=0,ncol=2))
                      }
-
+                     
                    },MoreArgs=list(ref_peaks=ref_peaks,peaktable=peaktable,
                                    bw=bw,maxFeatures=maxFeatures,vrt=vrt,
-                                   densFrom=densFrom,densTo=densTo,densN),BPPARAM = bpp)
+                                   densFrom=densFrom,densTo=densTo,densN=densN,max_idx=max_index),BPPARAM = bpp)
   vsize <- lam@peaks[,"num"]
   ###if nothing has been aligned correctly.
   if(length(vapp)==0){
     return(groupindex)
   }
-
-
+  
+  ###We shift the index
+  shift <- 0
+  new_ids <- max_index+1
+  temp_size <- rep(0,min(5000,2*nrow(ref_peaks)))
+  if(nrow(ref_peaks)>0){
+    temp_size[seq_along(vsize)] <- vsize
+  }
+  
+  for(i in seq_along(vapp)){
+    if(nrow(vapp[[i]])==0) next
+    temp <- vapp[[i]]
+    psupp <- which(temp[,2]>max_index)
+    if(length(psupp)==0) next
+    temp[psupp,2] <- temp[psupp,2]+shift
+    
+    ###We check the size of the new index
+    if(max(temp[psupp,2])>length(temp_size)){
+      temp_size <- c(temp_size,rep(0,length(temp_size)))
+    }
+    
+    t2 <- table(temp[psupp,2])
+    temp_size[temp[psupp,2]] <- t2[match(temp[psupp,2],names(t2))]
+    vapp[[i]] <- temp
+    shift <- shift+length(unique(temp[psupp,2]))
+  }
   vapp <- do.call(rbind,vapp)
   vapp <- bplapply(split(as.data.frame(vapp),f = vapp[,1],
                          drop = FALSE),FUN=function(x,vsize){x[which.max(vsize[x[,2]]),]},
-                   vsize=vsize,BPPARAM = bpp)
+                   vsize=temp_size,BPPARAM = bpp)
+  
   vapp <- do.call(rbind,vapp)
-
+  
+  ###We relabel with consecutive integer
+  psupp <- which(vapp[,2]>max_index)
+  if(length(psupp)>=1){
+    unique_values <- unique(vapp[psupp,2])
+    vapp[psupp,2] <- match(vapp[psupp,2],unique_values)+max_index-1
+    
+  }
   if(nrow(vapp)==0) return(groupindex)
-
+  
   ##If there is any NA we remove it (TODEBUG LATER)
   # vapp <- vapp[!is.na(vapp[,1]),,drop=FALSE]
   # vapp <- vapp[!duplicated(vapp[,1]),]
@@ -560,6 +594,7 @@ alignToModelByBatch.density <- function(lam, peaktables,bw = 10,binSize = 0.01, 
   ###We just return the index
   return(groupindex)
 }
+
 
 
 ###A final clustering is odne to correct mistakes of the previous step eventually.
@@ -732,60 +767,7 @@ addSinglePeaksToModel <- function(lam, peaks, cor_peaks, id_sample) {
   return(lam)
 }
 
-addPeaktableToModelByBatch <- function(lam, peaktable, cor_peaktable, index, id_sample, supp_data=chracter(0)) {
-  ###We add the solo hypothesis on the data
-  psolo <- is.na(index)
-  to_insert <- which(!psolo)
-  message("Found ",length(to_insert)," peaks belonging to the model and ",sum(psolo)," new peaks")
-
-  ###Matche pdeak are added to the model corrected and uncorrected.
-  if (length(to_insert) != 0){
-
-    lam <- updateFeatureInfosByBatch(lam, cor_peaktable[to_insert, , drop = FALSE], index[to_insert])
-  }
-
-  ####New feature are directly added to the 2 matrices
-  if(sum(psolo)!=0){
-    psolo <- which(psolo)
-    new_ids <- 1:length(psolo)+lam@max_id
-    npeaks <-
-      data.frame(
-        mz = peaktable[psolo, 1],
-        rt = cor_peaktable[psolo, 2],
-        rtdev = rep(0, length(psolo)),
-        rtfactor = rep(1, length(psolo)),
-        num = rep(1, length(psolo)),current_num = rep(1,length(psolo)),
-        id= new_ids,
-        stringsAsFactors = FALSE)
-    lam@max_id <- lam@max_id+length(psolo)
-    if(nrow(lam@peaks)!=0){
-      lam@peaks <- rbind(lam@peaks, npeaks)
-    }else{
-      lam@peaks <- npeaks
-    }
-    index[psolo] <- new_ids
-  }
-
-
-  ###We habdle the case of supplementary informations evneutally.
-  ldata <- list(peaktable[,1], peaktable[,2],
-  cor_peaktable[,2],peaktable[,3])
-
-  for(i in seq_along(supp_data)){
-    ldata[[length(ldata)+1]] <- peaktable[,supp_data[i]]
-  }
-  ldata[[length(ldata)+1]] <- rep(id_sample,length(psolo))
-  ldata[[length(ldata)+1]] <- index
-  ndata <- do.call(cbind,ldata)
-
-  colnames(ndata) <-   c('mz','rt','rt_cor','int',supp_data,'sample','id')
-  lam@data <- rbind(lam@data,ndata)
-
-  return(lam)
-}
-
-
-addPeaktableToModel <- function(lam, peaktable, cor_peaktable, index, id_sample, supp_data=chracter(0)) {
+addPeaktableToModel <- function(lam, peaktable, cor_peaktable, index, id_sample, supp_data=character(0)) {
   ###We add the solo hypothesis on the data
   psolo <- is.na(index)
   to_insert <- which(!psolo)
@@ -827,13 +809,96 @@ addPeaktableToModel <- function(lam, peaktable, cor_peaktable, index, id_sample,
   for(i in seq_along(supp_data)){
     ldata[[length(ldata)+1]] <- peaktable[,supp_data[i]]
   }
-  ldata[[length(ldata)+1]] <- rep(id_sample,length(psolo))
+  ldata[[length(ldata)+1]] <- rep(id_sample,length(index))
   ldata[[length(ldata)+1]] <- index
   ndata <- do.call(cbind,ldata)
 
   colnames(ndata) <-   c('mz','rt','rt_cor','int',supp_data,'sample','id')
   lam@data <- rbind(lam@data,ndata)
 
+  return(lam)
+}
+
+
+
+
+createFeatureInfos <- function(peaks, pos) {
+  vp <- by(cbind(peaks,pos),INDICES = pos,FUN = function(x){
+    return(c(mean(x[,1]),mean(x[,2]),0,1,nrow(x),nrow(x),x[1,ncol(x)]))
+  })
+  vp <- do.call(rbind,vp)
+  colnames(vp)<- c("mz","rt","rtdev","rtfactor",
+                   "num","current_num","id")
+  vp <- as.data.frame(vp)
+  return(vp)
+}
+
+
+
+addPeaktablesToModel<- function(lam, peaktables, cor_peaktables, index, bins, id_samples,supp_data=character(0)){
+  ###SIngle peaks
+  psolo <- is.na(index)
+  to_insert <- which(!psolo)
+  
+  ##New sample only features
+  to_insert <- which((!is.na(index))&(index>nrow(lam@peaks)))
+  
+  ###Matched features
+  to_update <- which((!is.na(index))&(index<=nrow(lam@peaks)))
+  
+  message("Found ",length(to_update)," peaks belonging to the model and ",sum(psolo)+length(to_insert)," new features")
+  
+  ###Matche pdeak are added to the model corrected and uncorrected.
+  if (length(to_update) > 0){
+    
+    lam <- updateFeatureInfos(lam, cor_peaktables[to_update, , drop = FALSE], index[to_update])
+  }
+  
+  ###We aggregate the information of the new sample only peaks.
+  if(length(to_insert)>0){
+    ninfos <- createFeatureInfos(cor_peaktables[to_insert, , drop = FALSE], index[to_insert]) 
+    lam@peaks <- rbind(lam@peaks, ninfos)
+    lam@max_id+nrow(ninfos)
+  }
+  
+  ####New feature are directly added to the 2 matrices
+  if(sum(psolo)!=0){
+    psolo <- which(psolo)
+    new_ids <- 1:length(psolo)+lam@max_id
+    npeaks <-
+      data.frame(
+        mz = peaktables[psolo, 1],
+        rt = cor_peaktables[psolo, 2],
+        rtdev = rep(0, length(psolo)),
+        rtfactor = rep(1, length(psolo)),
+        num = rep(1, length(psolo)),current_num = rep(1,length(psolo)),
+        id= new_ids,
+        stringsAsFactors = FALSE)
+    lam@max_id <- lam@max_id+length(psolo)
+    if(nrow(lam@peaks)!=0){
+      lam@peaks <- rbind(lam@peaks, npeaks)
+    }else{
+      lam@peaks <- npeaks
+    }
+    index[psolo] <- new_ids
+  }
+  
+  vsamples <- .bincode(1:nrow(cor_peaktables),breaks = bins,right = FALSE)
+  
+  ###We habdle the case of supplementary informations evneutally.
+  ldata <- list(peaktables[,1], peaktables[,2],
+                cor_peaktables[,2],peaktables[,3])
+  
+  for(i in seq_along(supp_data)){
+    ldata[[length(ldata)+1]] <- peaktables[,supp_data[i]]
+  }
+  ldata[[length(ldata)+1]] <- vsamples
+  ldata[[length(ldata)+1]] <- index
+  ndata <- do.call(cbind,ldata)
+  
+  colnames(ndata) <-   c('mz','rt','rt_cor','int',supp_data,'sample','id')
+  lam@data <- rbind(lam@data,ndata)
+  
   return(lam)
 }
 
@@ -976,7 +1041,7 @@ alignPeaktable <-
 #'
 #' @examples
 #' print('Examples to be put here')
-alignPeaktableBatch <-
+alignPeaktables <-
   function(lam,
            paths,
            rt_scaling = c(0.9, 0.95, 1, 1.05, 1.1),
@@ -989,47 +1054,43 @@ alignPeaktableBatch <-
            lim = 0.1,
            graphical=FALSE,
            bpp=NULL) {
-    toAdd <- rep(FALSE,length(paths))
-    seqIds <- rep(NA,length(paths))
     ##Case of first added file.
-    for(ip in seq_along(paths) ){
-      path <-  paths[ip]
+    added_paths <- rep(TRUE,length(paths))
+    ids <- rep(NA,length(paths))
+    for(ipath in seq_along(paths)){
+      path <- paths[ipath]
       temp <- addFile(lam, path)
       if (temp$added) {
+        ids[ipath] <- temp$id
         lam <- temp$obj
-        toAdd[ip] <- TRUE
-        seqIds[ip] <- temp$id
+      }else{
+        added_paths[ipath] <- FALSE
       }
     }
-
-    if(sum(toAdd)==0) return(lam)
-    ###peaktable has already been fortified
-    peaktable <- mapply(paths,as.list(seq_along(paths[toAdd])),FUN=function(x,y){
-      cnames <- colnames(x)
-      cnames <- c(cnames,"sample")
-      x <- cbind(as.matrix(x),rep(y,nrow(x)))
-      colnames(x) <- cnames
-      return(x)
-    },SIMPLIFY = FALSE)
-
-    ###if there isnt any sample to add we don t add any.
-
+    
+    if(all(!added_paths)) return(lam)
+    ###We remove the previousoly added files
+    paths <- paths[added_paths]
+    ids <- ids[added_paths]
+    
     if(is.null(ransac_dist_threshold)) ransac_dist_threshold <- lam@references@parameters$rt/2
-    lam@files_in_memory <- c(lam@files_in_memory,seqIds[toAdd])
+    lam@files_in_memory <- c(lam@files_in_memory,temp$id)
     alignment_threshold <- lam@references@parameters[["alignment_threshold"]]
-
-    ###WE retrieve the id associated to the sample
-    message("Aligning a batch of ",sum(toAdd),"files.")
-
-    ###We correct all the peaktable in parallel
-    correctRtPeaktable <- function(x,ref,rt_scaling,ransac_niter,ransac_dist_threshold,
-                                   ransac_l1,rt_extensions,span,lim){
-      library(onlineLCMSaligner)
+    
+    message("Aligning ",length(paths)," files.")
+    
+    correctPeaktablePar <- function(path,ref,supp_data,rt_scaling,ransac_niter,
+                                 ransac_dist_threshold,ransac_l1,rt_extensions,span,
+                                 lim){
+      if(!exists("fortifyPeaktable")){
+        library(onlineLCMSaligner)
+      }
+      
       peaktable <- read.table(path,sep = ref@parameters$sep_table,header=TRUE)
       peaktable <- fortifyPeaktable(peaktable,ref,supp_data=supp_data)
       ###We first correct the retention time
       lcc <-
-        onlineLCMSaligner::correctPeaktable(
+        correctPeaktable(
           ref,
           peaktable,
           rt_scaling = rt_scaling,
@@ -1045,55 +1106,89 @@ alignPeaktableBatch <-
       opeaktable <- order(cpeaktable[,"mz"])
       cpeaktable <- cpeaktable[opeaktable,,drop=FALSE]
       peaktable <- peaktable[opeaktable,,drop=FALSE]
+      
       aoo <- order(peaktable[,2])
       vsel <- ceiling(seq(1,length(aoo)-1,length=150))
       tcor <- matrix(c(peaktable[aoo[vsel],2],cpeaktable[aoo[vsel],2]-peaktable[aoo[vsel],2]),ncol=2,byrow=FALSE)
       return(list(peaktable,cpeaktable,tcor))
     }
-
-
-    rproc <- bplapply(paths[toAdd],FUN=correctRtPeaktable,ref=lam@references,
-             rt_scaling=rt_scaling,ransac_niter=ransac_niter,ransac_dist_threshold=ransac_dist_threshold,
-             ransac_l1=ransac_l1,rt_extensions=rt_extensions,span=span,lim=lim,supp_data=supp_data,BPPARAM=bpp)
-
-
-    lam@rt_correction[length(lam@files):(length(lam@files)+length(rproc)-1)] <- sapply(rproc,"[[",i=3)
-    all_cpeaktable <- sapply(rproc,"[[",i=2)
-    all_peaktable <- sapply(rproc,"[[",i=1)
-
-    merged_peaktable <- do.call(rbind,all_peaktable)
-    merged_cpeaktable <- do.call(rbind,all_cpeaktable)
+    
+    ###We correct all the peaktable in parallel
+    values <- bplapply(paths,FUN = correctPeaktablePar,ref=lam@references,rt_scaling = rt_scaling,
+             ransac_niter = ransac_niter,
+             ransac_dist_threshold = ransac_dist_threshold,
+             ransac_l1=ransac_l1,
+             rt_extensions = rt_extensions,
+             span = span,lim = lim,
+             supp_data=supp_data,BPPARAM = bpp)
+    
+    
+    
+    ### We bind all the peaktable
+    peaktables <- lapply(values,"[[",1)
+    
+    ###If it is the first peak we use it as a reference.
+    if(nrow(lam@peaks)==1){
+      idref <- 1
+      while(nrow(peaktables[[idref]])==0){
+        idref <- idref+1
+        ##All peaktables are empty
+        if(idref>length(peaktables)) return(lam)
+      }
+      ##We extract the first non empty peaktable
+      pt_ref <- peaktables[[idref]]
+      peaktables <- peaktables[-idref]
+      vpt_ref <- cpeaktables[[idref]]
+      cpeaktables <- cpeaktables[-idref]
+      
+      lam <- addPeaktableToModel(lam, pt_ref, cpt_ref, rep(NA,1:nrow(pt_ref)), 1, supp_data=supp_data)
+    }
+    
+    
+    
+    sample_bins <- c(0,cumsum(sapply(peaktables,nrow))+1)
+    peaktables <- do.call(rbind,peaktables)
+    
+    cpeaktables <-  lapply(values,"[[",2)
+    cpeaktables <- do.call(rbind,cpeaktables)
+    rt_corr <- lapply(values,"[[",3)
+    
+    
+    lam@rt_correction[(length(lam@files)-length(paths)+1):length(lam@files)] <- rt_corr
+    
+    
+    ###We reorder the two peaktables
+    opeaktables <- order(cpeaktables[,"mz"])
+    cpeaktables <- cpeaktables[opeaktables,,drop=FALSE]
+    peaktables <- peaktables[opeaktables,,drop=FALSE]
 
     vmatch <- NULL
-    ###We always reorder the peaks by mass
-    if(nrow(lam@peaks)!=0){
-      if(lam@references@parameters$aligner_type=="density"){
-        #####The bwe is always 2 times the retention time ost
-        vmatch <- alignToModel.density(lam, merged_cpeaktable,bw = lam@references@parameters$rt_dens,
-                                       binSize = lam@references@parameters$dmz*2,
-                                       maxFeatures = 50, sleep = 0,
-                                       mzCost = lam@references@parameters$dmz,
-                                       rtCost = lam@references@parameters$rt, bpp = bpp)
-      }else if(lam@references@parameters$aligner_type=="nn"){
-        vmatch <-
-          alignToModel.nn(lam, cpeaktable, threshold = alignment_threshold,id_sample=id)
-      }
-    }else{
-      vmatch <- rep(NA_real_,nrow(peaktable))
-    }
+    ###We match the features
+    
+    #####The bwe is always 2 times the retention time ost
+    vmatch <- alignToModelByBatch.density(lam, cpeaktables,bw = lam@references@parameters$rt_dens,
+                                   binSize = lam@references@parameters$dmz,
+                                   maxFeatures = 50, sleep = 0,
+                                   mzCost = lam@references@parameters$dmz,
+                                   rtCost = lam@references@parameters$rt, bpp = bpp)
+
     ###We can then change the match vector to the non sorted coordinates
-    vmatch[!is.na(vmatch)] <- lam@order_peaks[vmatch[!is.na(vmatch)]]
-
-    ###We just have to add the peaktable to the model
-    lam <- addPeaktableToModelByBatch(lam, merged_peaktable, merged_cpeaktable, vmatch,id_sample = id,supp_data=supp_data)
-
+    pfound <- which(!is.na(vmatch))
+    pfound <- pfound[vmatch[pfound]<=nrow(lam@peaks)]
+    if(any(pfound)){
+      vmatch[pfound] <- lam@order_peaks[vmatch[pfound]]
+    }
+    
+    lam <- addPeaktablesToModel(lam, peaktables, cpeaktables, vmatch,
+                                sample_bins, id_samples = ids,supp_data=supp_data)
+    
     lam@order_peaks <- order(lam@peaks[,1])
     if(!is.null(path_aligner)&&(length(lam@files_in_memory)>=lam@save_interval)){
       lam <- saveAligner(lam,path_aligner,supp_data=supp_data,reset=TRUE)
     }
     # message("Peaktable row:",nrow(cpeaktable)," peaks model:",nrow(lam@peaks),
     #         "total num",sum(lam@peaks[,"num"]))
-
+    
     return(lam)
   }
 
@@ -1126,22 +1221,6 @@ readAlignment <- function(path) {
   readRDS(path)
 }
 
-#####PLOTTING FUNCTION FOR COMMODITY PURPOSE
-#' Plot the number of detected files
-#'
-#' @param lam A LCMSAlignerModel object
-#'
-#' @return The ggplot graph
-#' @export
-#'
-#' @examples
-#' print('Examples to be put here')
-plotHistogram <- function(lam){
-  ggp<-ggplot(lam@peaks, aes(x=num)) +
-    geom_histogram()
-  plot(ggp)
-  return(ggp)
-}
 
 saveAligner <- function(lam,path,reset=TRUE,supp_data=character(0)){
   message("Saving alignment.")

@@ -1,5 +1,10 @@
 ---
-peakpicking:
+optimization:
+  description: Optimization of the workflow parameters using a response surface methodology.
+  files_used:
+    description: The number of files in optimization. If you want to select them yours please give a summary.csv ○
+    value: 10
+peakpcking:
   description: This step includes all the necessary sub steps to pass from an individual .mzML file to a processed peaktable. The data are processed using the ADAP algorithm implemented in MZmine.
   noise_level_ms1:
     priority: ESSENTIAL

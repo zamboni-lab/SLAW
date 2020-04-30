@@ -161,9 +161,26 @@ class ParametersFileHandler:
     def get_parameters_values(self,string=True):
         to_optim = self.get_optimizable_parameters_values(string=False)
         supp_par = [pp for pp in self.param_path if pp not in self.ranges and pp not in to_optim]
+
         val_list = list(to_optim.values())
         key_list = list(to_optim.keys())+supp_par
         val_list = val_list+[self[key]["value"] for key in supp_par]
+
+        ###We get the range parameter which are not optimizable
+        supp_ranges =  [pp for pp in self.ranges if pp not in to_optim]
+        supp_val = []
+        supp_key = []
+        for sp in supp_ranges:
+            const_key = sp + (ParametersFileHandler.SUFFIX_CONST,)
+            add_key = sp + (ParametersFileHandler.SUFFIX_ADD,)
+            tval = self[sp]["value"]
+            const_val = tval[0]
+            add_val = tval[1]
+            supp_val.extend([const_val,add_val])
+            supp_key.extend([const_key,add_key])
+
+        val_list = val_list+supp_val
+        key_list = key_list+supp_key
 
         if string:
             key_list = [ParametersFileHandler.SEP.join(key) for key in key_list]
@@ -175,8 +192,10 @@ class ParametersFileHandler:
             yaml.dump(self.dic, outfile, default_flow_style=False)
 
 if __name__=="__main__":
-    PATH_PARAMS = "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/parameters_set.yaml"
+    PATH_PARAMS = "E:/parameters.txt"
     pfh = ParametersFileHandler(PATH_PARAMS)
+    pfh.get_parameters_values().keys()
+
     loptim = pfh.get_optimizable_parameters()
     lval = [(lb+ub)/2 for lb,ub in loptim.values()]
     lnames = list(loptim.keys())

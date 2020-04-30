@@ -4,15 +4,10 @@
     <list default="true" id="84dbd36f-9766-4ce4-bf5b-1769fdcb59a6" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/onlineLCMSaligner_0.1.0.tar.gz" beforeDir="false" afterPath="$PROJECT_DIR$/onlineLCMSaligner_0.1.0.tar.gz" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/annotating_mixed_method.R" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/annotating_mixed_method.R" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/construct_peaktable_online.R" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/construct_peaktable_online.R" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/experiment.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/experiment.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/optimizer.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/optimizer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/rsm.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/rsm.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/sampling.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/sampling.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/parameters_set.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/parameters_set.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/helper/parameters_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/helper/parameters_handler.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/score_experiment.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/score_experiment.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/steps/optimize_parameters.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/steps/optimize_parameters.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wrapper_docker.py" beforeDir="false" afterPath="$PROJECT_DIR$/wrapper_docker.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -146,18 +141,18 @@
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state x="461" y="162" key="SettingsEditor/0.0.1920.1040@0.0.1920.1040" timestamp="1587452092215" />
-    <state x="656" y="344" key="com.intellij.ide.util.TipDialog" timestamp="1586932459440">
+    <state x="656" y="344" key="com.intellij.ide.util.TipDialog" timestamp="1587896248159">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state x="656" y="344" key="com.intellij.ide.util.TipDialog/0.0.1920.1040@0.0.1920.1040" timestamp="1586932459440" />
+    <state x="656" y="344" key="com.intellij.ide.util.TipDialog/0.0.1920.1040@0.0.1920.1040" timestamp="1587896248159" />
     <state x="610" y="135" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser" timestamp="1587477467781">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state x="610" y="135" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser/0.0.1920.1040@0.0.1920.1040" timestamp="1587477467781" />
-    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup" timestamp="1586264876599">
+    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup" timestamp="1587996050480">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup/0.0.1920.1040@0.0.1920.1040" timestamp="1586264876599" />
+    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup/0.0.1920.1040@0.0.1920.1040" timestamp="1587996050480" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

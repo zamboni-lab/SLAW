@@ -296,32 +296,15 @@ LCMSAlignerModelFromDirectory <-
     return(lam)
   }
 
-####We now perform the alignement by batch to speed the process
-
-#' Align all the file form a directory to an exisiting LCMSAlignerModel eventually
-#'
-#' @param directory The directory to monitor
-#' @param path_model The path to store the model
-#' @param output The directory of output for for the ocnstructed block file
-#' @param save_interval The number of aligned peak tbale between save
-#' @param num_file If A new modle is created, how many files are used to find the references peaks
-#' @param reset Shall the processing be restarted from the beginning eventually
-#' @param span Smoothing parameters contorlling the loess
-#' @param n_clusters Numbers of clusters evnetually tested.
-#' @param ... Arguments which will be passed to LCMSAlignerModel
-#'
-#' @return The LCMSAlignerObjects
 #' @export
-#'
-#' @examples
-#' print("Examples to be put here")
 LCMSAlignerModelFromDirectoryByBatch <-
   function(directory,
            path_model,
            output,
+           col_int="intensity",
            save_interval = 5,
-           size_batch = 50,
            num_file = 10,
+           by_batch = 15,
            reset = FALSE,
            threshold = 5,
            span = 0.6,
@@ -336,19 +319,25 @@ LCMSAlignerModelFromDirectoryByBatch <-
            bpp=NULL,
            graphical=FALSE,
            ...) {
-    message("Processing of directory ", directory, ".")
-
-    if(length(save_interval)<size_batch) size_interval <- size_batch
+    if(length(directory)==1){
+      message("Processing of directory ", directory, ".")
+    }else{
+      message("Processing of ", length(directory), " files.")
+    }
     if(is.null(maxAlign)) maxAlign <- 100000
     if(is.null(bpp)) bpp <- bpparam()
-
+    
     ###Two cases or the furnished vector is a set of chracter or the furnished data table is a set of character
-    if(dir.exists(directory)){
+    online <- TRUE
+    if((length(directory)==1) && dir.exists(directory)){
       all_files <- list.files(directory, full.names = TRUE)
-    }else{ ###It is a set fo files eventually.
+    }else if(length(directory)>1){ ###It is a set fo files eventually.
       all_files <- directory
+      online <- FALSE
+    }else{
+      stop(paste("Directory",directory,"does not exist."))
     }
-
+    
     lam <- NULL
     ###If the file is null we intialize it.
     if (file.exists(path_model)) {
@@ -357,6 +346,7 @@ LCMSAlignerModelFromDirectoryByBatch <-
           paths = path_model,
           save_interval = save_interval,
           output = output,
+          col_int=col_int,
           n_clusters = n_clusters,
           supp_data=supp_data,
           graphical = graphical,
@@ -367,15 +357,11 @@ LCMSAlignerModelFromDirectoryByBatch <-
         lam <- restart(lam,supp_data=supp_data)
       }
     } else{
-
+      
       ###Change oa pradigm we tak the biggest ifle
       vsize <- file.info(all_files)$size
       ref_files <- all_files[order(vsize,decreasing=TRUE)[1:min(num_file, length(all_files))]]
-
-      # ref_files <-
-      #   sample(all_files, size = min(num_file, length(all_files)))
-
-
+      
       lam <-
         LCMSAlignerModel(
           paths = ref_files,
@@ -393,49 +379,63 @@ LCMSAlignerModelFromDirectoryByBatch <-
     vpro <- isProcessed(lam, all_files)
     all_files <- all_files[!vpro]
     num_align <- 0
+    
     while (length(all_files) != 0) {
       num_align <- num_align+1
       if(num_align>maxAlign) break
-      all_files <- list.files(directory, full.names = TRUE)
+      if(online){
+        all_files <- list.files(directory, full.names = TRUE)
+      }
       vpro <- isProcessed(lam, all_files)
       all_files <- all_files[!vpro]
       if (length(all_files) != 0) {
         message("Found ", length(all_files), " files to process.")
+      }else{
+        message("No more files to process.")
+        lam <- saveAligner(lam, path_model,supp_data=supp_data)
+        ###We align by batch
+        sseq <- seq(1,length(all_files)+1,by=by_batch)
+        if(sseq[length(sseq)]!=(length(all_files)+1)){
+          sseq <- c(sseq,length(all_files)+1)
+        }
+        
+        if(clustering & length(sseq)>2){
+          clustering <- finalClustering(lam,bw=lam@references@parameters$rt_dens,binSize=lam@references@parameters$dmz,bpp)
+          lam <- clusterPeaktable(lam,clustering,bpp=bpp)
+          lam@clustering <- clustering
+          ###We just return the index
+        }
+        lam <- saveAligner(lam, path_model,supp_data=supp_data)
+        return(lam)
       }
 
-      ###We select a batch of files to align.
-      seq_batch <- seq(1,length(all_files),by = size_batch)
-      nbatch <- length(seq_batch)
-      if(seq_batch[length(seq_batch)] != length(all_files)){
-        seq_batch <- c(seq_batch,length(all_files)+1)
-      }
-
-      for (nb in 1:nbatch) {
+      
+      for (ibatch in 1:(length(sseq)-1)) {
+        batch_files <- all_files[sseq[ibatch]:(sseq[ibatch+1]-1)]
         ###We align each file individually
-        lam <- alignPeaktableBatch(lam,
-                              all_files[(seq_batch[nb]):(seq_batch[nb+1]-1)], path_aligner = path_model, span = span,
+        lam <- alignPeaktables(lam,
+                              batch_files, path_aligner = path_model, span = span,
                               supp_data=supp_data,ransac_l1=ransac_l1,
                               ransac_dist_threshold = ransac_dist_threshold,
                               lim = max_cor, graphical = graphical, bpp = bpp)
       }
-      ## we initilaize the clustering
-      lam@clustering <- 1:nrow(lam@peaks)
+      ## we initilaize the clusteritng
     }
+    lam@clustering <- 1:nrow(lam@peaks)
     ###We initialize the
-
+    
     ##We do the ifnal clustering mode
     if(nrow(lam@data)!=0){
-      lam <- saveAligner(lam, path_model,supp_data=supp_data)
-      # path_model_new <- path_model
-      # path_model_new <- strsplit(path_model_new,split = "\\.")[[1]]
-      # path_model_new[2] <- paste("old",path_model_new[2],sep="")
-      # path_model_new <- paste(path_model_new,collapse=".")
-      # lam <- saveAligner(lam, path_model_new,supp_data=supp_data)
+      #lam <- saveAligner(lam, path_model,supp_data=supp_data)
+      ##We save a copy
+      path_model_new <- strsplit(path_model,"\\.")[[1]]
+      path_model_new[2] <- paste("old",path_model_new[2],sep="")
+      path_model_new <- paste(path_model_new,collapse=".")
+      lam <- saveAligner(lam, path_model_new,supp_data=supp_data)
     }
     if(nrow(lam@peaks)==length(lam@clustering)){
       if(clustering){
-        clustering <- finalClustering(lam,bw=lam@references@parameters$rt_dens,
-                                      binSize=lam@references@parameters$dmz,bpp)
+        clustering <- finalClustering(lam,bw=lam@references@parameters$rt_dens,binSize=lam@references@parameters$dmz,bpp)
         lam <- clusterPeaktable(lam,clustering,bpp=bpp)
         lam@clustering <- clustering
         ###We just return the index
@@ -445,6 +445,5 @@ LCMSAlignerModelFromDirectoryByBatch <-
       }
       lam <- saveAligner(lam, path_model,supp_data=supp_data)
     }
-    message("No more files to process.")
     return(lam)
   }
