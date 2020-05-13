@@ -385,9 +385,6 @@ alignToModel.density <- function(lam, peaktable,bw = 10,binSize = 0.01, maxFeatu
   vtest <- tryCatch(nrow(vapp),error=function(e){
     return(NA)
   })
-  if(is.na(vtest)){
-    print(vapp)
-  }
   if(nrow(vapp)==0) return(groupindex)
 
   ##If there is any NA we remove it (TODEBUG LATER)
@@ -504,10 +501,13 @@ alignToModelByBatch.density <- function(lam, peaktable,bw = 10,binSize = 0.01, m
                        peaktable_idx <- which(curMat[, vrt] >= den$x[grange[1]] &
                                                 curMat[, vrt] <= den$x[grange[2]])
                        
+                       
                        ###We get the number of group which are matched together eventually.
                        if(ref){
                          ref_idx <- which(subModel[, 2] >= den$x[grange[1]] &
                                             subModel[, 2] <= den$x[grange[2]])
+                       }else{
+                         if(length(peaktable_idx)==1) next
                        }
                        snum <- snum + 1
                        num <- num + 1
@@ -835,7 +835,7 @@ createFeatureInfos <- function(peaks, pos) {
 
 
 
-addPeaktablesToModel<- function(lam, peaktables, cor_peaktables, index, bins, id_samples,supp_data=character(0)){
+addPeaktablesToModel<- function(lam, peaktables, cor_peaktables, index, samples ,supp_data=character(0)){
   ###SIngle peaks
   psolo <- is.na(index)
   to_insert <- which(!psolo)
@@ -846,7 +846,7 @@ addPeaktablesToModel<- function(lam, peaktables, cor_peaktables, index, bins, id
   ###Matched features
   to_update <- which((!is.na(index))&(index<=nrow(lam@peaks)))
   
-  message("Found ",length(to_update)," peaks belonging to the model and ",sum(psolo)+length(to_insert)," new features")
+  message("Found ",length(to_update)," peaks belonging to the model and ",sum(psolo)+length(unique(to_insert))," new features")
   
   ###Matche pdeak are added to the model corrected and uncorrected.
   if (length(to_update) > 0){
@@ -858,7 +858,7 @@ addPeaktablesToModel<- function(lam, peaktables, cor_peaktables, index, bins, id
   if(length(to_insert)>0){
     ninfos <- createFeatureInfos(cor_peaktables[to_insert, , drop = FALSE], index[to_insert]) 
     lam@peaks <- rbind(lam@peaks, ninfos)
-    lam@max_id+nrow(ninfos)
+    lam@max_id <- lam@max_id+nrow(ninfos)
   }
   
   ####New feature are directly added to the 2 matrices
@@ -883,7 +883,7 @@ addPeaktablesToModel<- function(lam, peaktables, cor_peaktables, index, bins, id
     index[psolo] <- new_ids
   }
   
-  vsamples <- .bincode(1:nrow(cor_peaktables),breaks = bins,right = FALSE)
+
   
   ###We habdle the case of supplementary informations evneutally.
   ldata <- list(peaktables[,1], peaktables[,2],
@@ -892,7 +892,7 @@ addPeaktablesToModel<- function(lam, peaktables, cor_peaktables, index, bins, id
   for(i in seq_along(supp_data)){
     ldata[[length(ldata)+1]] <- peaktables[,supp_data[i]]
   }
-  ldata[[length(ldata)+1]] <- vsamples
+  ldata[[length(ldata)+1]] <- samples
   ldata[[length(ldata)+1]] <- index
   ndata <- do.call(cbind,ldata)
   
@@ -1146,7 +1146,10 @@ alignPeaktables <-
     
     
     
-    sample_bins <- c(0,cumsum(sapply(peaktables,nrow))+1)
+    sample_bins <- sapply(peaktables,nrow)
+    sample_vec <- rep(ids,times=sample_bins)
+    
+    
     peaktables <- do.call(rbind,peaktables)
     
     cpeaktables <-  lapply(values,"[[",2)
@@ -1161,6 +1164,8 @@ alignPeaktables <-
     opeaktables <- order(cpeaktables[,"mz"])
     cpeaktables <- cpeaktables[opeaktables,,drop=FALSE]
     peaktables <- peaktables[opeaktables,,drop=FALSE]
+    sample_vec <- sample_vec[opeaktables]
+
 
     vmatch <- NULL
     ###We match the features
@@ -1172,15 +1177,14 @@ alignPeaktables <-
                                    mzCost = lam@references@parameters$dmz,
                                    rtCost = lam@references@parameters$rt, bpp = bpp)
 
-    ###We can then change the match vector to the non sorted coordinates
+    ###We can then change the match vector to the non sorted order
     pfound <- which(!is.na(vmatch))
     pfound <- pfound[vmatch[pfound]<=nrow(lam@peaks)]
     if(any(pfound)){
       vmatch[pfound] <- lam@order_peaks[vmatch[pfound]]
     }
-    
     lam <- addPeaktablesToModel(lam, peaktables, cpeaktables, vmatch,
-                                sample_bins, id_samples = ids,supp_data=supp_data)
+                                sample_vec,supp_data=supp_data)
     
     lam@order_peaks <- order(lam@peaks[,1])
     if(!is.null(path_aligner)&&(length(lam@files_in_memory)>=lam@save_interval)){

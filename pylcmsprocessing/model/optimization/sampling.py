@@ -37,22 +37,38 @@ class samplingOptimizer:
 
     ## @DEBUG is supposed to finish
     def optimize(self,func,num_points=100,relative_increase = 0.02,
-                 max_its=4,contraction = 0.8, extension = 0.1,num_cores=1):
+                 max_its=10,contraction = 0.6, extension = 0.1,num_cores=1):
+
+        max_jumps = 2
         ###We add some points
         global_best_point = None
         global_best_value = 0.01
         num_its = 1
         self.sampler.sample(bounds=self.bounds,func=func,num_cores=num_cores,num_points=num_points,fixed_arguments=self.fixed_arguments)
-        current_best_point,current_best_value = self.optimizer.get_maximum(self.sampler.get_points(),self.sampler.get_values())
+        current_best_point,current_best_value,valid = self.optimizer.get_maximum(self.sampler.get_points(),self.sampler.get_values())
+
+        num_jumps=0
+        names_vars = self.sampler.get_names()
         first = True
         ###We always test the best point
-        while (first and num_its < max_its) or (current_best_value-global_best_value)/global_best_value > (relative_increase) and num_its < max_its:
+        while (first and num_its < max_its) or ((current_best_value-global_best_value)/global_best_value > (relative_increase) or num_jumps <= max_jumps) and num_its < max_its :
+            if (current_best_value-global_best_value)/global_best_value <= (relative_increase):
+                num_jumps = num_jumps+1
+
+            impact_var = [var for idx,var in zip(valid,names_vars) if idx]
+            str_var =""
+            if len(impact_var)>0:
+                str_var = ",".join(impact_var)
+
+            print("Iteration:", num_its, "on ",max_its," best_score:",current_best_value," num_jumps:",num_jumps," parameters:",str_var)
+            dpoint = dict(zip(list(names_vars),list(current_best_point)))
             first = False
+
             ###We restrain thge constraints using the newly determined best points
-            self.bounds.contract_bound(current_best_point,self.sampler.get_names(),contraction=contraction, extension=extension,
+            self.bounds.contract_bound(current_best_point,self.sampler.get_names(),valid=valid,contraction=contraction, extension=extension,
                                      extreme=0.02, only_positive=True)
-            self.sampler.sample(bounds=self.bounds,func=func,num_cores=num_cores,num_points=num_points,fixed_arguments=self.fixed_arguments)
-            current_best_point, current_best_value = self.optimizer.get_maximum(self.sampler.get_points(), self.sampler.get_values(),removed=-1.0)
+            self.sampler.sample(bounds=self.bounds,func=func,num_cores=num_cores,num_points=num_points,add_point=[dpoint],fixed_arguments=self.fixed_arguments)
+            current_best_point, current_best_value, valid = self.optimizer.get_maximum(self.sampler.get_points(), self.sampler.get_values(),removed=-1.0)
             num_its += 1
 
         ##We pick the bset sampled points
@@ -74,33 +90,45 @@ class bounds:
             self.ub = dict(zip(names,ub))
             self.lb = dict(zip(names,lb))
 
+        self.initial_lb = self.lb.copy()
+        self.initial_ub = self.ub.copy()
+
     def lower_bound(self):
         return self.lb
 
     def upper_bound(self):
         return self.ub
 
-    def contract_bound(self,best_point,names, contraction=0.5, extension=0.1,
+    def contract_bound(self,best_point,names,valid=None, contraction=0.5, extension=0.1,
                                  extreme=0.02, only_positive=True):
-
+        if valid is None:
+            valid = [True]*len(self.lb)
 
         tnlb = self.lb.copy()
         tnub = self.ub.copy()
         crange = {k:(self.ub[k] - self.lb[k]) / 2 for k in self.lb}
         key_list = list(self.lb.keys())
         for ip in range(len(names)):
+            if not valid[ip]:
+                continue
             key = names[ip]
             nlb = best_point[ip] - crange[key] * contraction
             nub = best_point[ip] + crange[key] * contraction
 
             if (abs((best_point[ip] - self.lb[key]) / crange[key]) - 1) <= extreme:
-                nlb = self.lb[key] - crange[key] * contraction * extension * 2
+                nval = self.lb[key] - crange[key] * contraction * extension * 2
+                if nval < (0.75*self.initial_lb[key]):
+                    nval = (0.75*self.initial_lb[key])
+                nlb = nval
             else:
                 if nlb < self.lb[key]:
                     nlb = self.lb[key]
 
             if (abs((best_point[ip] - self.ub[key]) / crange[key]) - 1) <= extreme:
-                nub = self.ub[key] + crange[key] * contraction * extension * 2
+                nval = self.ub[key] + crange[key] * contraction * extension * 2
+                if nval > (1.25*self.initial_ub[key]):
+                    nval = (1.25*self.initial_ub[key])
+                nub = nval
             else:
                 if nub > self.ub[key]:
                     nub = self.ub[key]
@@ -123,8 +151,11 @@ class boundedSampler:
         self.parallel=True
 
     ##This method jsut need to inherit the first one
-    def sample(self,bounds,func,num_points=100,num_cores=1,fixed_arguments=None):
-        points,values,names=self.sample_points(bounds,func,num_points,num_cores=num_cores,fixed_arguments=fixed_arguments)
+    def sample(self,bounds,func,num_points=100,num_cores=1,add_point=None,fixed_arguments=None):
+        if add_point is None:
+            add_point=[]
+
+        points,values,names=self.sample_points(bounds,func,num_points,num_cores=num_cores,add_point=add_point,fixed_arguments=fixed_arguments)
         self.append_points(points,values)
         self.names = names
 
@@ -140,7 +171,7 @@ class boundedSampler:
         return np.concatenate(vpoints,axis = 0)
 
     def get_names(self):
-        if len(self.names)!=0:
+        if len(self.names)>0:
             return self.names
         if len(self.points)==0:
             return []
@@ -170,7 +201,7 @@ def wrap_func_dic(x):
 
 
 
-def do_uniform_random_sampling(lb,ub,func,num_points=1000,num_cores = None,fixed_arguments=None, add_center=True):
+def do_uniform_random_sampling(lb,ub,func,num_points=1000,num_cores = None,fixed_arguments=None, add_center=True, add_point=None):
   '''
   :param constraints: a scipy.optimize.Bounds object
   :param func: The function ot be optimized
@@ -196,14 +227,18 @@ def do_uniform_random_sampling(lb,ub,func,num_points=1000,num_cores = None,fixed
 
   ###We just sample every parameters across the different
   dic_arg = {}
+  num_points_sampled = num_points-int(add_center)-len(add_point)
 
   for k in to_optimize:
     if add_center:
         mid_point =  (ub[k]+lb[k])/2
-        par_seq = np.random.uniform(lb[k], ub[k], num_points-1)
+        par_seq = np.random.uniform(lb[k], ub[k], num_points_sampled)
         par_seq=np.append(par_seq,mid_point)
     else:
-        par_seq = np.random.uniform(lb[k], ub[k], num_points)
+        par_seq = np.random.uniform(lb[k], ub[k], num_points_sampled)
+    if len(add_point)>0:
+        for point in add_point:
+            par_seq = np.append(par_seq, point[k])
 
     dic_arg[k] = par_seq
 
@@ -231,9 +266,9 @@ class uniformBoundedSampler(boundedSampler):
         self.parallel=True
         super().__init__()
 
-    def sample_points(self,limits,func,num_points,num_cores=None,fixed_arguments=None):
+    def sample_points(self,limits,func,num_points,num_cores=None,add_point=None,fixed_arguments=None):
         points,values,to_optim = do_uniform_random_sampling(limits.lower_bound(), limits.upper_bound(), func, num_points=num_points,
-                                                   num_cores=num_cores, fixed_arguments=fixed_arguments)
+                                                   num_cores=num_cores,add_point=add_point,fixed_arguments=fixed_arguments)
         return points,values,to_optim
 
 ##################

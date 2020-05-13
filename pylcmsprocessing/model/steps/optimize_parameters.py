@@ -8,6 +8,7 @@ import subprocess
 import numpy as np
 import pandas as pd
 import time
+import math
 
 import model.experiment as me
 import common.references as cr
@@ -232,7 +233,7 @@ class ParametersOptimizer:
         os.makedirs(self.params_archive, exist_ok=True)
         self.path_samples = os.path.join(self.output,"mzML")
         os.makedirs(self.path_samples, exist_ok=True)
-        self.path_summary = os.path.join(self.output,"summary_par.csv")
+        self.path_summary = os.path.join(self.output,"summary_par")
         self.temp_polarity = os.path.join(self.output,"polarity.csv")
         self.polarity = exp.get_polarity()
         self.num_workers = num_workers
@@ -271,7 +272,7 @@ class ParametersOptimizer:
 
 
     ###Thoe optimization is always two steps
-    def do_optimize_parameters(self,optim_string="bbd_rsm",num_points=50,**kwargs):
+    def do_optimize_parameters(self,optim_string="bbd_rsm",max_its=10,num_points=50,**kwargs):
 
         ### We get the optimization algorithm.
         psampler,poptimizer,pscorer,gsampler,goptimizer,gscorer = parse_optim_option(optim_string)
@@ -296,13 +297,15 @@ class ParametersOptimizer:
             self.temp_yaml = self.input_par
 
         ##We get the bounds of the optimizable parameters.
+        summary_peakpicking = self.path_summary + "_peakpicking.csv"
+
         if len(to_optimize_peakpicking) > 0 and pscorer!="none":
             lb_peakpicking = [x[0] for x in to_optimize_peakpicking.values()]
             ub_peakpicking = [x[1] for x in to_optimize_peakpicking.values()]
             bounds_peakpicking = mos.bounds(lb_peakpicking, ub_peakpicking, list(to_optimize_peakpicking.keys()))
 
             # Paramters which are always fixed.
-            fixed_params_peakpicking = (self.path_exp, self.params_archive, self.dir_db, self.path_summary,\
+            fixed_params_peakpicking = (self.path_exp, self.params_archive, self.dir_db, summary_peakpicking,\
                            self.num_workers, self.polarity, self.path_samples, self.temp_yaml, psampler.is_parallel(), pscorer, pdb, False)
 
             dic_fixed_peakpicking = {"fixed_params":fixed_params_peakpicking}
@@ -312,8 +315,9 @@ class ParametersOptimizer:
                     dic_fixed_peakpicking[ll] = all_parameters[ll]
             try:
                 psoptim = mos.samplingOptimizer(psampler, poptimizer, bounds_peakpicking, fixed_arguments=dic_fixed_peakpicking)
-                pvoptim = psoptim.optimize(peak_picking_alignment_scoring,max_its=4,num_points=num_points, num_cores=self.num_workers)
-            except Exception:
+                pvoptim = psoptim.optimize(peak_picking_alignment_scoring,max_its=max_its,num_points=num_points, num_cores=self.num_workers)
+            except Exception as e:
+                print("Exception occured:",e)
                 pass
             print("Peakpicking optimization finished.")
         else:
@@ -322,7 +326,7 @@ class ParametersOptimizer:
         if len(to_optimize_grouping) > 0 and gscorer!="none":
             ###We compute the peak picking a single time
             dic_pp = all_parameters.copy()
-            fixed_pp_single = (self.path_exp, self.params_archive, self.dir_db, self.path_summary,\
+            fixed_pp_single = (self.path_exp, self.params_archive, self.dir_db, summary_peakpicking,\
                            self.num_workers, self.polarity, self.path_samples, self.temp_yaml, False, "ipopeak", pdb, True)
 
             if ("pvoptim" in locals()):
@@ -336,29 +340,22 @@ class ParametersOptimizer:
             lb_grouping = [x[0] for x in to_optimize_grouping.values()]
             ub_grouping = [x[1] for x in to_optimize_grouping.values()]
             bounds_grouping = mos.bounds(lb_grouping, ub_grouping, list(to_optimize_grouping.keys()))
-
-            fixed_params_grouping = (self.path_exp, self.params_archive, self.dir_db, self.path_summary,\
+            summary_alignment = self.path_summary+"_alignement.csv"
+            fixed_params_grouping = (self.path_exp, self.params_archive, self.dir_db, summary_alignment,\
                            self.num_workers, self.polarity, self.path_samples, self.temp_yaml, gsampler.is_parallel(), gscorer, pdb, False)
             dic_fixed_grouping = {"fixed_params":fixed_params_grouping}
 
             ##We read the correct parameter to copy the experiment
-            if os.path.isfile(self.path_summary):
-                pda = pd.read_csv(self.path_summary)
+            if os.path.isfile(summary_peakpicking):
+                pda = pd.read_csv(summary_peakpicking)
                 idmax = pda.score.idxmax()
                 pdb = pda.db[idmax]
-                # for idx in range(pda.shape[0]-1):
-                #     if pda.loc[idx].output_dir != pda.loc[idx].output_dir[pda.shape[0]-1]:
-                #         try:
-                #             shutil.rmtree(pda.loc[idx].output_dir)
-                #         except Exception:
-                #             pass
 
-                print("Best val pdb:",pdb)
                 ###In any case we recompute a single parameters with enough cores
                 ###In every case we recompute a single paramters with the best peakpicking
                 dic_call = dic_fixed_grouping
 
-                fixed_params_grouping = (self.path_exp, self.params_archive, self.dir_db, self.path_summary, \
+                fixed_params_grouping = (self.path_exp, self.params_archive, self.dir_db, summary_alignment, \
                                          self.num_workers, self.polarity, self.path_samples, self.temp_yaml,gsampler.is_parallel(), gscorer,pdb, False)
                 dic_fixed_grouping = {"fixed_params":fixed_params_grouping}
             ###We fix the paramter which are not yet fixed
@@ -373,7 +370,7 @@ class ParametersOptimizer:
 
             gsoptim = mos.samplingOptimizer(gsampler, goptimizer, bounds_grouping, fixed_arguments=dic_fixed_grouping)
             try:
-                gvoptim = gsoptim.optimize(peak_picking_alignment_scoring,max_its=4, num_points=num_points, num_cores=self.num_workers)
+                gvoptim = gsoptim.optimize(peak_picking_alignment_scoring,max_its=max_its, num_points=num_points, num_cores=self.num_workers)
                 print("Grouping optimization finished.")
                 final_dic = dic_fixed_grouping
                 for ik in gvoptim:
@@ -382,6 +379,7 @@ class ParametersOptimizer:
                 pass
         # The best paramters is stroed
         self.best_par = final_dic
+        print(final_dic)
 
     def export_best_parameters(self,outpath):
         pfh = ph.ParametersFileHandler(self.input_par)
@@ -395,15 +393,26 @@ class ParametersOptimizer:
         pfh.write_parameters(outpath)
 
 
-    def optimize_parameters(self,output_par,optimizer="lipo_rsm",num_files= 10,num_points=100,**kwargs):
-        ##Supplementary arugment for LIPO
-        # max_call=self.nrounds,initial_points=3
-        ##Supplementary for random sampling
-        # num_points=1000,num_cores = 1)
+    def optimize_parameters(self,output_par,optimizer="lipo_rsm",max_its=10,num_files= 10,num_points=100,**kwargs):
+
+        ###The memory of JAVA is always more limited for optimization, 700 less Mbs.
+        memory_by_core = int(os.environ["MEMORY"])*0.7
+
+        ###We set the JAVA option for the peak picking evnetually
+        os.environ["JAVA_OPTS"] = "-Xms" + str(math.floor(memory_by_core / 2)) + "m -Xmx" + str(
+            math.floor(memory_by_core) - 200) + "m"
+
         self.determine_initial_parameters()
         self.select_samples(num_files = num_files)
         print("Finished initial parameters estimation")
         print("Optimizing remaining parameters")
-        self.do_optimize_parameters(optim_string=optimizer,num_points=num_points)
+        self.do_optimize_parameters(optim_string=optimizer,max_its=max_its,num_points=num_points)
         print("Finished  optimization")
         self.export_best_parameters(output_par)
+
+        ###We reset the jAVA memoery limit
+        memory_by_core = int(os.environ["MEMORY"])
+
+        ###We set the JAVA option for the peak picking evnetually
+        os.environ["JAVA_OPTS"] = "-Xms" + str(math.floor(memory_by_core / 2)) + "m -Xmx" + str(
+            math.floor(memory_by_core) - 200) + "m"

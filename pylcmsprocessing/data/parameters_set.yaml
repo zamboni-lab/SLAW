@@ -1,10 +1,19 @@
 ---
 optimization:
-  description: Optimization of the workflow parameters using a response surface methodology.
+  description: Optimization of the workflow parameters using a responce sufrace
   files_used:
-    description: The number of files in optimization. If you want to select them yours please give a summary.csv ○
+    priority: LOW
+    description: The number of files in optimization. You can specify it by providing a usmmary.txt files
     value: 10
-peakpcking:
+  number_of_points:
+    priority: LOW
+    description: The number of points sampled at each surface estimation steps.
+    value: 10
+  num_iterations:
+    priority: LOW
+    description: The maximum number of surface estimated. If no improvment happens at any iteration the optimization stops
+    value: 10
+peakpicking:
   description: This step includes all the necessary sub steps to pass from an individual .mzML file to a processed peaktable. The data are processed using the ADAP algorithm implemented in MZmine.
   noise_level_ms1:
     priority: ESSENTIAL

@@ -132,17 +132,21 @@ if __name__=="__main__":
         if not ph.is_optimized():
             vui.generate_yaml_files()
             vui.initialize_yaml_polarity(PATH_YAML, pol)
-            num_points = 100
-            if "NOPTIM" in os.environ:
-                num_points = int(os.environ["NOPTIM"])
+            with open(vui.path_yaml, 'r') as stream:
+                raw_yaml = yaml.safe_load(stream)
+
+            num_points = int(raw_yaml["optimization"]["number_of_points"]["value"])
+            max_its = int(raw_yaml["optimization"]["num_iterations"]["value"])
+            optim_files = int(raw_yaml["optimization"]["files_used"]["value"])
+
             PATH_OPTIM = os.path.join(OUTPUT_DIR, "temp_optim")
             if not os.path.isdir(DB_STORAGE):
                 os.makedirs(DB_STORAGE)
 
             ###We optimize the parameters
             par_opt = ParametersOptimizer(exp, PATH_OPTIM,DB_STORAGE,num_workers=num_cpus, input_par=PATH_YAML)
-            par_opt.optimize_parameters(vui.path_yaml, optimizer=os.environ["OPTIM"],
-                                        num_points=num_points,num_files =num_optim,num_cores=num_cpus)
+            par_opt.optimize_parameters(vui.path_yaml, optimizer=os.environ["OPTIM"], max_its=max_its,
+                                        num_points=num_points,num_files =optim_files,num_cores=num_cpus)
             timer.store_point("woptimization")
             timer.print_point("woptimization")
             ###If there was optimiz\ation we have ot reset the otpoimization proces
@@ -187,4 +191,4 @@ if __name__=="__main__":
     timer.print_point("wannotation")
     if successfully_processed:
         exp.post_processing(PATH_TARGET)
-        #exp.clean()
+        exp.clean()

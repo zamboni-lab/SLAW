@@ -43,34 +43,32 @@ if(get_os()=="win"){
   bpp <- MulticoreParam(workers = NUM_CORES)
 }
 if(!file.exists(PATH_OUT_DATAMATRIX)){
-message("Beginning grouping using metric, ",VAL_INTENSITY)
+    message("Beginning grouping using metric, ",VAL_INTENSITY)
 
-dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
-    all_peaktables <- dbGetQuery(dbb, "SELECT output_ms FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")[, 1]
-dbDisconnect(dbb)
+    dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
+        all_peaktables <- dbGetQuery(dbb, "SELECT output_ms FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")[, 1]
+    dbDisconnect(dbb)
 
-##mz and rt are always stored
-lam <- LCMSAlignerModelFromDirectory(all_peaktables,
-                      path_model=PATH_ALIGNMENT,
-                       output=PATH_BLOCKS,save_interval=15,
-                       num_file=20,num_peaks=NUM_REF,col_int=VAL_INTENSITY,reset = FALSE,
-                       ppm = MZPPM, dmz=MZTOL,rt = RTTOL,rt_dens=RTTOL/2,n_clusters=10,
-                       supp_data=c("peakwidth","SN","right_on_left_assymetry","height","intensity"),ransac_l1=ALPHA_RT,
-                      max_cor=RTTOL*3,clustering=TRUE)
+    ##mz and rt are always stored
+    lam <- LCMSAlignerModelFromDirectoryByBatch(all_peaktables,
+                          path_model=PATH_ALIGNMENT,
+                           output=PATH_BLOCKS,save_interval=50,
+                           num_file=20,num_peaks=NUM_REF,col_int=VAL_INTENSITY,reset = FALSE,
+                           ppm = MZPPM, dmz=MZTOL,rt = RTTOL,rt_dens=RTTOL/2,n_clusters=10,
+                           supp_data=c("peakwidth","SN","right_on_left_assymetry","height","intensity"),ransac_l1=ALPHA_RT,
+                          max_cor=RTTOL*3,by_batch=20,clustering=TRUE)
 
-###We always remove single peaks.
-if(!file.exists(OUTFIGURE)){
-  pdf(OUTFIGURE)
-  plotDevRt(lam,int_threshold=0.15)
-  dev.off()
-}else{
-  message("Rt deviation figure already exists.")
-}
-
-###We always filter out the peaks detected only once.
-
-  vexp <- exportDataMatrix(lam,path=PATH_OUT_DATAMATRIX,quant_var = VAL_INTENSITY,subvariable=which(lam@peaks$num>=2),summary_vars=c("mz","rt","rt_cor","peakwidth","SN","right_on_left_assymetry"))
-  message("Alignment done")
+    ###We always remove single peaks.
+    if(!file.exists(OUTFIGURE)){
+      pdf(OUTFIGURE)
+      plotDevRt(lam,int_threshold=0.15)
+      dev.off()
+    }else{
+      message("Rt deviation figure already exists.")
+    }
+    ###We always filter out the peaks detected only once.
+    vexp <- exportDataMatrix(lam,path=PATH_OUT_DATAMATRIX,quant_var = VAL_INTENSITY,subvariable=which(lam@peaks$num>=2),summary_vars=c("mz","rt","rt_cor","peakwidth","SN","right_on_left_assymetry"))
+    message("Alignment done")
 }else{
   message("Data matrix already exists alignement won t be performed: ",PATH_OUT_DATAMATRIX)
 }

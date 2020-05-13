@@ -5,7 +5,7 @@
 #' @include utils.R
 
 initializeParameters <- function(lar){
-  lar@parameters <- list(rt=0.1,ppm=12,dmz=0.007,int=1,col_mz=1,rt_dens=0.04,
+  lar@parameters <- list(rt=0.1,ppm=12,dmz=0.007,int=1,col_mz=1,rt_dens=0.003,
                          col_rt=2,col_int=3,sep_table=",",alignment_threshold=8, aligner_type="density")
   lar
 }

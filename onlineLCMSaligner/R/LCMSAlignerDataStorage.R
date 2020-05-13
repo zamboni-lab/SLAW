@@ -138,11 +138,11 @@ setMethod("buildDataMatrix", "LCMSAlignerDataStorage", function(object,
   # sds <- matrix(0,nrow=length(subvariable),ncol=length(sel_blocks))
 
 
-
-  if ((memory.limit() * 10 ^ 6 * 0.8) < (length(subvariable) * (length(subsample)+3*length(summary_vars)) *
-                                         8)) {
-    stop("Matrix to be written probably too big to fit in memoery, please filter some variable.")
-  }
+# 
+#   if ((memory.limit() * 10 ^ 6 * 0.8) < (length(subvariable) * (length(subsample)+3*length(summary_vars)) *
+#                                          8)) {
+#     stop("Matrix to be written probably too big to fit in memoery, please filter some variable.")
+#   }
 
   ###Columns are mz rt and rt_dev among acquisition
   vmat <-
@@ -284,12 +284,12 @@ buildDataMatrix.datatable <- function(object,
   # sds <- matrix(0,nrow=length(subvariable),ncol=length(sel_blocks))
   
   
-  
-  if ((memory.limit() * 10 ^ 6 * 0.8) < (length(subvariable) * (length(subsample)+3*length(summary_vars)) *
-                                         8)) {
-    stop("Matrix to be written probably too big to fit in memoery, please filter some variable.")
-  }
-  
+  # 
+  # if ((memory.limit() * 10 ^ 6 * 0.8) < (length(subvariable) * (length(subsample)+3*length(summary_vars)) *
+  #                                        8)) {
+  #   stop("Matrix to be written probably too big to fit in memoery, please filter some variable.")
+  # }
+  # 
   ###Columns are mz rt and rt_dev among acquisition
   vmat <- Matrix(0.0,nrow = length(subvariable),
                  ncol = length(subsample),sparse = TRUE)

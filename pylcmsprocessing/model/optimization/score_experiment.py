@@ -140,7 +140,6 @@ class AlignmentScorerIPO(AlignmentScorer):
             return -1.0,-1.0
 
         tdata = pd.read_csv(dm_path, header=0)
-        print(tdata)
         cnames = [cc for cc in tdata.columns if cc.startswith(hdat)]
         num_sample = len(cnames)
 
@@ -158,7 +157,7 @@ class AlignmentScorerIPO(AlignmentScorer):
         return RCS,GS
 
 
-def modif_exp(x,alpha=2):
+def modif_exp(x,alpha=6):
     return (np.exp(1-alpha*(0.5-x))-np.exp(1-alpha/2))/(np.exp(1+alpha/2)-np.exp(1-alpha/2))
 
 class exponentialScorer(AlignmentScorer):

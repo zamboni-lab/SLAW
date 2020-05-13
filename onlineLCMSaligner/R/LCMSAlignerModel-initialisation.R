@@ -282,7 +282,7 @@ LCMSAlignerModelFromDirectory <-
     }
     if(nrow(lam@peaks)==length(lam@clustering)){
       if(clustering){
-        clustering <- finalClustering(lam,bw=lam@references@parameters$rt_dens,binSize=lam@references@parameters$dmz,bpp)
+        clustering <- finalClustering(lam,bw=lam@references@parameters$rt_dens/2,binSize=lam@references@parameters$dmz,bpp)
         lam <- clusterPeaktable(lam,clustering,bpp=bpp)
         lam@clustering <- clustering
         ###We just return the index
@@ -386,6 +386,14 @@ LCMSAlignerModelFromDirectoryByBatch <-
       if(online){
         all_files <- list.files(directory, full.names = TRUE)
       }
+      
+      if(length(all_files)==0) stop("No files to process.")
+      
+      sseq <- seq(1,length(all_files)+1,by=by_batch)
+      if(sseq[length(sseq)]!=(length(all_files)+1)){
+        sseq <- c(sseq,length(all_files)+1)
+      }
+      
       vpro <- isProcessed(lam, all_files)
       all_files <- all_files[!vpro]
       if (length(all_files) != 0) {
@@ -394,13 +402,9 @@ LCMSAlignerModelFromDirectoryByBatch <-
         message("No more files to process.")
         lam <- saveAligner(lam, path_model,supp_data=supp_data)
         ###We align by batch
-        sseq <- seq(1,length(all_files)+1,by=by_batch)
-        if(sseq[length(sseq)]!=(length(all_files)+1)){
-          sseq <- c(sseq,length(all_files)+1)
-        }
         
         if(clustering & length(sseq)>2){
-          clustering <- finalClustering(lam,bw=lam@references@parameters$rt_dens,binSize=lam@references@parameters$dmz,bpp)
+          clustering <- finalClustering(lam,bw=lam@references@parameters$rt_dens/2,binSize=lam@references@parameters$dmz,bpp)
           lam <- clusterPeaktable(lam,clustering,bpp=bpp)
           lam@clustering <- clustering
           ###We just return the index
@@ -435,7 +439,7 @@ LCMSAlignerModelFromDirectoryByBatch <-
     }
     if(nrow(lam@peaks)==length(lam@clustering)){
       if(clustering){
-        clustering <- finalClustering(lam,bw=lam@references@parameters$rt_dens,binSize=lam@references@parameters$dmz,bpp)
+        clustering <- finalClustering(lam,bw=lam@references@parameters$rt_dens/2,binSize=lam@references@parameters$dmz,bpp)
         lam <- clusterPeaktable(lam,clustering,bpp=bpp)
         lam@clustering <- clustering
         ###We just return the index
