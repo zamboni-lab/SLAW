@@ -35,10 +35,17 @@ class PeakpickingScorer(ExperimentScorer):
     def require_alignement(self):
         return False
 
+    def get_weight(self):
+        temp = [1.0]
+        return temp
+
 class AlignmentScorer(ExperimentScorer):
     def require_alignement(self):
         return True
 
+    def get_weight(self):
+        temp = [1.0,2.0]
+        return temp
 
 class PeakpickingScorerIPO(PeakpickingScorer):
     def __init__(self,exp):

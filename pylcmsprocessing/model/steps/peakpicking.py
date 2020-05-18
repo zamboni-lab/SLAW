@@ -6,6 +6,10 @@ from common.tools import get_platform,find_rscript
 class PeakPicking(ABC):
 
     @abstractmethod
+    def initialize_computing(self):
+        pass
+
+    @abstractmethod
     def need_computing(self):
         pass
 

@@ -16,7 +16,6 @@ def getSampler(name="lipo"):
         return lipoSampler
     return bbdSampler
 
-OPTIMIZER = ["max","rsm"]
 def getOptimizer(name="rsm"):
     if name=="rsm":
         return rsmOptimizer
@@ -26,16 +25,17 @@ def getOptimizer(name="rsm"):
 
 
 class samplingOptimizer:
-    def __init__(self,sampler,optimizer,bounds,fixed_arguments=None):
+    def __init__(self,sampler,optimizer,bounds,weight=None,fixed_arguments=None):
         if fixed_arguments is None:
             self.fixed_arguments = {}
         else:
             self.fixed_arguments = fixed_arguments
         self.bounds=bounds
         self.sampler=sampler
+        if weight is not None:
+            self.sampler.set_weight(weight)
         self.optimizer=optimizer
 
-    ## @DEBUG is supposed to finish
     def optimize(self,func,num_points=100,relative_increase = 0.02,
                  max_its=10,contraction = 0.6, extension = 0.1,num_cores=1):
 
@@ -148,6 +148,7 @@ class boundedSampler:
         self.points = []
         self.values = []
         self.names = []
+        self.weight = None
         self.parallel=True
 
     ##This method jsut need to inherit the first one
@@ -158,6 +159,9 @@ class boundedSampler:
         points,values,names=self.sample_points(bounds,func,num_points,num_cores=num_cores,add_point=add_point,fixed_arguments=fixed_arguments)
         self.append_points(points,values)
         self.names = names
+
+    def set_weight(self,weight):
+        self.weight = weight
 
     def append_points(self,points,values):
         self.points.append(points)
@@ -178,10 +182,16 @@ class boundedSampler:
         return list(self.points[0].keys())
 
     def get_values(self):
+
         sub_l = [y for x in self.values for y in x]
         if not isinstance(sub_l[0],float) and not isinstance(sub_l[0],int):
             res = np.stack(sub_l)
-            return list(np.sum(np.apply_along_axis(lambda x: ((x - np.mean(x)) / np.std(x)), 0, res), axis=1))
+            norm_val = np.apply_along_axis(lambda x: ((x - np.mean(x)) / np.std(x)), 0, res)
+            weight = [1]*(norm_val.shape[0])
+            if self.weight is not None:
+                weight=self.weight
+            norm_val = norm_val*weight
+            return list(np.sum(norm_val, axis=1))
         else:
             return sub_l
 
@@ -275,7 +285,7 @@ class uniformBoundedSampler(boundedSampler):
 ## BDD sampling ##
 ##################
 
-def do_bbd(lb, ub, func, num_cores=1, fixed_arguments=None):
+def do_bbd(lb, ub, func, num_cores=1, add_point=None, fixed_arguments=None):
         '''
         :param constraints: a scipy.optimize.Bounds object
         :param func: The function ot be optimized
@@ -294,11 +304,11 @@ def do_bbd(lb, ub, func, num_cores=1, fixed_arguments=None):
         ##We read the dimension from the contraints
         ndim = len(lb)
         bbd = bbdesign(ndim, center=1)
-        for it in range(ndim):
-            arg = to_optimize[it]
-            bbd[:, it] = bbd[:, it] * (ub[arg] - lb[arg]) / 2 + (ub[arg] + lb[arg]) / 2
+        it = 0
+        for k in to_optimize:
+            bbd[:, it] = bbd[:, it] * (ub[k] - lb[k]) / 2 + (ub[k] + lb[k]) / 2
+            it += 1
         lpar = bbd.tolist()
-        print("Using ",num_cores," parameters")
         ###We reshape the data frame in a list of dictionnary
         all_dict = [{**dict(zip(to_optimize, cargs)), **fixed_arguments, "fun": func} for cargs in lpar]
         list_for_numpy = [cargs for cargs in zip(*lpar)]
@@ -314,9 +324,9 @@ class bbdSampler(boundedSampler):
         self.parallel=True
         super().__init__()
 
-    def sample_points(self,bounds,func,num_points,num_cores=1,fixed_arguments=None):
+    def sample_points(self,bounds,func,num_points,num_cores=1,add_point=None,fixed_arguments=None):
         points,values,names = do_bbd(bounds.lower_bound(), bounds.upper_bound() , func, num_cores=num_cores,
-                               fixed_arguments=fixed_arguments)
+                               fixed_arguments=fixed_arguments,add_point=add_point)
         self.names = names
         return points,values,names
 

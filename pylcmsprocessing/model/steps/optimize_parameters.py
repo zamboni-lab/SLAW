@@ -280,8 +280,17 @@ class ParametersOptimizer:
         poptimizer = poptimizer()
         gsampler = gsampler()
         goptimizer = goptimizer()
-        pdb = "NONE"
 
+        ###We collect the wiegth for the score optimizer
+        pscorer = ms.get_scorer(pscorer)
+        pweight = pscorer.get_weight()
+        psampler.set_weight(pweight)
+
+        gscorer = ms.get_scorer(gscorer)
+        gweight = gscorer.get_weight()
+        gsampler.set_weight(gweight)
+
+        pdb = "NONE"
         ## Reading parameters to optimize and ranges
         pfh = ph.ParametersFileHandler(self.temp_yaml)
         to_optimize = pfh.get_optimizable_parameters(string=True)
