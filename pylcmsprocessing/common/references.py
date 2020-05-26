@@ -20,7 +20,10 @@ OUT={"DB":"processing.sqlite",
         "CANDIDATES": "ADAP/candidates.csv",
         "PEAKTABLES": "ADAP/peaktables",
         "MSMS": "ADAP/msms"
-     },"CENTWAVE":
+     },"OPENMS":{
+        "PEAKTABLES": "OPENMS/peaktables",
+        "MSMS": "OPENMS/msms"
+    },"CENTWAVE":
           {"SUMMARY":"ADAP/ADAP_parameters.csv",
     "SUMMARY_TEMPLATES": "ADAP/summary_templates.csv",
     "JSON":"ADAP/temp_json.json",

@@ -125,53 +125,50 @@ sum_metrics <- sum_metrics[sel_unique,]
 
 row.names(sum_metrics) <- traw_files[sel_unique]
 sum_metrics_scaled <- scale(sum_metrics)
-pdf(OUTPUT_SUMMARY_PDF)
-sink("/dev/null")
-val <- opls(
-  sum_metrics_scaled,
-  y = NULL,
-  crossvalI = 1,
-  predI = 2
-)
-plot(
-  sum_metrics[, c("peakwidth", "right_on_left_assymetry")],
-  xlab = "Mean peakwidth",
-  ylab = "Mean assymetry",
-  main = "Peakshape diagnosis",
-  pch = 16,
-  cex = 0.8,
-  col = "darkred"
-)
-text(
-  x = sum_metrics[, "peakwidth"],
-  y = sum_metrics[, "right_on_left_assymetry"],
-  labels = row.names(sum_metrics),
-  col = "darkred",
-  cex = 0.7,
-  adj = c(0, 0)
-)
-plot(
-  sum_metrics[, c("SN", "intensity")],
-  xlab = "Mean SN",
-  ylab = "Mean intensity",
-  main = "Intensity diagnosis",
-  pch = 16,
-  cex = 0.8,
-  col = "darkblue"
-)
-text(
-  x = sum_metrics[, "SN"],
-  y = sum_metrics[, "intensity"],
-  labels = row.names(sum_metrics),
-  col = "darkblue",
-  cex = 0.7,
-  adj = c(0, 0)
-)
-dev.off()
-sink(file = NULL)
-
-
-
+# pdf(OUTPUT_SUMMARY_PDF)
+# sink("/dev/null")
+# val <- opls(
+#   sum_metrics_scaled,
+#   y = NULL,
+#   crossvalI = 1,
+#   predI = 2
+# )
+# plot(
+#   sum_metrics[, c("peakwidth", "right_on_left_assymetry")],
+#   xlab = "Mean peakwidth",
+#   ylab = "Mean assymetry",
+#   main = "Peakshape diagnosis",
+#   pch = 16,
+#   cex = 0.8,
+#   col = "darkred"
+# )
+# text(
+#   x = sum_metrics[, "peakwidth"],
+#   y = sum_metrics[, "right_on_left_assymetry"],
+#   labels = row.names(sum_metrics),
+#   col = "darkred",
+#   cex = 0.7,
+#   adj = c(0, 0)
+# )
+# plot(
+#   sum_metrics[, c("SN", "intensity")],
+#   xlab = "Mean SN",
+#   ylab = "Mean intensity",
+#   main = "Intensity diagnosis",
+#   pch = 16,
+#   cex = 0.8,
+#   col = "darkblue"
+# )
+# text(
+#   x = sum_metrics[, "SN"],
+#   y = sum_metrics[, "intensity"],
+#   labels = row.names(sum_metrics),
+#   col = "darkblue",
+#   cex = 0.7,
+#   adj = c(0, 0)
+# )
+# dev.off()
+# sink(file = NULL)
 
 matchLCMSsignals <-
   function(mz_data,
@@ -313,10 +310,6 @@ matchMSsignals <-
     return(res)
 
   }
-
-
-
-
 
 vmz <- NULL
 vrt <- NULL

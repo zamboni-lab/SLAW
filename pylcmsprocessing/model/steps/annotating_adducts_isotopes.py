@@ -34,7 +34,6 @@ class IonAnnotater:
         tfiles = [self.adducts[i] + '\n' for i in range(len(self.adducts))]
         summary.writelines(tfiles)
         summary.close()
-
         summary = open(path_add_main, "w+")
         tfiles = [self.main_adducts[i]+'\n' for i in range(len(self.main_adducts))]
         summary.writelines(tfiles)

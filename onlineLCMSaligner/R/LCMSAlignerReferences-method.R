@@ -173,7 +173,7 @@ extractWellBehavedPeaksManyFiles <- function(lar,peaktables,
   dtf <- data.frame(mz=tab_clustering[,1]*sdv[1]+meanv[1],rt=tab_clustering[,2]*sdv[2]+meanv[2],
                     cluster = apply(gmm$Log_likelihood,1,which.max))
 
-    if(graphical)  plot(dtf$rt,dtf$mz,ylab="m/z",xlab="Retention time",col=as.factor(dtf$cluster),pch=16)
+    if(graphical)  plot(dtf$rt,dtf$mz,ylab="m/z",xlab="Retention time",col=as.factor(dtf$cluster),main="References peaks (Col=clusters)",pch=16)
   
   }
 

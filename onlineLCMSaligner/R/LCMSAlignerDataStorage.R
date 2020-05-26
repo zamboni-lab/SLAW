@@ -21,7 +21,7 @@ LCMSAlignerDataStorage <- function(path, force = TRUE) {
 
 storeData <- function(data, filename) {
   ####We write the data to a file
-  fwrite(data,
+  fwrite(as.data.table(data),
               file = filename,
               row.names = FALSE,
               sep = ",")

@@ -22,6 +22,7 @@ get_os <- function() {
 
 args <- commandArgs(trailingOnly = TRUE)
 
+print(args)
 PATH_DB<- args[1]
 PATH_BLOCKS <- args[2]
 PATH_ALIGNMENT <- args[3]
@@ -49,14 +50,22 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
         all_peaktables <- dbGetQuery(dbb, "SELECT output_ms FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")[, 1]
     dbDisconnect(dbb)
 
+    ###We check the columns of the peaktable.
+    pt <- read.table(all_peaktables[1],header=TRUE,sep=",")
+    cnames <- colnames(pt)
+
+    sel_args <- !cnames %in% c("mz","rt","rt_min","rt_max","mz_min","mz_max")
+    supp_args <- cnames[sel_args]
+
+
     ##mz and rt are always stored
-    lam <- LCMSAlignerModelFromDirectoryByBatch(all_peaktables,
+        lam <- LCMSAlignerModelFromDirectoryByBatch(all_peaktables,
                           path_model=PATH_ALIGNMENT,
-                           output=PATH_BLOCKS,save_interval=50,
+                           output=PATH_BLOCKS,save_interval=100,
                            num_file=20,num_peaks=NUM_REF,col_int=VAL_INTENSITY,reset = FALSE,
                            ppm = MZPPM, dmz=MZTOL,rt = RTTOL,rt_dens=RTTOL/2,n_clusters=10,
-                           supp_data=c("peakwidth","SN","right_on_left_assymetry","height","intensity"),ransac_l1=ALPHA_RT,
-                          max_cor=RTTOL*3,by_batch=20,clustering=TRUE)
+                           supp_data=supp_args,ransac_l1=ALPHA_RT,
+                          max_cor=RTTOL*3,by_batch=100,clustering=TRUE)
 
     ###We always remove single peaks.
     if(!file.exists(OUTFIGURE)){
@@ -67,7 +76,7 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
       message("Rt deviation figure already exists.")
     }
     ###We always filter out the peaks detected only once.
-    vexp <- exportDataMatrix(lam,path=PATH_OUT_DATAMATRIX,quant_var = VAL_INTENSITY,subvariable=which(lam@peaks$num>=2),summary_vars=c("mz","rt","rt_cor","peakwidth","SN","right_on_left_assymetry"))
+    vexp <- exportDataMatrix(lam,path=PATH_OUT_DATAMATRIX,quant_var = VAL_INTENSITY,subvariable=which(lam@peaks$num>=2),summary_vars=c("mz","rt","rt_cor",supp_args))
     message("Alignment done")
 }else{
   message("Data matrix already exists alignement won t be performed: ",PATH_OUT_DATAMATRIX)

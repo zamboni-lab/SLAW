@@ -15,7 +15,7 @@ LCMSAlignerModelFromDirectory(
   threshold = 5,
   span = 0.6,
   n_clusters = 15,
-  supp_data = c("peakwidth", "SN", "right_on_left_assymetry"),
+  supp_data = c(),
   ransac_l1 = 0.05,
   ransac_dist_threshold = 0.1,
   maxAlign = 100,

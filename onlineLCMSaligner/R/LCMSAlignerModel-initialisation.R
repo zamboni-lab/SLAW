@@ -178,7 +178,7 @@ LCMSAlignerModelFromDirectory <-
            threshold = 5,
            span = 0.6,
            n_clusters = 15,
-           supp_data=c("peakwidth","SN","right_on_left_assymetry"),
+           supp_data=c(),
            ransac_l1=0.05,
            ransac_dist_threshold=0.1,
            maxAlign = 100,
@@ -312,6 +312,7 @@ LCMSAlignerModelFromDirectoryByBatch <-
            supp_data=c("peakwidth","SN","right_on_left_assymetry"),
            ransac_l1=0.05,
            ransac_dist_threshold=0.1,
+           ransac_span = 0.8,
            maxAlign = 100,
            seed=512,
            max_cor = 0.1,
@@ -420,7 +421,7 @@ LCMSAlignerModelFromDirectoryByBatch <-
         lam <- alignPeaktables(lam,
                               batch_files, path_aligner = path_model, span = span,
                               supp_data=supp_data,ransac_l1=ransac_l1,
-                              ransac_dist_threshold = ransac_dist_threshold,
+                              ransac_dist_threshold = ransac_dist_threshold,ransac_span=ransac_span,
                               lim = max_cor, graphical = graphical, bpp = bpp)
       }
       ## we initilaize the clusteritng

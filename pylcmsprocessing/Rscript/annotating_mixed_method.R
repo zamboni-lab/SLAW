@@ -777,10 +777,6 @@ convertFeatures <- function(resAnnot, polarity = "negative") {
   }
   # message("Features conversion: ")
   for (ig in seq_along(resList)) {
-    # if (((ig * 10) %/% length(resList)) != current_dec) {
-    #   message(current_dec * 10, " ", appendLF = FALSE)
-    #   current_dec <- (ig * 10) %/% length(resList)
-    # }
     xannot <- resAnnot[resAnnot$group_label == unique_groups[ig], ]
     vannot <- unique(xannot[, "isogr"])
     vannot <- vannot[!is.na(vannot)]
@@ -1012,6 +1008,8 @@ groupFeatures <-
 
     ###We plit the files evnetually.
     number_features <- nrow(dm)
+    message("Number features",number_features)
+    message("cut_size",cut_size)
     cut_rts <- seq(1, number_features, by = cut_size/2)
     if (cut_rts[length(cut_rts)] != number_features) {
       cut_rts <- c(cut_rts, number_features + 1)
@@ -1113,26 +1111,25 @@ groupFeatures <-
 
 ####Actual processing in the pipeline.
 args <- commandArgs(trailingOnly = TRUE)
-# print(args)
 
-
-library(stringr)
+# 
+# library(stringr)
 # args <- c(
-#   "/output/datamatrices/datamatrix_7bbbdfd8150cffa0393412d02891dc87.csv",                 
-#   "/output/processing_db.sqlite",                                                    
-#   "/output/datamatrices/annotated_peaktable_7bbbdfd8150cffa0393412d02891dc87_full.csv", 
-#   "/output/datamatrices/annotated_peaktable_7bbbdfd8150cffa0393412d02891dc87_reduced.csv",
-#   "9",                                                                                    
-#   "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/xcms_raw_model.RData",                                          
-#   "/output/adducts.csv",                                                             
-#   "/output/main_adducts.csv",                                                        
-#   "negative",                                                                            
-#   "15.0",                                                                                
-#   "0.01",                                                                                 
-#   "50",                                                                                   
-#   "2",                                                                                    
+#   "/output/datamatrices/datamatrix_ec33b0ccad6d47ab6b44cec104305d4b.csv",
+#   "/output/processing_db.sqlite",
+#   "/output/datamatrices/annotated_peaktable_ec33b0ccad6d47ab6b44cec104305d4b.csv",
+#   "/output/datamatrices/annotated_peaktable_ec33b0ccad6d47ab6b44cec104305d4b.csv",
+#   "9",
+#   "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/xcms_raw_model.RData",
+#   "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/adducts_pos.txt",
+#   "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/adducts_main_pos.txt",
+#   "positive",
+#   "15.0",
+#   "0.01",
+#   "50",
+#   "2",
 #   "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/Rscript/cliques_matching.cpp")
-# args <- str_replace(args,"/output","E:/dev/workflow_debug/annotation_bug")
+# args <- str_replace(args,"/output","U:/users/Alexis/examples_lcms_workflow/output_optim")
 
 PATH_DATAMATRIX <- args[1]
 PATH_DB <- args[2]
@@ -1149,28 +1146,25 @@ DMZ <-  as.numeric(args[11])
 FILES_USED <- min(as.numeric(args[12]), 25,NUM_CORES*2)
 FILTER_NUMS <- max(1, as.numeric(args[13]))
 PATH_MATCHING <- args[14]
-NUM_BY_BATCH <- 7000
+NUM_BY_BATCH <- 500
 if (length(args) == 15) {
   NUM_BY_BATCH <- as.numeric(args[15])
 }
 
 ##reading data matrices
 
-# PATH_DATAMATRIX <- "C:/Users/dalexis/Documents/dev/docker_sing_output/test/datamatrices/datamatrix_dbbd3baaecc783af267ec80c8d4eed03.csv"
-
 lints <- list()
 ldetect <- list()
 
 BY_LINE <- 2000
-
-counter <- 1
 
 sdata <- fread(PATH_DATAMATRIX, header = TRUE, sep = ",",skip=0,nrows = BY_LINE)
 cnames <- colnames(sdata)
 posIntensities <- getIntensityPos(sdata)
 
 val_int <- rep(0,length(posIntensities))
-while(nrow(sdata)==BY_LINE){
+counter <- 1
+while(TRUE){
   sdata <- tryCatch(fread(PATH_DATAMATRIX, header = FALSE, sep = ",",skip=BY_LINE*(counter-1)+1,nrows = BY_LINE),
                    error=function(e) return(NA))
   if(length(sdata)==1) break
@@ -1179,9 +1173,7 @@ while(nrow(sdata)==BY_LINE){
   int <- apply(sdata[,..posIntensities],1,mean,na.rm=TRUE)
   lints[[counter]] <- int
   val_int <- val_int+apply(sdata[,..posIntensities],2,sum,na.rm=TRUE)
-  
   counter <- counter+1
-  
 }
 
 ###We rebuild the whole vector
@@ -1196,9 +1188,9 @@ while (sum(vdetect) > 200000) {
   vdetect <- num_detect >= FILTER_NUMS
 }
 
+rm(sdata)
 ###Reading the raw files
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
-#raw_files <- dbGetQuery(dbb, "SELECT path FROM samples WHERE level='MS1'")[, 1]
 raw_files <- dbGetQuery(dbb, "SELECT path FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")[, 1]
 
 dbDisconnect(dbb)
@@ -1208,7 +1200,6 @@ sel_files <-
   order(val_int, decreasing = TRUE)[1:min(FILES_USED, length(val_int))]
 raw_files <- raw_files[sel_files]
 
-
 ###Setting up the parallel processing
 bpp <- NULL
 if (get_os() == "win") {
@@ -1216,10 +1207,8 @@ if (get_os() == "win") {
 } else{
   bpp <- MulticoreParam(workers = min(NUM_CORES, 4),progressbar=TRUE)
 }
-bpp <- SerialParam(progressbar=TRUE)
 
 opened_raw_files <- sapply(raw_files,readMSData, mode = "onDisk")
-
 fadd <- file(PATH_ADDUCTS, "r")
 adducts <- readLines(fadd)
 close(fadd)

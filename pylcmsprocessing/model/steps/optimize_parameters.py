@@ -58,7 +58,8 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
                                    peakpicking__peaks_deconvolution__rt_wavelet__const,
                                    peakpicking__peaks_deconvolution__rt_wavelet__add,
                                    peakpicking__peaks_deconvolution__coefficient_area_threshold,grouping__ppm,
-                                   grouping__drt,grouping__dmz,grouping__alpha,grouping__num_references,fixed_params,
+                                   grouping__drt,grouping__dmz,grouping__alpha,grouping__num_references,
+                                   peakpicking__traces_construction__num_outliers,fixed_params,
                                    **kwargs):
     args_refs = locals()
     del args_refs["fixed_params"]
@@ -113,8 +114,9 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
 
     ####We load the orginial yaml file
     parameters = ph.ParametersFileHandler(initial_yaml)
+    peakpicking = parameters.get_peakpicking()
+    peakpicking = me.check_peakpicking(peakpicking)
     l_values = [convert_val(ll) for ll in args_refs.values()]
-
     parameters.set_all_parameters(list(args_refs.keys()),list(l_values))
 
     ###The numbver of scans is handled separately as it is an integer.
@@ -128,7 +130,6 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
     ###We create the UI
     vui = UI(OUTPUT_DIR, path_samples, polarity=polarity, mass_spec="Exactive", num_workers=num_cpus,
              path_yaml=stored_param)
-    # vui.generate_yaml_files(cr.DATA["YAML"])
     ###The output database is generated.
     vui.generate_MZmine_XML(path_xml=PATH_XML)
 
@@ -139,28 +140,38 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
             num_cpus=len(lf)
 
     exp.initialise_database(num_cpus, OUTPUT_DIR, polarity, path_samples, ["ADAP"], 1)
-    exp.building_inputs_single_processing(PATH_XML)
-
     to_join = list(args_refs.values())
     to_join = [str(pp) for pp in to_join]
-
 
     if os.path.isfile(pdb):
         exp.rebase_experiment(pdb)
     else:
         try:
-            exp.run("/MZmine-2.52-Linux", int(num_cpus), log=LOG_PATH)
-            exp.correct_conversion()
-            exp.post_processing_peakpicking()
+            if peakpicking=="ADAP":
+                exp.run_mzmine("/MZmine-2.52-Linux", PATH_XML, int(num_cpus), log=LOG_PATH)
+                exp.correct_conversion()
+                exp.post_processing_peakpicking_mzmine()
+            if peakpicking=="OPENMS":
+                const = peakpicking__peaks_deconvolution__peak_width__const
+                add = peakpicking__peaks_deconvolution__peak_width__add
+                min_fwhm = float(const) * 60
+                max_fwhm = float(const+add) * 60
+                sn = float(peakpicking__peaks_deconvolution__SN)
+                min_int = float(peakpicking__noise_level_ms1)
+                min_scan = math.floor(float(peakpicking__traces_construction__min_scan))
+                max_outlier = math.floor(float(peakpicking__traces_construction__num_outliers))
+                quant = "area"
+                ppm = float(peakpicking__traces_construction__ppm)
+                exp.run_openms(min_fwhm, max_fwhm, sn, ppm, min_int, max_outlier, min_scan, quant, log=LOG_PATH)
+
         except Exception as e:
             print(e)
-            try:
-                if not reset:
-                    os.remove(PATH_DB)
-                    subprocess.call("rm -r " + OUTPUT_DIR)
-            except Exception:
-                pass
-            # shutil.rmtree(OUTPUT_DIR)
+            # try:
+            #     if not reset:
+            #         os.remove(PATH_DB)
+            #         subprocess.call("rm -r " + OUTPUT_DIR)
+            # except Exception:
+            #     pass
             to_write = stored_param + "," + PATH_DB + "," + PATH_SAVE_DB + "," + OUTPUT_DIR + "," + str(
                 -1) + "," + ",".join(to_join) + "\n"
             with open(SUMMARY_YAML, "a") as ff:
@@ -168,7 +179,8 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
             return -1
 
     ##We check te scorer if it is a peak sorer we don t need the data matrix
-    if scorer!="ipopeak":
+    scorer = scorer(exp)
+    if scorer.require_alignement():
         exp.group_online(intensity="int",
                          ppm=float(convert_val(grouping__ppm)),
                          mztol=float(convert_val(grouping__dmz)),
@@ -176,12 +188,13 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
                          n_ref=int(convert_val(grouping__num_references)),
                          alpha=float(convert_val(grouping__alpha)),
                          log=LOG_PATH)
+        scorer.exp=exp
     tvscore = -1.0
     try:
-        msd = ms.get_scorer(scorer)
-        msd = msd(exp)
+        # msd = ms.get_scorer(scorer)
+        # msd = msd(exp)
         ###We authorize 1 jump
-        vscore = msd.score(output=OUTPUT_DIR)
+        vscore = scorer.score(output=OUTPUT_DIR)
         tvscore = vscore
         if not isinstance(tvscore,float):
             tvscore = "|".join(["{0:.10g}".format(sc) for sc in tvscore])
@@ -190,13 +203,13 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
         to_write = stored_param + "," +PATH_DB+","+PATH_SAVE_DB+","+OUTPUT_DIR+","+str(tvscore) +","+",".join(to_join) + "\n"
         with open(SUMMARY_YAML, "a") as ff:
             ff.write(to_write)
-        if parallel:
-            try:
-                if not reset:
-                    os.remove(PATH_DB)
-                    shutil.rmtree(OUTPUT_DIR)
-            except Exception:
-                pass
+        # if parallel:
+        #     try:
+        #         if not reset:
+        #             os.remove(PATH_DB)
+        #             shutil.rmtree(OUTPUT_DIR)
+        #     except Exception:
+        #         pass
         ###In all case we write the parameter in
         return -1
     ###We write the score in the table
@@ -336,7 +349,7 @@ class ParametersOptimizer:
             ###We compute the peak picking a single time
             dic_pp = all_parameters.copy()
             fixed_pp_single = (self.path_exp, self.params_archive, self.dir_db, summary_peakpicking,\
-                           self.num_workers, self.polarity, self.path_samples, self.temp_yaml, False, "ipopeak", pdb, True)
+                           self.num_workers, self.polarity, self.path_samples, self.temp_yaml, False, pscorer, pdb, True)
 
             if ("pvoptim" in locals()):
                 for ik in pvoptim:
@@ -379,7 +392,10 @@ class ParametersOptimizer:
 
             gsoptim = mos.samplingOptimizer(gsampler, goptimizer, bounds_grouping, fixed_arguments=dic_fixed_grouping)
             try:
-                gvoptim = gsoptim.optimize(peak_picking_alignment_scoring,max_its=max_its, num_points=num_points, num_cores=self.num_workers)
+                mfloor = math.floor(self.num_workers/2)
+                if mfloor<1:
+                    mfloor = 1
+                gvoptim = gsoptim.optimize(peak_picking_alignment_scoring,max_its=max_its, num_points=num_points, num_cores=mfloor)
                 print("Grouping optimization finished.")
                 final_dic = dic_fixed_grouping
                 for ik in gvoptim:
@@ -394,11 +410,7 @@ class ParametersOptimizer:
         pfh = ph.ParametersFileHandler(self.input_par)
         ll_values = [convert_val(ll) for ll in self.best_par.values()]
         pfh.set_all_parameters(list(self.best_par.keys()), ll_values)
-        # for k in self.best_par:
-        #     if k == "fixed_params":
-        #         continue
-        #     pfh[k] = convert_val(self.best_par[k])
-        pfh.dic["optimized"] = True
+        pfh.dic["optimization"]["need_optimization"]["value"] = False
         pfh.write_parameters(outpath)
 
 

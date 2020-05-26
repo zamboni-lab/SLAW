@@ -963,12 +963,12 @@ alignPeaktable <-
       correctPeaktable(
         lam@references,
         peaktable,
+        lam@peaks,
         rt_scaling = rt_scaling,
         ransac_niter = ransac_niter,
         ransac_dist_threshold = ransac_dist_threshold,
         ransac_l1=ransac_l1,
         extensions = rt_extensions,
-        span = span,
         lim = lim
       )
     cpeaktable <- lcc$peaktable
@@ -1045,9 +1045,10 @@ alignPeaktables <-
   function(lam,
            paths,
            rt_scaling = c(0.9, 0.95, 1, 1.05, 1.1),
-           ransac_niter = 2000,
+           ransac_niter = 1500,
            ransac_dist_threshold = NULL,
            ransac_l1=0.05,
+           ransac_span=0.7,
            rt_extensions = c(4, 0.15),
            path_aligner=NULL,span = 0.6,
            supp_data=c("peakwidth","SN","right_on_left_assymetry"),
@@ -1080,8 +1081,8 @@ alignPeaktables <-
     message("Aligning ",length(paths)," files.")
     
     correctPeaktablePar <- function(path,ref,supp_data,rt_scaling,ransac_niter,
-                                 ransac_dist_threshold,ransac_l1,rt_extensions,span,
-                                 lim){
+                                 ransac_dist_threshold,ransac_l1,rt_extensions,ransac_span,
+                                 lim,graphical,peaks){
       if(!exists("fortifyPeaktable")){
         library(onlineLCMSaligner)
       }
@@ -1093,13 +1094,15 @@ alignPeaktables <-
         correctPeaktable(
           ref,
           peaktable,
+          peaks=peaks,
           rt_scaling = rt_scaling,
           ransac_niter = ransac_niter,
           ransac_dist_threshold = ransac_dist_threshold,
           ransac_l1=ransac_l1,
+          ransac_span=ransac_span,
           extensions = rt_extensions,
-          span = span,
-          lim = lim
+          lim = lim,
+          graphical = graphical
         )
       cpeaktable <- lcc$peaktable
       ###We reorder the two peaktables
@@ -1114,13 +1117,23 @@ alignPeaktables <-
     }
     
     ###We correct all the peaktable in parallel
+    # values <- vector(mode="list",length=length(paths))
+    # for(ip in seq_along(paths)){
+    #   
+    #   values[[ip]] <- correctPeaktablePar(paths[ip],ref=lam@references,rt_scaling = rt_scaling,
+    #                       ransac_niter = ransac_niter,
+    #                       ransac_dist_threshold = ransac_dist_threshold,
+    #                       ransac_l1=ransac_l1,rt_extensions = rt_extensions,
+    #                       ransac_span = ransac_span,lim = lim,
+    #                       graphical=graphical,supp_data=supp_data,peaks=lam@peaks)
+    # }
     values <- bplapply(paths,FUN = correctPeaktablePar,ref=lam@references,rt_scaling = rt_scaling,
              ransac_niter = ransac_niter,
              ransac_dist_threshold = ransac_dist_threshold,
-             ransac_l1=ransac_l1,
+             ransac_l1=ransac_l1,peaks=lam@peaks,
              rt_extensions = rt_extensions,
-             span = span,lim = lim,
-             supp_data=supp_data,BPPARAM = bpp)
+             ransac_span = ransac_span,lim = lim,
+             supp_data=supp_data,graphical=graphical,BPPARAM = bpp)
     
     
     

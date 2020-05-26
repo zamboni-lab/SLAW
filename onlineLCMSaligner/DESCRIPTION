@@ -6,7 +6,7 @@ Author: Alexis Delabriere
 Maintainer: Alexis Delabriere <alexis.delabriere@outlook.fr>
 Description: Alignement of file in an online fashion
 License: GPL (>= 2)
-Imports: Rcpp (>= 1.0.1),rtree,data.table
+Imports: Rcpp (>= 1.0.1),rtree,data.table, xcms
 LinkingTo: Rcpp
 Encoding: UTF-8
 LazyData: true

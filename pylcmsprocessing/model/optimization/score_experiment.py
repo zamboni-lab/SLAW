@@ -29,13 +29,14 @@ class ExperimentScorer:
         print("Need to be implemented")
 
     def require_alignement(self):
-        return
+        return False
 
 class PeakpickingScorer(ExperimentScorer):
     def require_alignement(self):
         return False
 
-    def get_weight(self):
+    @staticmethod
+    def get_weight():
         temp = [1.0]
         return temp
 
@@ -43,7 +44,8 @@ class AlignmentScorer(ExperimentScorer):
     def require_alignement(self):
         return True
 
-    def get_weight(self):
+    @staticmethod
+    def get_weight():
         temp = [1.0,2.0]
         return temp
 
@@ -52,14 +54,13 @@ class PeakpickingScorerIPO(PeakpickingScorer):
         self.exp = exp
     def score(self,output,ppm=10,tol_rt=0.015):
         all_peaktables = self.exp.get_query("SELECT output_ms FROM processing WHERE valid=1")
-
-        ##We adapt the output
         all_peaktables=[p[0] for p in all_peaktables]
-        # all_peaktables=[p[0].replace("/output",output,1) for p in all_peaktables]
         ##We change all the value with their actual path in the sampling folder
         val = 0
         for path in all_peaktables:
+            # print(path)
             if not os.path.exists(path):
+                # print("PATH_NOT_FOUND")
                 return -1.0
             vdata = pd.read_csv(path,header=0,sep=",")
             MASS_C13 = 1.003355

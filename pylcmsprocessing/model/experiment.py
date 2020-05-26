@@ -18,6 +18,12 @@ import model.steps.post_processing as pp
 import pandas as pd
 import shutil
 
+def check_peakpicking(pp):
+    pp = pp.upper()
+    peakpicker = ["OPENMS","ADAP"]
+    if not pp in peakpicker:
+        raise  Exception("Unknown peakpicking: "+pp+" known peakpickers are "+",".join(peakpicker))
+    return pp
 
 def is_converted(csvfile):
     try:
@@ -145,12 +151,12 @@ class Experiment:
         ###If the value exists
         c.execute('''SELECT * FROM common''')
         common = c.fetchall()
-        if len(common) is 0:
+        if len(common)==0:
             if max_jobs is None or out_dir is None:
                 raise Exception("Missing 'max_jobs' or 'out_dir' arguments please furnish them")
             values = (int(max_jobs), out_dir, polarity)
             c.execute('INSERT INTO common VALUES (?,?,?)', values)
-        if len(common) is not 0:
+        if len(common)!=0:
             out_dir = common[0][1]
 
         ###Creating the output directory
@@ -395,7 +401,10 @@ class Experiment:
         self.close_db()
         return softwares
 
-    def run(self, pmzmine, batch_size=2000, silent=True, log = None):
+    def run_mzmine(self, pmzmine, xml_file, batch_size=2000, silent=True, log = None):
+
+        self.building_inputs_single_processing(xml_file)
+
         num_workers = self.get_workers()
         runner = pr.ParallelRunner(num_workers)
         softwares = self.find_software_from_peakpicking()
@@ -416,7 +425,7 @@ class Experiment:
             processing = 0
             while any(need_processing):
                 ####Peak picking
-                clis = [x.command_line_processing(hide=False) for x in peakpickings if x.need_computing()]
+                clis = [x.command_line_processing() for x in peakpickings if x.need_computing()]
                 ####We run the jobs actually
                 if len(clis) > 0:
                     runner.run(clis, silent=silent, log = log, timeout = cr.CONSTANT["PEAKPICKING_TIMOUT"])
@@ -444,10 +453,50 @@ class Experiment:
                         pid = row[0]
                         update_query = self.update_query_construction("processing","id",str(pid),"valid","0")
                         c.execute(update_query)
-                ##The ids of thes
-
-                #path_output = self.output.getFile(cr.OUT["INCORRECT_FILES"])
         print("Peak picking finished",num_incorrect_files,"files not processed on a total of",tot_files)
+        self.close_db()
+
+    def run_openms(self,min_fwhm,max_fwhm,snt,ppm,min_int,max_outlier,min_points,quant,silent=True, log = None,batch_size=2000):
+        ###We collect the output path
+        builder = ib.openMSBuilder(self.db,output=self.output)
+        builder.build_inputs_single_parameter_set(min_fwhm,max_fwhm,snt,ppm,min_int,max_outlier,min_points,quant)
+        num_workers = self.get_workers()
+        runner = pr.ParallelRunner(num_workers)
+        ####we generate the command line for all the inputs
+        self.open_db()
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM processing WHERE output_ms!='NOT PROCESSED'")
+
+        while True:
+            rows = c.fetchmany(batch_size)
+            if not rows: break
+            if quant=="intensity":
+                quant = "area"
+            peakpickings = [mp.PeakPickingOpenMS(row, min_fwhm,max_fwhm,snt,ppm,min_int,max_outlier,min_points,quant) for row in rows]
+            ids = [row[0] for row in rows]
+            need_processing = [x.need_computing() for x in peakpickings]
+            ids_to_convert = [id for id,pp in zip(ids,need_processing) if pp]
+            ####Peak picking
+            clis = [x.command_line_processing() for x in peakpickings if x.need_computing()]
+            ####We run the jobs actually
+            if len(clis) > 0:
+                runner.run(clis, silent=silent, log = log, timeout = cr.CONSTANT["PEAKPICKING_TIMOUT"])
+            names_output = [x.get_output() for x in peakpickings]
+            #We convert the peaktables back to the data.
+            pjoin = os.path.join(ct.find_rscript(), "FromFeaturesMLToDf.R")
+            # ###CWe create the command line to allow the peakpicking
+            names_converted = [x.split(".")[0]+".csv" for x in names_output]
+            clis_conversion = ["Rscript " + pjoin + " " +old+ " " +new for old,new in zip(names_output,names_converted)]
+            if len(clis_conversion) > 0:
+                runner.run(clis_conversion, silent=silent, log = log, timeout = cr.CONSTANT["PEAKPICKING_TIMOUT"])
+
+            for pid,nn in zip(ids_to_convert,names_converted):
+                if os.path.isfile(nn):
+                    update_query = self.update_query_construction("processing", "id", str(pid), "output_ms", nn)
+                    c.execute(update_query)
+                else:
+                    update_query = self.update_query_construction("processing", "id", str(pid), "valid", "0")
+                    c.execute(update_query)
         self.close_db()
 
     ###Try to correct he MZmine ocrrection in case processing was interrupted
@@ -471,7 +520,7 @@ class Experiment:
         self.save_db()
 
     ###This step is always done before grouping
-    def post_processing_peakpicking(self):
+    def post_processing_peakpicking_mzmine(self):
         ###We rename the peaktable to get more meaningful names.
         self.open_db()
         c = self.conn.cursor()
@@ -479,15 +528,12 @@ class Experiment:
         all_peaktable = c.fetchall()
         c.execute("SELECT path FROM samples WHERE level='MS1'")
         all_samples = c.fetchall()
-
         dirname = self.output.getDir(cr.OUT["ADAP"]["PEAKTABLES"])
         dirname_msms = self.output.getDir(cr.OUT["ADAP"]["MSMS"])
         ###Now we jsut rename all the files
         for ip in range(0,len(all_peaktable)):
-
             ##Correcting if needed convert he ms files
             new_name = os.path.join(dirname,os.path.splitext(os.path.basename(all_samples[ip][0]))[0]+".csv")
-
             if os.path.isfile(new_name):
                 continue
             old_name = all_peaktable[ip][1]
@@ -508,15 +554,37 @@ class Experiment:
             name_quant = os.path.splitext(full_name)[0]+"_quant.csv"
             if os.path.isfile(name_quant):
                 os.remove(name_quant)
+        self.close_db()
+        self.save_db()
 
+    ###This step is always done before grouping
+    def post_processing_peakpicking_openms(self):
+        ###We rename the peaktable to get more meaningful names.
+        self.open_db()
+        c = self.conn.cursor()
+        c.execute("SELECT processing.id,path,output_ms,output_ms2 FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")
+        res = c.fetchall()
+        dirname = self.output.getDir(cr.OUT["OPENMS"]["PEAKTABLES"])
+        dirname_msms = self.output.getDir(cr.OUT["OPENMS"]["MSMS"])
+        ###Now we jsut rename all the files
+        for id,sample,peaktable,ms2 in res:
+            ##Correcting if needed convert he ms files
+            out_dir = os.path.dirname(peaktable)
+            raw_samp = os.path.basename(sample).split(".")[0]
+            new_name = os.path.join(out_dir,raw_samp+".csv")
+            if os.path.isfile(new_name):
+                continue
+            os.rename(peaktable,new_name)
+            query = self.update_query_construction("processing", "id", id, "output_ms", new_name)
+            c.execute(query)
 
         self.close_db()
         self.save_db()
 
 
-    def extract_ms2(self,noise_level=0):
+    def extract_ms2(self,output,noise_level=0):
         num_workers = self.get_workers()
-        dir_out= self.output.getDir(cr.OUT["ADAP"]["MSMS"])
+        dir_out= self.output.getDir(output)
         pscript = os.path.join(ct.find_rscript(),"extractingMGFfromMZML.R")
         cli = " ".join(["Rscript",pscript,self.db,dir_out,str(noise_level),str(num_workers)])
         subprocess.call(cli,shell=True)

@@ -63,7 +63,10 @@ class ParametersFileHandler:
 
     def is_optimized(self):
         ##Cherck if the file has been optomized eventually
-        return self.dic["optimized"]
+        return not self.dic["optimization"]["need_optimization"]["value"]
+
+    def get_peakpicking(self):
+        return self.dic["peakpicking"]["algorithm"]["value"]
 
     def find_ranges(self):
         for path in self.param_path:

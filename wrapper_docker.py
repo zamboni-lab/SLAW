@@ -10,10 +10,11 @@ import shutil
 ##We import the module of python processing.
 sys.path.append('/pylcmsprocessing')
 from pylcmsprocessing.model.helper.UI import UI
-from pylcmsprocessing.model.experiment import Experiment
+from pylcmsprocessing.model.experiment import Experiment,check_peakpicking
 from pylcmsprocessing.model.steps.optimize_parameters import ParametersOptimizer
 from pylcmsprocessing.model.helper.parameters_handler import ParametersFileHandler
 from pylcmsprocessing.common.time_evaluation import Timer
+import pylcmsprocessing.common.references as pcr
 
 if __name__=="__main__":
 ##Two thing to check the number of CPUs and the ocnsumed meory eventually.
@@ -28,7 +29,11 @@ if __name__=="__main__":
     memory_by_core = 1048*1.2
 
     if "MEMORY" in os.environ:
-        memory_by_core = int(os.environ["MEMORY"])
+        memory_by_core = int(math.floor(float(os.environ["MEMORY"])))
+    else:
+        ##We save it ofr optimization
+        os.environ["MEMORY"] = str(math.floor(memory_by_core))
+
 
     ##This is the number of thread
     ncores = avail_memory//memory_by_core
@@ -99,8 +104,6 @@ if __name__=="__main__":
     else:
         num_optim = 5
 
-
-
     # LOG = "/log.txt"
     #Procesinf of the pipeline eventually.
     path_save_db = os.path.join(OUTPUT_DIR,"processing_db.sqlite")
@@ -129,6 +132,10 @@ if __name__=="__main__":
         exit(0)
     else:
         ph = ParametersFileHandler(vui.path_yaml)
+        ##We check what is the given peakpicker.
+        peakpicking = ph.get_peakpicking()
+        peakpicking = check_peakpicking(peakpicking)
+
         if not ph.is_optimized():
             vui.generate_yaml_files()
             vui.initialize_yaml_polarity(PATH_YAML, pol)
@@ -153,23 +160,41 @@ if __name__=="__main__":
             exp.reset_processing()
 
     if not os.path.isfile(PATH_XML):
-        vui.generate_MZmine_XML(path_xml=PATH_XML)
+        if peakpicking=="ADAP":
+            vui.generate_MZmine_XML(path_xml=PATH_XML)
         print("An ADAP batch file has been generated in the "+OUTPUT_DIR+" directory, you ca use it to refine peakpicking parameters using MZmine.")
     exp.initialise_database(num_cpus,OUTPUT_DIR,vui.polarity,INPUT,["ADAP"], 1)
-    exp.building_inputs_single_processing(PATH_XML)
-    exp.run("/MZmine-2.52-Linux",int(num_cpus*3),log = LOG)
-    exp.correct_conversion()
-    exp.post_processing_peakpicking()
-    timer.store_point("wpeakpicking")
-    timer.print_point("wpeakpicking")
-
+    # exp.building_inputs_single_processing(PATH_XML)
     ###We always read the yaml paramters file.
     with open(vui.path_yaml, 'r') as stream:
         raw_yaml = yaml.safe_load(stream)
 
-    ###If there is an MS2 folder we process it
-    if "MS2" in os.environ:
-        exp.extract_ms2(noise_level=float(raw_yaml["peakpicking"]["noise_level_ms2"]["value"]))
+    if peakpicking=="ADAP":
+        exp.run_mzmine("/MZmine-2.52-Linux",PATH_XML,int(num_cpus*3),log = LOG)
+        exp.correct_conversion()
+        exp.post_processing_peakpicking_mzmine()
+        ###If there is an MS2 folder we process it
+        if "MS2" in os.environ:
+            exp.extract_ms2(noise_level=float(raw_yaml["peakpicking"]["noise_level_ms2"]["value"]), output=pcr.OUT["ADAP"]["MSMS"])
+
+    if peakpicking=="OPENMS":
+        ###In this case arugment are read directly
+        #run_openms(self, min_fwhm, max_fwhm, snt, ppm, min_int, max_outlier, min_points, quant
+        min_fwhm = float(raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width"]["value"][0])*60
+        max_fwhm = float(raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width"]["value"][1])*60
+        sn = float(raw_yaml["peakpicking"]["peaks_deconvolution"]["SN"]["value"])
+        min_int = float(raw_yaml["peakpicking"]["noise_level_ms1"]["value"])
+        min_scan = math.floor(float(raw_yaml["peakpicking"]["traces_construction"]["min_scan"]["value"]))
+        max_outlier = math.floor(float(raw_yaml["peakpicking"]["traces_construction"]["num_outliers"]["value"]))
+        quant = raw_yaml["grouping"]["extracted_quantity"]["value"]
+        ppm = float(raw_yaml["peakpicking"]["traces_construction"]["ppm"]["value"])
+        exp.run_openms(min_fwhm, max_fwhm, sn, ppm, min_int, max_outlier, min_scan, quant,log = LOG)
+        exp.extract_ms2(noise_level=float(raw_yaml["peakpicking"]["noise_level_ms2"]["value"]),output=pcr.OUT["OPENMS"]["MSMS"])
+        exp.post_processing_peakpicking_openms()
+    ###As openMS does not give nativelyt MS-MS
+    timer.store_point("wpeakpicking")
+    timer.print_point("wpeakpicking")
+
     intensity = str(raw_yaml["grouping"]["extracted_quantity"]["value"])
     exp.group_online(intensity=intensity,
         ppm = float(raw_yaml["grouping"]["ppm"]["value"]),
