@@ -5,7 +5,7 @@ import common
 
 class Grouper:
     ####Row is a row of the processing database and peak
-    def __init__(self,row,temp,out,files,names,intensity,mztol,rttol):
+    def __init__(self,row,temp,out,files,names,intensity,mztol,rttol,filter_qc,fold_blank):
         self.hash = row[3]
         self.temp = temp
         self.output_data=os.path.join(out,"datamatrix_"+intensity+"_"+self.hash+".csv")
@@ -15,6 +15,8 @@ class Grouper:
         self.intensity=intensity
         self.mztol=mztol
         self.rttol=rttol
+        self.filter_qc = filter_qc
+        self.fold_blank = fold_blank
         self.path_files =os.path.join(temp,"files.txt")
 
 
@@ -45,7 +47,8 @@ class Grouper:
 class OnlineGrouper:
     def __init__(self,row,path_db,
     blocks,alignment,out,intensity,mztol,ppm,rttol,
-    num_ref,alpha,ms2_mz_tol,ms2_rt_tol,fused_mgf,temp_dm_1,temp_dm_2,num_workers,outfig):
+    num_ref,alpha,ms2_mz_tol,ms2_rt_tol,fused_mgf,temp_dm_1,
+                 temp_dm_2,num_workers,outfig,filter_qc,fold_blank):
         self.hash = row[3]
         self.db=path_db
         self.output_data=os.path.join(out,"datamatrix_"+row[3]+".csv")
@@ -65,6 +68,8 @@ class OnlineGrouper:
         self.dm_2=temp_dm_2
         self.num_workers=num_workers
         self.figure=outfig+row[3]+".pdf"
+        self.filter_qc = filter_qc
+        self.fold_blank = fold_blank
 
     def need_computing(self):
         return not os.path.exists(self.output_data)
@@ -82,6 +87,19 @@ class OnlineGrouper:
         return " ".join(["Rscript",command_line,self.db,self.blocks,self.alignment,
                         self.output_data,self.intensity,str(self.rttol),str(self.mztol),str(self.ppm),
                         str(self.num_ref),str(self.alpha),str(self.num_workers),self.figure])
+
+    def command_line_filtering(self):
+        pscript = ct.find_rscript()
+        command_line = os.path.join(pscript,"filter_datamatrix.R")
+        # args < - commandArgs(trailingOnly=TRUE)
+        # PATH_DB < - args[1]
+        # PATH_DM < - args[2]
+        # TEMP_DM < - args[3]
+        # FOLD_BLANK < - as.numeric(args[4])
+        # QC_FRACTION < - as.numeric(args[5])
+        ####We give all the name of the grouping parameters implicated in a single file
+        return " ".join(["Rscript",command_line,self.db,self.output_data,
+                         self.dm_1,str(self.fold_blank),str(self.filter_qc)])
 
     def command_line_fusing_msms(self):
         pscript = ct.find_rscript()

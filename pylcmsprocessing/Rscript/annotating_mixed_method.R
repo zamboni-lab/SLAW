@@ -1205,7 +1205,7 @@ bpp <- NULL
 if (get_os() == "win") {
   bpp <- SnowParam(workers = NUM_CORES,progressbar=TRUE)
 } else{
-  bpp <- MulticoreParam(workers = min(NUM_CORES, 4),progressbar=TRUE)
+  bpp <- MulticoreParam(workers = min(NUM_CORES, 10),progressbar=TRUE)
 }
 
 opened_raw_files <- sapply(raw_files,readMSData, mode = "onDisk")

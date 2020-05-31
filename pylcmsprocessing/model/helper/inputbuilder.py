@@ -79,8 +79,8 @@ class MZMineBuilder(inputBuilder):
         c = conn.cursor()
 
         try:
-            ctuple = (1, 1, xml_file, hash_val, "", "", "", "", "", "", "", "")
-            c.execute("""INSERT INTO peakpicking VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""", ctuple)
+            ctuple = (1, 1, xml_file, hash_val, "", "", "", "")
+            c.execute("""INSERT INTO peakpicking VALUES (?,?,?,?,?,?,?,?)""", ctuple)
         except sqlite3.IntegrityError as e:
             pass
 
@@ -255,8 +255,8 @@ class openMSBuilder(inputBuilder):
         hash_val = hash_list(args)
 
         try:
-            ctuple = (cid, 2, "",hash_val, "", "", "", "", "", "", "", "")
-            c.execute("""INSERT INTO peakpicking VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""", ctuple)
+            ctuple = (cid, 2, "",hash_val, "", "", "", "")
+            c.execute("""INSERT INTO peakpicking VALUES (?,?,?,?,?,?,?,?)""", ctuple)
         except sqlite3.IntegrityError as e:
             pass
 

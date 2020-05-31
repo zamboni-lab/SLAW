@@ -282,10 +282,10 @@ close.connection(tcon)
 ###Reading the column name first.
 ocnames <- as.character(fread(PATH_DATAMATRIX,sep = ",",nrows=1,header=FALSE)[1,])
 
-###We detect the position of the first intnesity columns
-to_cut <- which(startsWith(ocnames,"int_"))[1]
+###We detect the position of the first qaunt_columns
+quant_prefix <- paste(str_split(ocnames[length(ocnames)],fixed("_"))[[1]][1],"_",sep="")
 
-
+to_cut <- which(startsWith(ocnames,quant_prefix))[1]
 
 
 ###Dm idx contain the list of all the necessary features.

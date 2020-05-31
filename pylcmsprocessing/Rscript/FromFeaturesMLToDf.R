@@ -108,7 +108,7 @@ convertXMLopenMS <-  function(fv) {
   dfl$rt_min <- rts[map_min]/60
   dfl$rt_max <- rts[map_max]/60
   dfl$rt <- dfl$rt/60
-  
+  dfl$peakwidth <- dfl$peakwidth/60
   ####We dont remove the ifle as we need ti trestart the calculations eventually.
   return(dfl)
 }

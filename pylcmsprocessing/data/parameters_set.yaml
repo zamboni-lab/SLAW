@@ -142,6 +142,16 @@ grouping:
     priority: LOW
     description: Integer. The number of references peaks chosen to correct retention time correction.
     value: 150
+filtering:
+  description: Filters used to remove non relirable feature using blanks and qcs.
+  frac_qc:
+    priority: HIGH
+    description: Fraction of detection in qcs for a signal to be kept. If no qc sample is porvided this is a fraction of all samples.
+    value: 0.5
+  fold_blank:
+    priority: HIGH
+    description: The ratio of intensity of samples on blank. Feature with a fold ratio lower than this value are discarded.
+    value: 3
 ion_annotation:
     description: Grouping of ions originating form the same metabolite and annotations of adducts and fragments. The detection is done using a modified MScliques the annotation of ion is done using the InterpretMSSpectrum package.
     polarity:
@@ -156,6 +166,14 @@ ion_annotation:
       priority: HIGH
       description: Float. The minimum m/z tolerance in Da to match ions coming for the same metabolites. It is given by max(ppm x m/z x 1e-6,dmz).
       value: 0.01
+    max_isotopes:
+      priority: LOW
+      description: The maximum number of isotopic pattern extracted.
+      value: 4
+    max_charge:
+      priority: LOW
+      description: THe maiximum number of charge allowed.
+      value: 2
     adducts_negative:
       priority: HIGH
       description: Character. A list of adducts to be considered as chemical formula. See the provided examples for syntax.

@@ -429,11 +429,14 @@ class ParametersOptimizer:
         print("Optimizing remaining parameters")
         self.do_optimize_parameters(optim_string=optimizer,max_its=max_its,num_points=num_points)
         print("Finished  optimization")
+        print("Exporting in "+output_par)
         self.export_best_parameters(output_par)
 
         ###We reset the jAVA memoery limit
         memory_by_core = int(os.environ["MEMORY"])
 
+
+
         ###We set the JAVA option for the peak picking evnetually
-        os.environ["JAVA_OPTS"] = "-Xms" + str(math.floor(memory_by_core / 2)) + "m -Xmx" + str(
-            math.floor(memory_by_core) - 200) + "m"
+        # os.environ["JAVA_OPTS"] = "-Xms" + str(math.floor(memory_by_core / 2)) + "m -Xmx" + str(
+        #     math.floor(memory_by_core) - 200) + "m"

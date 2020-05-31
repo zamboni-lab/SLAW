@@ -59,6 +59,7 @@ DATA = {
         "positive":{"FULL":"/pylcmsprocessing/data/adducts_pos.txt","MAIN":"/pylcmsprocessing/data/adducts_main_pos.txt"},
         "negative":{"FULL":"/pylcmsprocessing/data/adducts_neg.txt","MAIN":"/pylcmsprocessing/data/adducts_main_neg.txt"}
     },
+    "ISOTOPES":"/pylcmsprocessing/data/isotopes.tsv",
     "IONMODE":["positive","negative"],
     "YAML": "/pylcmsprocessing/data/parameters_set.yaml"
 }
@@ -91,7 +92,8 @@ TEMP={"DIR":"temp","CONVERSION":
       "REPLICATES":"temp/replicates",
       "IONANNOTATION":{"FULL":"temp/adducts.csv",
                        "MAIN":"temp/main_adducts.csv"},
-      "POSTPROCESSING":"temp/raw_files.txt"
+      "POSTPROCESSING":"temp/raw_files.txt",
+      "ISOTOPES":"temp/isotopes.txt"
       }
 
 

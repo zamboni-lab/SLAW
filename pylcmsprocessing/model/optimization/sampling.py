@@ -51,16 +51,10 @@ class samplingOptimizer:
         names_vars = self.sampler.get_names()
         first = True
         ###We always test the best point
+        print("Iteration:", num_its, "on", max_its, "current best score:", current_best_value)
         while (first and num_its < max_its) or ((current_best_value-global_best_value)/global_best_value > (relative_increase) or num_jumps <= max_jumps) and num_its < max_its :
             if (current_best_value-global_best_value)/global_best_value <= (relative_increase):
                 num_jumps = num_jumps+1
-
-            impact_var = [var for idx,var in zip(valid,names_vars) if idx]
-            str_var =""
-            if len(impact_var)>0:
-                str_var = ",".join(impact_var)
-
-            print("Iteration:", num_its, "on ",max_its," best_score:",current_best_value," num_jumps:",num_jumps," parameters:",str_var)
             dpoint = dict(zip(list(names_vars),list(current_best_point)))
             first = False
 
@@ -70,7 +64,7 @@ class samplingOptimizer:
             self.sampler.sample(bounds=self.bounds,func=func,num_cores=num_cores,num_points=num_points,add_point=[dpoint],fixed_arguments=self.fixed_arguments)
             current_best_point, current_best_value, valid = self.optimizer.get_maximum(self.sampler.get_points(), self.sampler.get_values(),removed=-1.0)
             num_its += 1
-
+            print("Iteration:", num_its, "on ",max_its," current best score:",current_best_value)
         ##We pick the bset sampled points
         all_values = self.sampler.get_values()
         all_points = self.sampler.get_points()

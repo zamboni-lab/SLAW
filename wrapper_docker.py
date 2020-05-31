@@ -204,9 +204,22 @@ if __name__=="__main__":
         alpha=float(raw_yaml["grouping"]["alpha"]["value"]),
         ms2_mz_tol = float(raw_yaml["peakpicking"]['peaks_deconvolution']["ms2_mz_tol"]["value"]),
         ms2_rt_tol = float(raw_yaml["peakpicking"]['peaks_deconvolution']["ms2_rt_tol"]["value"]),
+        filter_qc= float(raw_yaml["filtering"]['frac_qc']["value"]),
+        fold_blank= float(raw_yaml["filtering"]['fold_blank']["value"]),
         log=LOG)
     timer.store_point("walignment")
     timer.print_point("walignment")
+
+    ###Gap filling and isotopic pattern extraction
+    exp.add_missing_informations(max_iso=int(raw_yaml["ion_annotation"]['max_isotopes']["value"]),
+                                 max_charge=int(raw_yaml["ion_annotation"]['max_charge']["value"]),
+                                 quant=intensity,
+                                 ppm=float(raw_yaml["ion_annotation"]["ppm"]["value"]),
+                                 dmz=float(raw_yaml["ion_annotation"]["dmz"]["value"]))
+
+    timer.store_point("wgapfill")
+    timer.print_point("wgapfill")
+
     main_adducts_str=raw_yaml["ion_annotation"]["main_adducts_"+exp.polarity]["value"]
     adducts_str = raw_yaml["ion_annotation"]["adducts_"+exp.polarity]["value"]
     successfully_processed = exp.annotate_ions(int(raw_yaml["ion_annotation"]["num_files"]["value"]),float(raw_yaml["ion_annotation"]["ppm"]["value"]),

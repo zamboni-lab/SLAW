@@ -15,6 +15,7 @@ import model.steps.evaluating as me
 import model.helper.comparing_evaluation as mce
 import model.steps.annotating_adducts_isotopes as mai
 import model.steps.post_processing as pp
+import model.steps.information_completion as ic
 import pandas as pd
 import shutil
 
@@ -274,10 +275,6 @@ class Experiment:
         hash TEXT,
         peaktable TEXT,
         fused_msms TEXT,
-        hash_peaktable TEXT,
-        index_file TEXT,
-        evaluation TEXT,
-        hash_evaluation TEXT,
         annotated_peaktable_full TEXT,
         annotated_peaktable_reduced TEXT,
         CONSTRAINT known_software
@@ -636,7 +633,7 @@ class Experiment:
     def group_online(self,intensity="int",
     ppm = 15,mztol=0.007,rttol=0.02,n_ref = 150,
                      ms2_mz_tol=0.01,ms2_rt_tol=0.05,
-                     alpha = 0.1,log=None):
+                     alpha = 0.1,filter_qc=0.5,fold_blank=3,log=None):
         num_workers = self.get_workers()
         runner = pr.ParallelRunner(num_workers)
         ####We create all the grouper eventually
@@ -666,7 +663,8 @@ class Experiment:
             ppg = mg.OnlineGrouper(pp,self.db,dir_blocks, dir_alignment,
             dir_datamatrix, intensity, mztol, ppm, rttol, n_ref, alpha,
                                    ms2_mz_tol,ms2_rt_tol,path_fused_msms,
-                                   path_temp_1,path_temp_2,num_workers,path_fig)
+                                   path_temp_1,path_temp_2,num_workers,path_fig,
+                                   filter_qc,fold_blank)
             ###We update the peaktable path
             poutput_dm = ppg.get_output_datamatrix()
             poutput_mgf = ppg.get_fused_mgf()
@@ -680,10 +678,12 @@ class Experiment:
         if countgroup != 0:
             groupers = groupers[0:countgroup]
             clis_align = [g.command_line_aligning() for g in groupers if g.need_computing()]
+            clis_filtering = [g.command_line_filtering() for g in groupers if g.need_computing()]
             clis_fusing = [g.command_line_fusing_msms() for g in groupers if g.need_computing()]
             # print(clis[0])
             if len(clis_align) > 0:
                 runner.run(clis_align, log=log)
+                runner.run(clis_filtering, log=log)
                 runner.run(clis_fusing, log=log)
         self.save_db()
         print("Alignment finished")
@@ -796,6 +796,39 @@ class Experiment:
         print("Annotation finished")
         return successfull_processing
 
+    def add_missing_informations(self,max_iso, max_charge, quant, ppm, dmz):
+        num_workers = self.get_workers()
+        runner = pr.ParallelRunner(num_workers)
+        ###Data of previous steps
+        path_isotopes = cr.DATA["ISOTOPES"]
+        path_rt_model = self.output.getFile(cr.TEMP["GROUPING"]["ALIGNMENT"])
+        path_temp_1 = self.output.getFile(cr.TEMP["FUSING"]["TEMP1"])
+        self.open_db()
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM peakpicking")
+        all_peakpicking = c.fetchall()
+        margin_mz = 0.001
+
+        expanders = [0] * len(all_peakpicking)
+        count_expand = 0
+        
+        for pp in all_peakpicking:
+            ###pp 4,10,11
+            ie = ic.InformationExpander(self.db, pp[4], path_temp_1, path_rt_model, path_isotopes,
+                                         max_iso, max_charge, quant,
+                                         margin_mz, ppm, dmz, num_workers)
+            # path_datamatrice_filled = ie.get_output()
+            # query = self.update_query_construction("peakpicking", "id", str(pp[0]), "peaktable",
+            #                                        path_datamatrice_filled)
+            # c.execute(query)
+            expanders[count_expand] = ie
+            count_expand += 1
+        if count_expand != 0:
+            expanders = expanders[0:count_expand]
+            clis = [iexp.command_line() for iexp in expanders if iexp.need_computing()]
+            if len(clis) > 0:
+                runner.run(clis, silent=True)
+        print("Gap filling and isotopic pattern extraction finsihed.")
 
     def post_processing(self,targets,path_raw_files=None,mztol=0.05,rttol=0.03):
         if path_raw_files is None:
@@ -862,8 +895,10 @@ class Experiment:
         path_annotation = c.fetchall()[0][0]
         self.close_db()
         if os.path.isfile(path_annotation):
-            to_rm= [cr.TEMP["GROUPING"]["TEMP"],cr.TEMP["IONANNOTATION"]["FULL"],cr.TEMP["IONANNOTATION"]["MAIN"],
-            cr.TEMP["CONVERSION"],cr.OUT["ADAP"]["JSON"],cr.OUT["ADAP"]["CANDIDATES"],cr.TEMP["DIR"]]
+            to_rm= [cr.TEMP["IONANNOTATION"]["FULL"],cr.TEMP["IONANNOTATION"]["MAIN"],
+            cr.TEMP["CONVERSION"],cr.OUT["ADAP"]["JSON"],cr.OUT["ADAP"]["CANDIDATES"]]
+            # to_rm= [cr.TEMP["GROUPING"]["TEMP"],cr.TEMP["IONANNOTATION"]["FULL"],cr.TEMP["IONANNOTATION"]["MAIN"],
+            # cr.TEMP["CONVERSION"],cr.OUT["ADAP"]["JSON"],cr.OUT["ADAP"]["CANDIDATES"],cr.TEMP["DIR"]]
             for waste in to_rm:
                 pwaste = self.output.getPath(waste)
                 if os.path.isdir(pwaste):
