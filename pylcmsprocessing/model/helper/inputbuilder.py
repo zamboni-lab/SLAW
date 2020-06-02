@@ -284,6 +284,6 @@ class openMSBuilder(inputBuilder):
             except sqlite3.IntegrityError as e:
                 counter_processed += 1
 
-        print(counter_processed, "existing peak picking", counter_to_process, "added.")
+        print(str(counter_to_process), " peakpicking added.")
         conn.commit()
         conn.close()

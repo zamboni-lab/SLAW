@@ -7,6 +7,8 @@ import common.tools as ct
 import model.steps.grouping as mg
 import os
 import subprocess
+from shutil import copyfile
+
 
 
 def get_scorer(name):
@@ -181,6 +183,8 @@ class exponentialScorer(AlignmentScorer):
         path_fig = self.exp.output.getFile(cr.OUT["FIGURES"]["RT_DEV"])
         # path_fig = path_fig.replace("/output", output, 1)
         hdat = "rt_cor"
+        ###We copy the database for examintation
+
         ppg = mg.OnlineGrouper(fake_pp, self.exp.db, dir_blocks, dir_alignment,
                                dir_datamatrix, hdat, 0.01, 15, 0.01, 150, 0.01,
                                0.05, 0.05, "NONE",
@@ -192,22 +196,16 @@ class exponentialScorer(AlignmentScorer):
         subprocess.call(cli, shell=True, timeout=900)
         if not os.path.exists(dm_path):
             return -1.0, -1.0
-
         tdata = pd.read_csv(dm_path, header=0)
-        print(tdata)
         cnames = [cc for cc in tdata.columns if cc.startswith(hdat)]
         num_sample = len(cnames)
-
         rt_tab = tdata[cnames]
         val = rt_tab.apply(lambda x: np.absolute(np.nanmean(x - np.nanmedian(x))), axis=1)
         ARTS = np.nanmean(val)
         RCS = 1 / ARTS
-
         summed_probas = np.sum(modif_exp(tdata.num_detection / len(cnames)))**2/tdata.shape[0]
         ###We just have to comnpare the column
-
         return RCS, summed_probas
-
 
 class reproducibleCVscorer(AlignmentScorer):
 

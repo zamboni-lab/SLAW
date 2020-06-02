@@ -199,8 +199,10 @@ bmax <- estimated_par[2]/60
 params$peakpicking$peaks_deconvolution$peak_width$value <- c(bmin,bmax)
 bbmin <- bmin*0.5
 if(bbmin<0.01) bbmin <- 0.01
-params$peakpicking$peaks_deconvolution$peak_width$range$min <- c(bbmin,bmin*c(3))
-params$peakpicking$peaks_deconvolution$peak_width$range$max <- bmax*c(0.5,3)
+if("range" %in% names(params$peakpicking$peaks_deconvolution$peak_width)){
+  params$peakpicking$peaks_deconvolution$peak_width$range$min <- c(bbmin,bmin*c(3))
+  params$peakpicking$peaks_deconvolution$peak_width$range$max <- bmax*c(0.5,3)
+}
 write_yaml(params,OUTPUT_PAR)
 
 

@@ -96,35 +96,35 @@ if (get_os() == "win") {
 }
 
 ##We know extract the value
-summarize <- function(pt, val) {
-  library(data.table)
-  pt <- fread(pt, header = TRUE, sep = ",")
-  apply(pt[, ..val, drop = FALSE], 2, function(x) {
-    sel <- !is.na(x) & !is.infinite(x) & !x > 1e11
-    mean(x[sel])
-  })
-}
+# summarize <- function(pt, val) {
+#   library(data.table)
+#   pt <- fread(pt, header = TRUE, sep = ",")
+#   apply(pt[, ..val, drop = FALSE], 2, function(x) {
+#     sel <- !is.na(x) & !is.infinite(x) & !x > 1e11
+#     mean(x[sel])
+#   })
+# }
+#
+#
+# sum_metrics <-
+#   bplapply(
+#     split(peaktables, f = seq_along(peaktables)),
+#     summarize,
+#     val = c("SN", "intensity", "peakwidth", "right_on_left_assymetry"),
+#     BPPARAM = bpp
+#   )
 
-
-sum_metrics <-
-  bplapply(
-    split(peaktables, f = seq_along(peaktables)),
-    summarize,
-    val = c("SN", "intensity", "peakwidth", "right_on_left_assymetry"),
-    BPPARAM = bpp
-  )
-
-
-suppressWarnings(suppressMessages(library(ropls, warn.conflicts = FALSE)))
-sum_metrics <- do.call(rbind, sum_metrics)
-
-sel_unique <- !duplicated(sum_metrics)
-
-###Stupid case of 2 times the same sample.
-sum_metrics <- sum_metrics[sel_unique,]
-
-row.names(sum_metrics) <- traw_files[sel_unique]
-sum_metrics_scaled <- scale(sum_metrics)
+#
+# suppressWarnings(suppressMessages(library(ropls, warn.conflicts = FALSE)))
+# sum_metrics <- do.call(rbind, sum_metrics)
+#
+# sel_unique <- !duplicated(sum_metrics)
+#
+# ###Stupid case of 2 times the same sample.
+# sum_metrics <- sum_metrics[sel_unique,]
+#
+# row.names(sum_metrics) <- traw_files[sel_unique]
+# sum_metrics_scaled <- scale(sum_metrics)
 # pdf(OUTPUT_SUMMARY_PDF)
 # sink("/dev/null")
 # val <- opls(

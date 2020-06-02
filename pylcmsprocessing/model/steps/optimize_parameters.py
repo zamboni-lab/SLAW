@@ -7,7 +7,7 @@ from random import sample,seed
 import subprocess
 import numpy as np
 import pandas as pd
-import time
+from shutil import copyfile
 import math
 
 import model.experiment as me
@@ -15,6 +15,8 @@ import common.references as cr
 import model.optimization.score_experiment as ms
 import model.optimization.sampling as mos
 import model.helper.parameters_handler as ph
+import model.helper.inputbuilder as ib
+
 import common.tools as ct
 from model.helper.UI import UI
 
@@ -142,8 +144,12 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
     exp.initialise_database(num_cpus, OUTPUT_DIR, polarity, path_samples, ["ADAP"], 1)
     to_join = list(args_refs.values())
     to_join = [str(pp) for pp in to_join]
-
     if os.path.isfile(pdb):
+        if peakpicking=="OPENMS":
+            builder = ib.openMSBuilder(exp.db, output=exp.output)
+            ###Dummy arugment used to initialize the database only.
+            builder.build_inputs_single_parameter_set(0.01, 0.1, 10, 10, 500, 3, 5, "intensity")
+        # copyfile(pdb,os.path.join(os.environ["OUTPUT"],os.path.basename(pdb)))
         exp.rebase_experiment(pdb)
     else:
         try:
@@ -151,6 +157,7 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
                 exp.run_mzmine("/MZmine-2.52-Linux", PATH_XML, int(num_cpus), log=LOG_PATH)
                 exp.correct_conversion()
                 exp.post_processing_peakpicking_mzmine()
+                exp.save_db()
             if peakpicking=="OPENMS":
                 const = peakpicking__peaks_deconvolution__peak_width__const
                 add = peakpicking__peaks_deconvolution__peak_width__add
@@ -165,7 +172,6 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
                 exp.run_openms(min_fwhm, max_fwhm, sn, ppm, min_int, max_outlier, min_scan, quant, log=LOG_PATH)
 
         except Exception as e:
-            print(e)
             # try:
             #     if not reset:
             #         os.remove(PATH_DB)
@@ -191,14 +197,13 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
         scorer.exp=exp
     tvscore = -1.0
     try:
-        # msd = ms.get_scorer(scorer)
-        # msd = msd(exp)
         ###We authorize 1 jump
         vscore = scorer.score(output=OUTPUT_DIR)
         tvscore = vscore
         if not isinstance(tvscore,float):
             tvscore = "|".join(["{0:.10g}".format(sc) for sc in tvscore])
     except Exception as e:
+        print(e)
             ###We write the score in the table
         to_write = stored_param + "," +PATH_DB+","+PATH_SAVE_DB+","+OUTPUT_DIR+","+str(tvscore) +","+",".join(to_join) + "\n"
         with open(SUMMARY_YAML, "a") as ff:
@@ -309,7 +314,8 @@ class ParametersOptimizer:
         to_optimize = pfh.get_optimizable_parameters(string=True)
         ###Parameterd are split between peakpciking and grouping
         to_optimize_peakpicking = {ll:to_optimize[ll] for ll in to_optimize if ll.startswith("peakpicking")}
-        to_optimize_grouping = {ll:to_optimize[ll] for ll in to_optimize if ll.startswith("grouping")}
+        to_optimize_grouping =\
+            {ll:to_optimize[ll] for ll in to_optimize if ll.startswith("grouping")}
         all_parameters = pfh.get_parameters_values()
 
         final_dic = all_parameters.copy()
@@ -321,6 +327,7 @@ class ParametersOptimizer:
         ##We get the bounds of the optimizable parameters.
         summary_peakpicking = self.path_summary + "_peakpicking.csv"
 
+        # print("Optimizing:",to_optimize_peakpicking)
         if len(to_optimize_peakpicking) > 0 and pscorer!="none":
             lb_peakpicking = [x[0] for x in to_optimize_peakpicking.values()]
             ub_peakpicking = [x[1] for x in to_optimize_peakpicking.values()]
@@ -404,7 +411,6 @@ class ParametersOptimizer:
                 pass
         # The best paramters is stroed
         self.best_par = final_dic
-        print(final_dic)
 
     def export_best_parameters(self,outpath):
         pfh = ph.ParametersFileHandler(self.input_par)

@@ -118,8 +118,8 @@ if __name__=="__main__":
     pol = exp.guess_polarity(INPUT)
     print("Polarity detected: " + exp.polarity)
     exp.initialise_database(num_cpus, OUTPUT_DIR, pol, INPUT, ["ADAP"], 1, path_ms2=path_ms2)
-    timer.store_point("winitialisation")
-    timer.print_point("winitialisation")
+    timer.store_point("initialisation")
+    timer.print_point("initialisation")
     vui = UI(OUTPUT_DIR, INPUT, polarity=os.environ["POLARITY"], mass_spec="Exactive", num_workers=num_cpus,
          path_yaml=PATH_YAML)
 
@@ -154,15 +154,15 @@ if __name__=="__main__":
             par_opt = ParametersOptimizer(exp, PATH_OPTIM,DB_STORAGE,num_workers=num_cpus, input_par=PATH_YAML)
             par_opt.optimize_parameters(vui.path_yaml, optimizer=os.environ["OPTIM"], max_its=max_its,
                                         num_points=num_points,num_files =optim_files,num_cores=num_cpus)
-            timer.store_point("woptimization")
-            timer.print_point("woptimization")
+            timer.store_point("optimization")
+            timer.print_point("optimization")
             ###If there was optimiz\ation we have ot reset the otpoimization proces
             exp.reset_processing()
 
     if not os.path.isfile(PATH_XML):
         if peakpicking=="ADAP":
             vui.generate_MZmine_XML(path_xml=PATH_XML)
-        print("An ADAP batch file has been generated in the "+OUTPUT_DIR+" directory, you ca use it to refine peakpicking parameters using MZmine.")
+            print("An ADAP batch file has been generated in the "+OUTPUT_DIR+" directory, you ca use it to refine peakpicking parameters using MZmine.")
     exp.initialise_database(num_cpus,OUTPUT_DIR,vui.polarity,INPUT,["ADAP"], 1)
     # exp.building_inputs_single_processing(PATH_XML)
     ###We always read the yaml paramters file.
@@ -192,8 +192,8 @@ if __name__=="__main__":
         exp.extract_ms2(noise_level=float(raw_yaml["peakpicking"]["noise_level_ms2"]["value"]),output=pcr.OUT["OPENMS"]["MSMS"])
         exp.post_processing_peakpicking_openms()
     ###As openMS does not give nativelyt MS-MS
-    timer.store_point("wpeakpicking")
-    timer.print_point("wpeakpicking")
+    timer.store_point("peakpicking")
+    timer.print_point("peakpicking")
 
     intensity = str(raw_yaml["grouping"]["extracted_quantity"]["value"])
     exp.group_online(intensity=intensity,
@@ -207,8 +207,8 @@ if __name__=="__main__":
         filter_qc= float(raw_yaml["filtering"]['frac_qc']["value"]),
         fold_blank= float(raw_yaml["filtering"]['fold_blank']["value"]),
         log=LOG)
-    timer.store_point("walignment")
-    timer.print_point("walignment")
+    timer.store_point("alignment")
+    timer.print_point("alignment")
 
     ###Gap filling and isotopic pattern extraction
     exp.add_missing_informations(max_iso=int(raw_yaml["ion_annotation"]['max_isotopes']["value"]),
@@ -217,16 +217,16 @@ if __name__=="__main__":
                                  ppm=float(raw_yaml["ion_annotation"]["ppm"]["value"]),
                                  dmz=float(raw_yaml["ion_annotation"]["dmz"]["value"]))
 
-    timer.store_point("wgapfill")
-    timer.print_point("wgapfill")
+    timer.store_point("gap-filling")
+    timer.print_point("gap-filling")
 
     main_adducts_str=raw_yaml["ion_annotation"]["main_adducts_"+exp.polarity]["value"]
     adducts_str = raw_yaml["ion_annotation"]["adducts_"+exp.polarity]["value"]
     successfully_processed = exp.annotate_ions(int(raw_yaml["ion_annotation"]["num_files"]["value"]),float(raw_yaml["ion_annotation"]["ppm"]["value"]),
         float(raw_yaml["ion_annotation"]["dmz"]["value"]),min_filter=raw_yaml["ion_annotation"]["min_filter"]["value"],
                 adducts=adducts_str,main_adducts=main_adducts_str, max_workers=num_cpus)
-    timer.store_point("wannotation")
-    timer.print_point("wannotation")
+    timer.store_point("annotation")
+    timer.print_point("annotation")
     if successfully_processed:
-        exp.post_processing(PATH_TARGET)
+        # exp.post_processing(PATH_TARGET)
         exp.clean()

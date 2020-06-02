@@ -43,23 +43,11 @@ if(get_os()=="win"){
 }
 if(!file.exists(PATH_OUT_DATAMATRIX)){
     message("Beginning grouping using metric, ",VAL_INTENSITY)
-
-    print(PATH_DB)
-    print(file.exists(PATH_DB))
     dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
-    message("processing")
-    all_peaktables <- dbReadTable(dbb, "processing")[, 1]
-    print(all_peaktables)
-    message("samples")
-    all_peaktables <- dbReadTable(dbb, "samples")[, 1]
-    print(all_peaktables)
-    message("join")
-    all_peaktables <- dbGetQuery(dbb, "SELECT * FROM samples INNER JOIN processing on samples.id=processing.sample")[, 1]
-    print(all_peaktables)
+    # all_peaktables <- dbGetQuery(dbb, "SELECT * FROM samples INNER JOIN processing on samples.id=processing.sample")[, 1]
+
     all_peaktables <- dbGetQuery(dbb, "SELECT output_ms FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")[, 1]
     dbDisconnect(dbb)
-
-    print(all_peaktables)
 
     ###We check the columns of the peaktable.
     pt <- read.table(all_peaktables[1],header=TRUE,sep=",")

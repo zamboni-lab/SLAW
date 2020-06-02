@@ -18,23 +18,6 @@ ISO_NAME_COL <- "isotopic_pattern_annot"
 
 ##Argument passed by Python
 args <- commandArgs(trailingOnly = TRUE)
-# print(dput(args))
-# # # 
-# args <-  c(
-#   "U:/users/Alexis/examples_lcms_workflow/output_optim/processing_db.sqlite",
-#   "U:/users/Alexis/examples_lcms_workflow/output_optim/datamatrices/datamatrix_ec33b0ccad6d47ab6b44cec104305d4b.csv",
-#   "U:/users/Alexis/examples_lcms_workflow/output_optim/temp/temp1",
-#   "U:/users/Alexis/examples_lcms_workflow/output_optim/temp/alignement.rds",
-#   "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/isotopes.tsv",
-#   "4",
-#   "2",
-#   "intensity",
-#   "0.001",
-#   "15.0",
-#   "0.01",
-#   "3"
-# )
-# 
 
 PATH_DB <- args[1]
 PATH_DM <- args[2]
@@ -271,6 +254,7 @@ extractMissingInformations <- function(praw,peaks,isotopes,infer,align,
       }
       sel_iso <- sc[unlist(miso[1:(idx-1)]),2]
       mass_diff <- sc[unlist(miso[1:(idx-1)]),1]-mz_peak
+      break
     }
     if(is.null(sel_iso)) return(NA)
     sel_iso_c13 <- c(sc[1,2],sel_iso)
@@ -281,6 +265,8 @@ extractMissingInformations <- function(praw,peaks,isotopes,infer,align,
     
     ##We remove the peaks which have already been matched to C13
     sel_peaks <- 1:nrow(sc)
+    # print(miso[1:(idx-1)])
+    # if(is.null(miso[[1]])) browser()
     sel_peaks <- sel_peaks[-unlist(miso[1:(idx-1)])]
     
     
@@ -324,21 +310,11 @@ extractMissingInformations <- function(praw,peaks,isotopes,infer,align,
 }
 
 
-# PATH_DB <- args[1]
-# PATH_DM <- args[2]
-# PATH_FILLED <- args[3]
-# PATH_MODEL <- args[4]
-# PATH_ISOTOPES <- args[5]
-# MAX_ISO <- as.integer(args[6])
-# QUANT <- args[7]
-# MARGIN_MZ <- as.numeric(args[8])
-# MAX_CHARGE <- as.integer(args[9])
-# PPM <- as.numeric(args[10])
-# DMZ <- as.numeric(args[11])
 # 
-exm <- extractMissingInformations(all_samples[3],all_peaktables[3],isotopes_to_extract[[3]],to_infer[[3]],align@rt_correction[[3]],dm=dm_peaks,quant=QUANT,table_iso=isotopes_table,
-                                                 dist_c13=dist_iso,margin_mz=MARGIN_MZ,max_iso = MAX_ISO,
-                                  max_charge = MAX_CHARGE, ppm = PPM,dmz = DMZ)
+# 
+# exm <- extractMissingInformations(all_samples[3],all_peaktables[3],isotopes_to_extract[[3]],to_infer[[3]],align@rt_correction[[3]],dm=dm_peaks,quant=QUANT,table_iso=isotopes_table,
+#                                                  dist_c13=dist_iso,margin_mz=MARGIN_MZ,max_iso = MAX_ISO,
+#                                   max_charge = MAX_CHARGE, ppm = PPM,dmz = DMZ)
 # vmap <- mapply(all_samples,all_peaktables,isotopes_to_extract,to_infer,align@rt_correction,
 #                  FUN = extractMissingInformations,MoreArgs = list(dm=dm_peaks,quant=QUANT,table_iso=isotopes_table,
 #                                                                   dist_c13=dist_iso,margin_mz=MARGIN_MZ,max_iso = MAX_ISO,

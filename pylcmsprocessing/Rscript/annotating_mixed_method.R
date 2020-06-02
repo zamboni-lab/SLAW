@@ -930,8 +930,6 @@ buildDataMatrixSimplified <-
     ### This is done for every batch
     for (i in 1:(length(seq_line) - 1)) {
       ##We get the range of the datamatrix to load.
-      
-      
       sel_idx <- seq_line[i]:(seq_line[i + 1] - 1)
       vannot <- sapply(annot[sel_idx], function(an, dm, cnames) {
         refv <- an[1, "ref_feature"]
@@ -948,10 +946,7 @@ buildDataMatrixSimplified <-
             neutral_mass = neutral_mass
           )
         ##We fuse the MS2 information column
-
-
-        tdf <- cbind(tdf, dm[refv, 3:ncol(dm)])
-        colnames(tdf) <-
+        cnames_tdf <-
           c("mz",
             "rt",
             "main_peak",
@@ -959,6 +954,9 @@ buildDataMatrixSimplified <-
             "clique",
             "neutral_mass",
             cnames[3:ncol(dm)])
+
+        tdf <- cbind(tdf, dm[refv, 3:ncol(dm)])
+        colnames(tdf) <- cnames_tdf
         return(tdf)
       }, dm = dm, cnames = colnames(dm),
       simplify = FALSE)
@@ -1008,8 +1006,6 @@ groupFeatures <-
 
     ###We plit the files evnetually.
     number_features <- nrow(dm)
-    message("Number features",number_features)
-    message("cut_size",cut_size)
     cut_rts <- seq(1, number_features, by = cut_size/2)
     if (cut_rts[length(cut_rts)] != number_features) {
       cut_rts <- c(cut_rts, number_features + 1)
@@ -1046,25 +1042,17 @@ groupFeatures <-
         bpp = bpp
       )
       ###we compute the cliques
-      # message("Computing cliques")
       sink(file="/dev/null")
       anclique <- computeCliques(anclique, 1e-5, TRUE)
       sink(NULL)
-      # browser()
       ###We correct the index for subselection.
       for (ic in seq_along(anclique@cliques)) {
         anclique@cliques[[ic]] <- sel_idx[anclique@cliques[[ic]]]
       }
-      # tlist[[i]] <- list(cliques, anclique@cliques, assignments, size, current_id)
-      # saveRDS(tlist,file = "/output/save_cliques.rds")
       cliques <-
         mergeCliques(cliques, anclique@cliques, assignments, size, current_id)
     }
 
-    ###We convert the cliques ID back to the unsorted point
-    # for (ic in seq_along(cliques)) {
-    #   cliques[[ic]] <- cliques[[ic]]
-    # }
 
     summarized_df <- data.frame(
       mz = dm[, "mz"],
@@ -1093,7 +1081,14 @@ groupFeatures <-
 
     anclique@network <- empty_graph()
     pint <- getIntensityPos(dm)[1]
-
+    
+    ###We add the missing feature to the data
+    num_features <- 1:nrow(dm)
+    found_features <- unlist(cliques)
+    missing_features <- setdiff(num_features,found_features)
+    if(length(missing_features)>0){
+      cliques <- c(cliques,as.list(missing_features))
+    }
     message("Annotating")
     res_df <- annotateCliques(cliques,
                               summarized_df,
@@ -1113,7 +1108,7 @@ groupFeatures <-
 args <- commandArgs(trailingOnly = TRUE)
 
 # 
-# library(stringr)
+library(stringr)
 # args <- c(
 #   "/output/datamatrices/datamatrix_ec33b0ccad6d47ab6b44cec104305d4b.csv",
 #   "/output/processing_db.sqlite",
@@ -1146,7 +1141,7 @@ DMZ <-  as.numeric(args[11])
 FILES_USED <- min(as.numeric(args[12]), 25,NUM_CORES*2)
 FILTER_NUMS <- max(1, as.numeric(args[13]))
 PATH_MATCHING <- args[14]
-NUM_BY_BATCH <- 500
+NUM_BY_BATCH <- 5000
 if (length(args) == 15) {
   NUM_BY_BATCH <- as.numeric(args[15])
 }
@@ -1262,6 +1257,7 @@ dm <- fread(PATH_DATAMATRIX, header = TRUE, sep = ",")
 
 ###If the file already exists at this step we erase it
 if(file.exists(PATH_OUTPUT_SIMPLE)) file.remove(PATH_OUTPUT_SIMPLE)
+# PATH_OUTPUT_SIMPLE_DD <- "U:/users/Alexis/examples_lcms_workflow/output_optim/datamatrices/annotated_peaktable_bis_ec33b0ccad6d47ab6b44cec104305d4b.csv"
 dm_simplified <- buildDataMatrixSimplified(dm, annot, PATH_OUTPUT_SIMPLE)
 if(file.exists(PATH_OUTPUT_FULL)) file.remove(PATH_OUTPUT_FULL)
 dm_full <- buildDataMatrixFull(dm, annot, PATH_OUTPUT_FULL)

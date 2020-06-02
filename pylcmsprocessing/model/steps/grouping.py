@@ -48,7 +48,7 @@ class OnlineGrouper:
     def __init__(self,row,path_db,
     blocks,alignment,out,intensity,mztol,ppm,rttol,
     num_ref,alpha,ms2_mz_tol,ms2_rt_tol,fused_mgf,temp_dm_1,
-                 temp_dm_2,num_workers,outfig,filter_qc,fold_blank):
+                 temp_dm_2,num_workers,outfig,filter_qc=0,fold_blank=3):
         self.hash = row[3]
         self.db=path_db
         self.output_data=os.path.join(out,"datamatrix_"+row[3]+".csv")

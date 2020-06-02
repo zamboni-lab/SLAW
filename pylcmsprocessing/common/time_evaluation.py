@@ -16,7 +16,9 @@ class Timer:
 
     def print_point(self,name):
         pindex = self.names.index(name)
-        print(name,str(self.measures[pindex]-self.measures[0]))
+        tval = self.measures[pindex]-self.measures[0]
+        last_interval = self.measures[pindex]-self.measures[pindex-1]
+        print("STEP:",name,"TOTAL_TIME:","%0.2f" % tval+"s"," LAST_STEP:","%0.2f" % last_interval+"s")
 
 
 if __name__=="__main__":
