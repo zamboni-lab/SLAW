@@ -95,14 +95,9 @@ if __name__=="__main__":
     PATH_DB = os.path.join(OUTPUT_DIR, "temp_processing_db.sqlite")
     DB_STORAGE = os.path.join(OUTPUT_DIR, "temp_optim", "db_storage")
 
-    if os.path.isdir("/sauer1"):
+    if os.path.isdir("/sauer1") or "CLUSTER" in os.environ:
         PATH_DB = "/temp_processing_db.sqlite"
         DB_STORAGE = "/db_storage"
-
-    if "FOPTIM" in os.environ:
-        num_optim = int(os.environ["FOPTIM"])
-    else:
-        num_optim = 5
 
     # LOG = "/log.txt"
     #Procesinf of the pipeline eventually.
@@ -128,7 +123,11 @@ if __name__=="__main__":
         ###We just create a an empty yaml file
         vui.generate_yaml_files()
         vui.initialize_yaml_polarity(PATH_YAML, pol)
-        print("Parameters file generated please tune the parameers and or parameters range before optimization.")
+        # self.determine_initial_parameters()
+        print("Empty directory detected, performing initial guess of SLAW parameters.")
+        temp_opt = ParametersOptimizer(exp, "FAKE", DB_STORAGE, num_workers=num_cpus, input_par=PATH_YAML)
+        temp_opt.determine_initial_parameters(output_par=PATH_YAML)
+        print("Parameters file generated please check the parameters values and/or parameters range before optimization.")
         exit(0)
     else:
         ph = ParametersFileHandler(vui.path_yaml)
@@ -145,15 +144,15 @@ if __name__=="__main__":
             num_points = int(raw_yaml["optimization"]["number_of_points"]["value"])
             max_its = int(raw_yaml["optimization"]["num_iterations"]["value"])
             optim_files = int(raw_yaml["optimization"]["files_used"]["value"])
+            initial_estimation = bool(raw_yaml["optimization"]["initial_estimation"]["value"])
 
             PATH_OPTIM = os.path.join(OUTPUT_DIR, "temp_optim")
             if not os.path.isdir(DB_STORAGE):
                 os.makedirs(DB_STORAGE)
-
             ###We optimize the parameters
             par_opt = ParametersOptimizer(exp, PATH_OPTIM,DB_STORAGE,num_workers=num_cpus, input_par=PATH_YAML)
-            par_opt.optimize_parameters(vui.path_yaml, optimizer=os.environ["OPTIM"], max_its=max_its,
-                                        num_points=num_points,num_files =optim_files,num_cores=num_cpus)
+            par_opt.optimize_parameters(output_par=vui.path_yaml, optimizer="random_rsm_combined_random_rsm_expalign", max_its=max_its,
+                                        num_points=num_points,num_files =optim_files,num_cores=num_cpus, initial_estimation=initial_estimation)
             timer.store_point("optimization")
             timer.print_point("optimization")
             ###If there was optimiz\ation we have ot reset the otpoimization proces
@@ -187,9 +186,12 @@ if __name__=="__main__":
         min_scan = math.floor(float(raw_yaml["peakpicking"]["traces_construction"]["min_scan"]["value"]))
         max_outlier = math.floor(float(raw_yaml["peakpicking"]["traces_construction"]["num_outliers"]["value"]))
         quant = raw_yaml["grouping"]["extracted_quantity"]["value"]
+        fwhm_fac = 1.2
+        if "peak_width_fac" in raw_yaml["peakpicking"]["peaks_deconvolution"]:
+            fwhm_fac = float(raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width_fac"]["value"])
         ppm = float(raw_yaml["peakpicking"]["traces_construction"]["ppm"]["value"])
-        exp.run_openms(min_fwhm, max_fwhm, sn, ppm, min_int, max_outlier, min_scan, quant,log = LOG)
-        exp.extract_ms2(noise_level=float(raw_yaml["peakpicking"]["noise_level_ms2"]["value"]),output=pcr.OUT["OPENMS"]["MSMS"])
+        exp.run_openms(min_fwhm, max_fwhm, fwhm_fac, sn, ppm, min_int, max_outlier, min_scan, quant,log = LOG)
+        exp.extract_ms2(noise_level=float(raw_yaml["peakpicking"]["noise_level_ms2"]["value"]),output=pcr.OUT["OPENMS"]["MSMS"],all=True)
         exp.post_processing_peakpicking_openms()
     ###As openMS does not give nativelyt MS-MS
     timer.store_point("peakpicking")

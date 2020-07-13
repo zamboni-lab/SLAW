@@ -47,7 +47,7 @@ dbDisconnect(dbb)
 dm <- fread(PATH_DM,nrows = 2)
 ccol <- ncol(dm)
 
-cnames <- colnames(dmm)
+cnames <- colnames(dm)
 int_prefix <- str_split(cnames,"_")[length(cnames)][[1]][1]
 
 sel_int <- which(str_starts(cnames,int_prefix))
@@ -78,10 +78,10 @@ while(is.data.table(dm)){
 
   ###Filtering blanks
   if(length(blanks)!=0 & length(non_blanks)!=0){
-    fold <- rep(1000,length(int_blank))
     int_blank <- apply(dm[,..pblank],1,mean,na.rm=TRUE)
+    vfold <- rep(1000,length(int_blank))
     int_sample <- apply(dm[,..psample],1,mean,na.rm=TRUE)
-    fold[is.nan(int_sample)] <- 0
+    vfold[is.nan(int_sample)] <- 0
     pok <- (!is.nan(int_blank))|(!is.nan(int_blank))
     vfold[pok] <- int_sample[pok]/int_blank[pok] 
     sel_val <- vfold>=FOLD_BLANK

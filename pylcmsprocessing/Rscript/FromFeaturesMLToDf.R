@@ -7,9 +7,13 @@ suppressMessages(library(XML))
 suppressMessages(library(stringr))
 suppressMessages(library(DBI))
 suppressMessages(library(RSQLite))
+# 
+# args <- c("U:/users/Alexis/data/slaw_evaluation/MTBLS865/output/OPENMS/peaktables/peaktable_527_cbfc76e654c8cdb843043e670899fede.csv","U:/users/Alexis/data/slaw_evaluation/MSV83010/output_sub/OPENMS/peaktables/tout.csv")
+
 
 feature_ml <- args[1]
 outfile <-  args[2]
+
 
 get_os <- function() {
   if (.Platform$OS.type == "windows") {
@@ -33,9 +37,11 @@ convertXMLopenMS <-  function(fv) {
   rootnode <- xmlRoot(rtree)
   rootsize <- xmlSize(rootnode)
   
-  num_features <- xmlSize(rootnode[[3]])
-  
-  
+  ##Detemrining the position of the root
+  posroot <- which(names(rootnode)=="featureList")
+
+  num_features <- xmlSize(rootnode[[posroot]])
+
   convertValue <- function(x) {
     istable <- FALSE
     
@@ -52,16 +58,18 @@ convertXMLopenMS <-  function(fv) {
       res <- val
     return(res)
   }
+
   rts <- sapply(1:num_features,function(ix,rn){
     x <- rn[[ix]]
     convertValue(xmlGetAttr(x[[12]], "value"))
-  },rn=rootnode[[3]])
+  },rn=rootnode[[posroot]])
   rts <- sort(unique(unlist(rts)))
   
   margin <- 0.002
   
   dfl <- sapply(1:num_features, function(ix, rn,margin=0.002) {
     x <- rn[[ix]]
+    
     intensity <- x[[3]]
     allint <- convertValue(xmlGetAttr(x[[11]], "value"))
     allrt <- convertValue(xmlGetAttr(x[[12]], "value"))
@@ -81,7 +89,7 @@ convertXMLopenMS <-  function(fv) {
                          mz_min=mz_min,mz_max=mz_max,peakwidth=fwhm,
                          quality=quality)
     return(tempdf)
-  }, rn = rootnode[[3]], margin=margin, simplify = FALSE)
+  }, rn = rootnode[[posroot]], margin=margin, simplify = FALSE)
   
   # mz	rt	height	intensity	rt_min	rt_max	mz_min	mz_max	SN	peakwidth	right_on_left_assymetry
   
@@ -112,6 +120,12 @@ convertXMLopenMS <-  function(fv) {
   ####We dont remove the ifle as we need ti trestart the calculations eventually.
   return(dfl)
 }
-converted_table <- convertXMLopenMS(feature_ml)
+###If an error occurs we just output an emtpy data frame
+converted_table <- tryCatch(convertXMLopenMS(feature_ml),error=function(e){
+  return(data.frame(mz = numeric(0),rt = numeric(0),height=numeric(0),
+                    intensity = numeric(0),rt_min=numeric(0),rt_max=numeric(0),
+                    mz_min=numeric(0),mz_max=numeric(0),peakwidth=numeric(0),
+                    quality=numeric(0)))
+})
 wt <- file.remove(feature_ml)
 wt <-write.table(converted_table, file = outfile, row.names = FALSE,sep=",",col.names = TRUE)

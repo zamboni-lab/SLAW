@@ -6,6 +6,7 @@ import os
 def run_cl(cl,timeout=None):
     ###We always include the environement
     my_env = os.environ.copy()
+    # print(cl[0])
     if timeout is None:
         subprocess.call(cl[0],shell=True,env=my_env)
     else:
@@ -34,5 +35,5 @@ class ParallelRunner:
         # if chunksize != len(command_lines)/self.max_jobs:
         #     chunksize <- chunksize+1
         largs = [(cl+supp_str,timeout) for cl in command_lines]
-        with concurrent.futures.ProcessPoolExecutor(self.max_jobs) as executor:
+        with concurrent.futures.ProcessPoolExecutor(min(self.max_jobs,len(command_lines))) as executor:
             executor.map(run_cl, largs)#,chunksize=chunksize)

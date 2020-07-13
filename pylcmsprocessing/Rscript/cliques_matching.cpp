@@ -91,11 +91,6 @@ List mergeCliques(List cliques,List new_cliques,IntegerVector assignment,Integer
     res[i] = temp;
   }
 
-  // for(auto it=assignment.begin();it!=assignment.end();it++){
-  //   if(IntegerVector::is_na(*it)) continue;
-  //   //+1 for R compatibilty
-  //   *it = idx_list[*it]+1;
-  // }
   maxCliques[0]=cliques_counter+1;
   return(res);
 }

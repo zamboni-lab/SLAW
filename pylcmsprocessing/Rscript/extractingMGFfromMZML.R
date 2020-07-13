@@ -25,8 +25,9 @@ readMS2mzML <- function(path, outfile, noise_level=0) {
   suppressMessages(suppressWarnings(library(MSnbase, quietly = TRUE)))
   
   convertToMgfTxt <- function(raw_info, raw_spec, vid, noise_level=0) {
+    if(nrow(raw_spec)==0) return(character(0))
     sel_peaks <- which(as.numeric(raw_spec[, 2])>noise_level)
-    if(length(sel_peaks)==0) return(character())
+    if(length(sel_peaks)==0) return(character(0))
     raw_spec <- raw_spec[sel_peaks,,drop=FALSE]
     raw_spec[, 1] <- sprintf("%0.4f", raw_spec[, 1])
     raw_spec[, 2] <- sprintf("%.3g", as.numeric(raw_spec[, 2]))
@@ -52,15 +53,21 @@ readMS2mzML <- function(path, outfile, noise_level=0) {
       "END IONS"
     )
   }
+  if(file.exists(outfile)) return(NA)
   
   of <- openMSfile(path)
   vhh <- header(of)
   rrh <- vhh[vhh$msLevel == 2, ]
+  if(nrow(rrh)==0) return(NULL)
   all_peaks <- peaks(of, rrh$seqNum)
+  if(!is.list(all_peaks)){
+    all_peaks <- list(all_peaks)
+  }
   tsplit <- split(rrh, f = 1:nrow(rrh))
   all_txt <-
     do.call(c, mapply(tsplit, all_peaks, as.list(seq_along(tsplit)), FUN =
-                        convertToMgfTxt,MoreArgs=list(noise_level=noise_level)))
+                        convertToMgfTxt,MoreArgs=list(noise_level=noise_level),SIMPLIFY = FALSE))
+  if(length(all_txt)==0) return(NULL)
   ff <- file(outfile)
   writeLines(all_txt, con = ff)
   close(ff)
@@ -68,12 +75,13 @@ readMS2mzML <- function(path, outfile, noise_level=0) {
 
 
 args <- commandArgs(trailingOnly = TRUE)
-# args <- c("U:/users/Alexis/examples_lcms_workflow/output/processing_db.sqlite",
-#           "U:/users/Alexis/examples_lcms_workflow/tout_ms2","4")
+# args <- c("U:/users/Alexis/data/slaw_evaluation/test_data/output/processing_db.sqlite",
+#           "U:/users/Alexis/data/slaw_evaluation/test_data/output/tout_ms2","500","4","TRUE")
 PATH_DB <- args[1]
 DIR_OUTPUT <- args[2]
 NOISE_LEVEL <- as.numeric(args[3])
 NUM_CORES <- as.integer(args[4])
+ALL <- as.logical(args[5])
 
 bpp <- NULL
 
@@ -98,7 +106,10 @@ raw_files <- infos[, 1]
 vids <- as.integer(infos[, 2])
 num_files <- length(raw_files)
 
+need_computing <- numeric(0)
+
 ###We create all theoutput path
+if(length(raw_files)>0){
 all_path <-
   paste("MS2_",
         str_split(basename(raw_files), fixed("."), simplify = TRUE)[, 1],
@@ -108,9 +119,10 @@ all_path <- file.path(DIR_OUTPUT, all_path)
 all_hash <- md5(raw_files)
 
 need_computing <- which(!file.exists(all_path))
+}
 
 if (length(need_computing) != 0) {
-  bpmapply(
+  vv <- bpmapply(
     raw_files[need_computing],
     all_path[need_computing],
     FUN = readMS2mzML,
@@ -143,3 +155,27 @@ if (length(need_computing) != 0) {
                        name = "processing",append=TRUE)
   dbDisconnect(dbb)
 }
+
+
+if(ALL){
+  message("Extracting all MS-MS spectra.")
+  dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
+  all_msms <- dbGetQuery(dbb, "SELECT path,output_ms2 FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1'")
+  dbDisconnect(dbb)
+  pout <- all_msms[,2]
+  psamples <- all_msms[,1]
+  need_computing <- which(!file.exists(pout))
+  if (length(need_computing) != 0) {
+    vv <- bpmapply(
+      psamples[need_computing],
+      pout[need_computing],
+      FUN = readMS2mzML,
+      SIMPLIFY = FALSE,
+      BPPARAM = bpp,
+      MoreArgs=list(noise_level=NOISE_LEVEL)
+    )
+  }
+  message("MS-MS spectra extraction finished")
+}
+
+# readMS2mzML("U:/users/Alexis/data/slaw_evaluation/MTBLS865/mzML/neg_AEG15_Ac.mi._SPIL2_1-B,6_01_18851.mzML","U:/users/Alexis/data/slaw_evaluation/MTBLS865/neg_AEG15_Ac.mi._SPIL2_1-B,6_01_18851.mgf",noise_level=1000)

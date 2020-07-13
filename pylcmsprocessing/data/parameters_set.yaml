@@ -11,11 +11,15 @@ optimization:
   number_of_points:
     priority: LOW
     description: The number of points sampled at each surface estimation steps.
-    value: 10
+    value: 20
   num_iterations:
     priority: LOW
     description: The maximum number of surface estimated. If no improvment happens at any iteration the optimization stops
     value: 10
+  initial_estimation:
+    priority: LOW
+    description: Shall initial parameters and ranges be estimated from raw files. This will override the provided values.
+    value: True
 peakpicking:
   description: This step includes all the necessary sub steps to pass from an individual .mzML file to a processed peaktable. The data are processed using the ADAP algorithm implemented in MZmine or the openMS FeatureFinderMetabo algorithm.
   algorithm:
@@ -56,6 +60,9 @@ peakpicking:
       priority: LOW
       description: openMS only the maximum number of outliers allowed in a mass traces.
       value: 5
+      range:
+        - 2
+        - 7
   peaks_deconvolution:
     description: Deconvolute traces to extract peaks corresponding to individuals ions.
     SN:
@@ -82,6 +89,15 @@ peakpicking:
         max:
           - 0.07
           - 0.3
+    peak_width_fac:
+      priority: HIGH
+      description: (Open MS only) FLoat between 0 and 1 a factor fivinf the main peakwidth for feature finder metabo.
+      value: 0.2
+      range:
+        - 0.0
+        - 1.0
+
+
     rt_wavelet:
       priority: ESSENTIAL
       description: Floats. Float. The minimum and width width the wavelets used for peak detection.
@@ -131,6 +147,9 @@ grouping:
     priority: LOW
     description: Float. The minimum m/z tolerance in Da to be considered. Mass tolerance between peaks of different samples to aligned is given by max(ppm x m/z x 1e-6,dmz).
     value: 0.01
+    range:
+      - 0.001
+      - 0.007
   alpha:
     priority: LOW
     description: Float. A value indicating L1 regularization term of RT correction
@@ -198,4 +217,3 @@ ion_annotation:
       priority: HIGH
       description: The number of files used to generate EICs profile for ion annotations. This number should be at most 100
       value: 50
-optimized: False

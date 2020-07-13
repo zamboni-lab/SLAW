@@ -117,7 +117,9 @@ if (file.exists(opt$summary)) {
   vm <- match(basename(expected_paths), basename(paths))
   if (any(is.na(vm)))
     stop("Missing files :", paste(expected_paths[vm], sep = ", "))
-  paths <-  paths[!is.na(vm)]
+  ##We reorder path
+  
+  
   rnames <- opt$summary
   if (opt$summaryreplicate %in% colnames(tsummary)) {
     replicates <-  tsummary[[opt$summaryreplicate]]
@@ -127,6 +129,10 @@ if (file.exists(opt$summary)) {
 
   if (opt$summarytype %in% colnames(tsummary)){
     types <- tsummary[[opt$summarytype]]
+    ###We reorder the ACs files eventually.
+    types <- types[vm]
+
+
     ###Three type of terminology are authorized, QC,blank,sample and QC and a number.
     msamp <- types=="sample"
     mQC <- types=="QC"

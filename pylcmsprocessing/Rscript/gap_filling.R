@@ -4,10 +4,6 @@ suppressWarnings(suppressMessages(library(DBI,warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(stringr,warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(BiocParallel,warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(data.table,warn.conflicts = FALSE)))
-# suppressWarnings(suppressMessages(library(filesstrings,warn.conflicts = FALSE)))
-###We need to read the peaktable and the data matrices.
-
-
 
 ###COnstant add columns name
 ##We add the isotopic pattern
@@ -18,6 +14,14 @@ ISO_NAME_COL <- "isotopic_pattern_annot"
 
 ##Argument passed by Python
 args <- commandArgs(trailingOnly = TRUE)
+
+# args <- c("U:/users/Alexis/data/slaw_evaluation/MTBLS865/output/processing_db.sqlite",
+#           "U:/users/Alexis/data/slaw_evaluation/MTBLS865/output/datamatrices/datamatrix_6a1a72c48840903be90db74884cfc1ab.csv",
+#           "U:/users/Alexis/data/slaw_evaluation/MTBLS865/output/datamatrices/dm_fillled.csv",
+#           "U:/users/Alexis/data/slaw_evaluation/MTBLS865/output/temp/alignement.rds",
+#           "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/isotopes.tsv",
+#           "4","2","intensity","0.002","15","0.002","2"
+# )
 
 PATH_DB <- args[1]
 PATH_DM <- args[2]
@@ -31,7 +35,6 @@ MARGIN_MZ <- as.numeric(args[9])
 PPM <- as.numeric(args[10])
 DMZ <- as.numeric(args[11])
 NUM_WORKERS <- as.integer(args[12])
-
 
 
 get_os <- function() {
@@ -53,31 +56,16 @@ if (get_os() == "win") {
   bpp <- MulticoreParam(workers = NUM_WORKERS,progressbar=TRUE)
 }
 
-
-
-# PATH_DB <- "U:/users/Alexis/examples_lcms_workflow/output_optim/processing_db.sqlite"
-# PATH_DM <- "U:/users/Alexis/examples_lcms_workflow/output_optim/datamatrices/datamatrix_4777fec3cb98be147c6611e2d4f1403e.csv"
-# PATH_FILLED <- "U:/users/Alexis/examples_lcms_workflow/output_optim/datamatrices/datamatrix_filled_4777fec3cb98be147c6611e2d4f1403e.csv"
-# PATH_MODEL <- "U:/users/Alexis/examples_lcms_workflow/output_optim/temp/alignement.rds"
-# PATH_ISOTOPES <- "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/isotopes.tsv"
-# MAX_ISO <- 4
-# QUANT <- "intensity"
-# QUANT <- "height"
-
-
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
 all_peaktables <- dbGetQuery(dbb, "SELECT output_ms FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")[, 1]
 all_samples <- dbGetQuery(dbb, "SELECT path FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")[, 1]
 dbDisconnect(dbb)
 
-# if(FALSE){
-#   all_peaktables <- str_replace(all_peaktables,"/sauer1","U:")  
-#   all_samples <- str_replace(all_samples,"/sauer1","U:")
-# }
 isotopes_table <- fread(PATH_ISOTOPES,sep = " ")
 
 
 dm <- fread(PATH_DM,sep=",")
+
 sel_columns <- c("min_mz","max_mz","mean_mz","mean_rt","mean_peakwidth")
 
 if(max(dm[["mean_peakwidth"]])>max(dm[["mean_rt"]])){
@@ -90,12 +78,13 @@ ocnames <- colnames(dm)
 quant_prefix <- paste(str_split(ocnames[length(ocnames)],fixed("_"))[[1]][1],"_",sep="")
 quant_cols <- which(startsWith(ocnames,quant_prefix))
 
+###We reorder the data 
+
+
+
 max_sample <- apply(dm[,..quant_cols],1,which.max)
 
 by_sample <- split(seq_along(max_sample),max_sample)
-# for(ib in seq_along(by_sample)){
-#   by_sample[[ib]] <- idx_ms2[by_sample[[ib]]]
-# }
 vord <- as.numeric(names(by_sample))      
 
 isotopes_to_extract <- vector(mode="list",length=length(quant_cols))
@@ -120,20 +109,12 @@ dist_iso <- sapply(maxC,function(x,miso,c13){
   return(res)
 },miso=MAX_ISO,c13=0.01111)
 
-
+# message("Inferring",all_samples,"vs",,)
 ###We also extract the data to infer
 to_infer <- apply(dm[,..quant_cols],2,function(x){which(is.na(x))})
-# to_infer <- apply(dm[,..quant_cols],2,function(x){which(is.na(x))})
 extractMissingInformations <- function(praw,peaks,isotopes,infer,align,
                                        table_iso,dist_c13,dm,quant,margin_mz=0.001,
                                        max_iso = 4,max_charge = 2, ppm = 8,dmz = 0.002){
-  # praw <- all_samples[1]
-  # peaks <- all_peaktables[1]
-  # isotopes <- isotopes_to_extract[[1]]
-  # infer <- to_infer[[1]]
-  # align <- align@rt_correction[[1]]
-  # dm <- dm_peaks
-  # quant <- "intensity"
   
 
   suppressWarnings(suppressMessages(library(xcms,warn.conflicts = FALSE)))
@@ -150,14 +131,15 @@ extractMissingInformations <- function(praw,peaks,isotopes,infer,align,
   ###integrate the missing peak
   rt_corr <- dm[[4]][infer[ort]]+align[vmatch,2]
   
+  ###we first perform gap filling
   extractIntensity <- function(min_mz,max_mz,rt,peakwidth,idx,quant,xraw,margin_mz){
     
     rt_min <- rt-peakwidth/2
     rt_max <- rt+peakwidth/2
-    # if(rt_min>max(xraw@scantime[length(xraw@scantime)])|rt_max<max(xraw@scantime[1]))
     min_mz <- min_mz - margin_mz
     max_mz <- max_mz + margin_mz
-    tval <- rawEIC(xraw,rtrange=c(rt_min*60,rt_max*60),mzrange=c(min_mz,max_mz))
+    tval <- tryCatch(rawEIC(xraw,rtrange=c(rt_min*60,rt_max*60),mzrange=c(min_mz,max_mz)),error=function(e){return(NA)})
+    if(length(tval)==1 && is.na(tval)) return(0)
     val <- 0
     if(quant=="intensity"){
       val <- trapz(x = xraw@scantime[tval[[1]]],tval[[2]])
@@ -193,151 +175,138 @@ extractMissingInformations <- function(praw,peaks,isotopes,infer,align,
   
   ##We map the feature to the peaktable
   dm2 <- dm[isotopes,,drop=FALSE]
-  mapFeatures <- function(dm2,pt){
-    mz_r <- max(dm2[,max_mz-min_mz])
-    
-    vmm <- xcms:::fastMatch(dm2[["mean_mz"]],pt[["mz"]],tol=mz_r)
-    
-    vnull <- which(sapply(vmm,is.null))
-    while(length(vnull)>0){
-      mz_r <- mz_r*1.5
-      vmm[vnull] <- xcms:::fastMatch(dm2[["mean_mz"]][vnull],pt[["mz"]],tol=mz_r)
+  visotopes <- list()
+  if(length(isotopes)!=0){
+    mapFeatures <- function(dm2,pt){
+      mz_r <- max(dm2[,max_mz-min_mz])
+      
+      vmm <- xcms:::fastMatch(dm2[["mean_mz"]],pt[["mz"]],tol=mz_r)
+      
       vnull <- which(sapply(vmm,is.null))
-    }
-    
-    vv <- mapply(dm2[["mean_rt"]],vmm,FUN=function(x,y,rt_pp){
-      y[which.min(rt_pp[y])]
-    },MoreArgs = list(rt_pp=pt[["rt"]]))
-    return(vv)
-  }
-  
-  vmap <- mapFeatures(dm2,peaks)
-  
-  ##Depending of the max isotopes we calculate the isotopic reation
-  extractIsotopes <- function(peak,xraw,
-                              iso_table,dist_iso,
-                              noise_level,
-                              max_iso = 4,max_charge = 2, ppm = 10,dmz = 0.004){
-    # print(iso_table)
-    mz_peak <- peak["mz"]
-    int_peak <- peak["height"]
-    ##We select the closest feature
-    sel_scan <- which.min(abs(peak["rt"]*60-xraw@scantime))
-    mzrange <- c(peak[["mz_min"]]-0.001,peak["mz_max"]+max(4,max_iso)+0.5)
-    sc <- getScan(xraw,sel_scan,mzrange=mzrange)
-    
-    iso_table[2:nrow(iso_table),"proportion"] <- iso_table[2:nrow(iso_table),"proportion"]*iso_table[2:nrow(iso_table),"max"]
-
-    maxCp <- (peak["mz_max"]/14)
-    massC13 <- iso_table[["massdiff"]][1]
-    massdiffC13 <- massC13*(1:max_iso)
-    idp <- floor(maxCp/20)+1
-    distC13 <- dist_iso[,idp]
-    tol <- min((ppm*mz_peak*1e-6),dmz)
-    max_theo_int <- int_peak*distC13
-    if(max(max_theo_int)<noise_level) return(NA)
-    charge <- NA
-    sel_iso <- NULL
-    mass_diff <- NULL
-    for(charge in max_charge:1){
-      mz_theo <- mz_peak+massdiffC13/charge
-      miso <- xcms:::fastMatch(mz_theo,sc[,1],tol=tol)
-      
-      ###We filter by  intensity
-      if(is.null(miso[[1]])) next
-      ###We unroll the index of isotopic pattern
-      idx <- 1
-      
-      while(idx<=max_iso && !is.null(miso[[idx]])&& miso[[idx]][1]<=max_theo_int[idx]){
-        miso[[idx]] <- miso[[idx]][1]
-        idx <- idx+1
+      while(length(vnull)>0){
+        mz_r <- mz_r*1.5
+        vmm[vnull] <- xcms:::fastMatch(dm2[["mean_mz"]][vnull],pt[["mz"]],tol=mz_r)
+        vnull <- which(sapply(vmm,is.null))
       }
-      sel_iso <- sc[unlist(miso[1:(idx-1)]),2]
-      mass_diff <- sc[unlist(miso[1:(idx-1)]),1]-mz_peak
-      break
-    }
-    if(is.null(sel_iso)) return(NA)
-    sel_iso_c13 <- c(sc[1,2],sel_iso)
-    name_c13 <- c("",paste(1:length(sel_iso),rep("C13",length(sel_iso)),sep=""))
-    mass_diff <- c(0,mass_diff)
-    df_to_return <- data.frame(name=name_c13,int=sel_iso_c13,massdiff=mass_diff,charge=rep(charge,length(mass_diff)))
-    # return(df_to_return)
-    
-    ##We remove the peaks which have already been matched to C13
-    sel_peaks <- 1:nrow(sc)
-    # print(miso[1:(idx-1)])
-    # if(is.null(miso[[1]])) browser()
-    sel_peaks <- sel_peaks[-unlist(miso[1:(idx-1)])]
-    
-    
-    mz_other_isotopes <- iso_table[2:nrow(iso_table),"massdiff"]
-    name_other_isotopes <- iso_table[2:nrow(iso_table),"isotope"]
-    dist_other_isotopes <- iso_table[2:nrow(iso_table),"proportion"]
-    supp_mz <- unlist(mz_other_isotopes/charge+mz_peak)
-    msupp <- xcms:::fastMatch(supp_mz,sc[sel_peaks,1],tol=tol,symmetric = FALSE)
-    
-    supp_found <- which(!sapply(msupp,is.null))
-    if(length(supp_found)==0){
-        return(df_to_return)
-    }else{
-      msupp[supp_found] <- lapply( msupp[supp_found],"[",i=1)
-      msupp[supp_found] <- lapply(msupp[supp_found],function(x,idx){
-        idx[x]
-      },idx=sel_peaks)
-      ###We check intensity
-      supp_found <- supp_found[sc[unlist(msupp[supp_found]),2]<1.1*int_peak*dist_other_isotopes[supp_found]]
-      if(length(supp_found)==0) return(df_to_return)
-      ###We check if there is a conflict if so we group it
-      matched_features <- msupp[supp_found]
-      supp_table <- data.frame(name=unlist(name_other_isotopes[supp_found]),int=sc[unlist(msupp[supp_found]),2],
-                               massdiff=sc[unlist(msupp[supp_found]),1]-mz_peak,charge=rep(charge,length(supp_found)))
-      supp_table <- by(supp_table,INDICES = supp_table$int,FUN = function(x){
-        data.frame(name=paste(x[["name"]],collapse = "@"),int=x[["int"]][1],massdiff=x[["massdiff"]][1],charge=x[["charge"]][1])
-      })
-      supp_table <- do.call(rbind,supp_table)
       
-      if(length(supp_found)==0) return(df_to_return)
-      df_to_return <- rbind(df_to_return,supp_table)
-      return(df_to_return)
+      vv <- mapply(dm2[["mean_rt"]],vmm,FUN=function(x,y,rt_pp){
+        y[which.min(rt_pp[y])]
+      },MoreArgs = list(rt_pp=pt[["rt"]]))
+      return(vv)
     }
+    
+    vmap <- mapFeatures(dm2,peaks)
+    
+    ##Depending of the max isotopes we calculate the isotopic reation
+    extractIsotopes <- function(peak,xraw,
+                                iso_table,dist_iso,
+                                noise_level,
+                                max_iso = 4,max_charge = 2, ppm = 10,dmz = 0.004){
+      # print(iso_table)
+      mz_peak <- peak["mz"]
+      int_peak <- peak["height"]
+      ##We select the closest feature
+      sel_scan <- which.min(abs(peak["rt"]*60-xraw@scantime))
+      mzrange <- c(peak[["mz_min"]]-0.001,peak["mz_max"]+max(4,max_iso)+0.5)
+      sc <- getScan(xraw,sel_scan,mzrange=mzrange)
+      iso_table[2:nrow(iso_table),"proportion"] <- iso_table[2:nrow(iso_table),"proportion"]*iso_table[2:nrow(iso_table),"max"]
+      maxCp <- (peak["mz_max"]/14)
+      massC13 <- iso_table[["massdiff"]][1]
+      massdiffC13 <- massC13*(1:max_iso)
+      idp <- floor(maxCp/20)+1
+      distC13 <- dist_iso[,idp]
+      tol <- min((ppm*mz_peak*1e-6),dmz)
+      max_theo_int <- int_peak*distC13
+      if(max(max_theo_int)<noise_level) return(NA)
+      charge <- NA
+      sel_iso <- NULL
+      mass_diff <- NULL
+      for(charge in max_charge:1){
+        mz_theo <- mz_peak+massdiffC13/charge
+        miso <- xcms:::fastMatch(mz_theo,sc[,1],tol=tol)
+        
+        ###We filter by  intensity
+        if(is.null(miso[[1]])) next
+        ###We unroll the index of isotopic pattern
+        idx <- 1
+        
+        while(idx<=max_iso && !is.null(miso[[idx]])&& miso[[idx]][1]<=max_theo_int[idx]){
+          miso[[idx]] <- miso[[idx]][1]
+          idx <- idx+1
+        }
+        sel_iso <- sc[unlist(miso[1:(idx-1)]),2]
+        mass_diff <- sc[unlist(miso[1:(idx-1)]),1]-mz_peak
+        break
+      }
+      if(is.null(sel_iso)) return(NA)
+      sel_iso_c13 <- c(sc[1,2],sel_iso)
+      name_c13 <- c("",paste(1:length(sel_iso),rep("C13",length(sel_iso)),sep=""))
+      mass_diff <- c(0,mass_diff)
+      df_to_return <- data.frame(name=name_c13,int=sel_iso_c13,massdiff=mass_diff,charge=rep(charge,length(mass_diff)))
+      
+      ##We remove the peaks which have already been matched to C13
+      sel_peaks <- 1:nrow(sc)
+      sel_peaks <- sel_peaks[-unlist(miso[1:(idx-1)])]
+      
+      
+      mz_other_isotopes <- iso_table[2:nrow(iso_table),"massdiff"]
+      name_other_isotopes <- iso_table[2:nrow(iso_table),"isotope"]
+      dist_other_isotopes <- iso_table[2:nrow(iso_table),"proportion"]
+      supp_mz <- unlist(mz_other_isotopes/charge+mz_peak)
+      msupp <- xcms:::fastMatch(supp_mz,sc[sel_peaks,1],tol=tol,symmetric = FALSE)
+      
+      supp_found <- which(!sapply(msupp,is.null))
+      if(length(supp_found)==0){
+          return(df_to_return)
+      }else{
+        msupp[supp_found] <- lapply( msupp[supp_found],"[",i=1)
+        msupp[supp_found] <- lapply(msupp[supp_found],function(x,idx){
+          idx[x]
+        },idx=sel_peaks)
+        ###We check intensity
+        supp_found <- supp_found[sc[unlist(msupp[supp_found]),2]<1.1*int_peak*dist_other_isotopes[supp_found]]
+        if(length(supp_found)==0) return(df_to_return)
+        ###We check if there is a conflict if so we group it
+        matched_features <- msupp[supp_found]
+        supp_table <- data.frame(name=unlist(name_other_isotopes[supp_found]),int=sc[unlist(msupp[supp_found]),2],
+                                 massdiff=sc[unlist(msupp[supp_found]),1]-mz_peak,charge=rep(charge,length(supp_found)))
+        supp_table <- by(supp_table,INDICES = supp_table$int,FUN = function(x){
+          data.frame(name=paste(x[["name"]],collapse = "@"),int=x[["int"]][1],massdiff=x[["massdiff"]][1],charge=x[["charge"]][1])
+        })
+        supp_table <- do.call(rbind,supp_table)
+        
+        if(length(supp_found)==0) return(df_to_return)
+        df_to_return <- rbind(df_to_return,supp_table)
+        return(df_to_return)
+      }
+    }
+    visotopes <- apply(peaks[vmap],1,extractIsotopes,xraw=xraw,
+          iso_table=table_iso,dist_iso=dist_c13,
+          noise_level=noise_level,
+          max_iso = max_iso,max_charge = max_charge, ppm = ppm,dmz = dmz)
   }
-  visotopes <- apply(peaks[vmap],1,extractIsotopes,xraw=xraw,
-        iso_table=table_iso,dist_iso=dist_c13,
-        noise_level=noise_level,
-        max_iso = max_iso,max_charge = max_charge, ppm = ppm,dmz = dmz)
-  
   return(list(inferred_values,visotopes))
 }
-
-
-# 
-# 
-# exm <- extractMissingInformations(all_samples[3],all_peaktables[3],isotopes_to_extract[[3]],to_infer[[3]],align@rt_correction[[3]],dm=dm_peaks,quant=QUANT,table_iso=isotopes_table,
-#                                                  dist_c13=dist_iso,margin_mz=MARGIN_MZ,max_iso = MAX_ISO,
-#                                   max_charge = MAX_CHARGE, ppm = PPM,dmz = DMZ)
-# vmap <- mapply(all_samples,all_peaktables,isotopes_to_extract,to_infer,align@rt_correction,
-#                  FUN = extractMissingInformations,MoreArgs = list(dm=dm_peaks,quant=QUANT,table_iso=isotopes_table,
-#                                                                   dist_c13=dist_iso,margin_mz=MARGIN_MZ,max_iso = MAX_ISO,
-#                                                                   max_charge = MAX_CHARGE, ppm = PPM,dmz = DMZ),SIMPLIFY = FALSE)
 
 
 vmap <- bpmapply(all_samples,all_peaktables,isotopes_to_extract,to_infer,align@rt_correction,
                FUN = extractMissingInformations,MoreArgs = list(dm=dm_peaks,quant=QUANT,table_iso=isotopes_table,
                                                                 dist_c13=dist_iso,margin_mz=MARGIN_MZ,max_iso = MAX_ISO,
                                                                 max_charge = MAX_CHARGE, ppm = PPM,dmz = DMZ),SIMPLIFY = FALSE,BPPARAM = bpp)
+
 ###We fill the column 
 for(iquant in seq_along(quant_cols)){
+  if(length(to_infer[[iquant]])==0) next
   sel_col <- quant_cols[iquant]
-  dm[to_infer[[iquant]],sel_col] <- vmap[[iquant]][[1]]
+  dm[[sel_col]][to_infer[[iquant]]] <- vmap[[iquant]][[1]]
 }
 
 
 name_col <- rep(NA_character_,nrow(dm))
 dist_col <- rep(NA_real_,nrow(dm))
 
-
-
 for(is in seq_along(vmap)){
+  if(length(isotopes_to_extract[[is]])==0) next
   names <- sapply(vmap[[is]][[2]],function(x){
     if(!is.data.frame(x)) return(NA)
     sel_idx <- 2:nrow(x)
@@ -352,7 +321,7 @@ for(is in seq_along(vmap)){
   name_col[isotopes_to_extract[[is]]] <- names
   dist_col[isotopes_to_extract[[is]]] <- dists
 }
-
+message("Gap filling finished")
 ###The data matrix is expanded
 infos_idx <- 1:(quant_cols[1]-1)
 quant_idx <- quant_cols
@@ -360,6 +329,6 @@ new_names <- c(colnames(dm)[infos_idx],ISO_NAME_COL,ISO_DIST_COL,colnames(dm)[qu
 quant_cols_2 <- quant_cols+2
 dm <- cbind(dm[,..infos_idx],name_col,dist_col,dm[,..quant_idx])
 colnames(dm) <- new_names
-# print(dm[1:20])
-ww <- fwrite(dm,PATH_FILLED)
-ww <- file.rename(PATH_FILLED, PATH_DM)
+ww <- file.rename(PATH_DM, PATH_FILLED)
+ww <- fwrite(dm,PATH_DM)
+

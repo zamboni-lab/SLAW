@@ -421,26 +421,26 @@ createNetworkMultifiles <-
           (countMat[alle[, 1:2]] + 1)
         cosMat[alle[, c(2, 1)]] <- cosMat[alle[, c(1, 2)]]
         countMat[alle[, c(1, 2)]] <- countMat[alle[, c(1, 2)]] + 1
-        # message("cosMat",format(object.size(cosMat),"Mb"))
       }
     }
-    # message("\nDone")
 
     ##We get the first useless elemnts
     sel_val <- rowSums(cosMat) != 0
-    # message(sum(sel_val),"signals with features.")
-    # sel_val <- apply(cosMat, 1, function(x) {
-    #   any(x != 0)
-    # })
-    cosMat <- cosMat[sel_val, sel_val]
 
-    gadj <-
-      graph_from_adjacency_matrix(adjmatrix = cosMat,
+    cosMat <- cosMat[sel_val, sel_val]
+    
+    ##In case one network construction has failed.
+    gadj <-tryCatch(graph_from_adjacency_matrix(adjmatrix = cosMat,
                                   mode = "undirected",
-                                  weighted = TRUE)
+                                  weighted = TRUE),error=function(e){return(NA)})
+    if(length(gadj)==1){
+      cosMat <- pmax(cosMat,t(cosMat))
+      gadj <-graph_from_adjacency_matrix(adjmatrix = cosMat,
+                                                  mode = "undirected",
+                                                  weighted = TRUE)
+    }
     gadj <-
       set_vertex_attr(gadj, name = "id", value = which(sel_val))
-    # message("gadj",format(object.size(gadj),"Mb"))
     ldata <-
       convertToCliqueMS(dm,
                         path_raw = raw_files[[1]],
@@ -1110,11 +1110,11 @@ args <- commandArgs(trailingOnly = TRUE)
 # 
 library(stringr)
 # args <- c(
-#   "/output/datamatrices/datamatrix_ec33b0ccad6d47ab6b44cec104305d4b.csv",
-#   "/output/processing_db.sqlite",
-#   "/output/datamatrices/annotated_peaktable_ec33b0ccad6d47ab6b44cec104305d4b.csv",
-#   "/output/datamatrices/annotated_peaktable_ec33b0ccad6d47ab6b44cec104305d4b.csv",
-#   "9",
+#   "U:/users/Alexis/data/slaw_evaluation/MSV83010/output_cluster/datamatrices/datamatrix_a4b68bd9e6c73664a86dac3d1fdf7d78.csv",
+#   "U:/users/Alexis/data/slaw_evaluation/MSV83010/output_cluster/processing_db.sqlite",
+#   "U:/users/Alexis/data/slaw_evaluation/MSV83010/output_cluster/datamatrices/annotated_peaktable_ec33b0ccad6d47ab6b44cec104305d4b.csv",
+#   "U:/users/Alexis/data/slaw_evaluation/MSV83010/output_cluster/datamatrices/annotated_peaktable_ec33b0ccad6d47ab6b44cec104305d4b.csv",
+#   "2",
 #   "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/xcms_raw_model.RData",
 #   "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/adducts_pos.txt",
 #   "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/adducts_main_pos.txt",
@@ -1124,6 +1124,8 @@ library(stringr)
 #   "50",
 #   "2",
 #   "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/Rscript/cliques_matching.cpp")
+
+
 # args <- str_replace(args,"/output","U:/users/Alexis/examples_lcms_workflow/output_optim")
 
 PATH_DATAMATRIX <- args[1]
@@ -1151,7 +1153,7 @@ if (length(args) == 15) {
 lints <- list()
 ldetect <- list()
 
-BY_LINE <- 2000
+BY_LINE <- 50000
 
 sdata <- fread(PATH_DATAMATRIX, header = TRUE, sep = ",",skip=0,nrows = BY_LINE)
 cnames <- colnames(sdata)
@@ -1187,7 +1189,7 @@ rm(sdata)
 ###Reading the raw files
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
 raw_files <- dbGetQuery(dbb, "SELECT path FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")[, 1]
-
+# raw_files <- str_replace(raw_files,"/input","U:/users/Alexis/data/slaw_evaluation/MSV83010/mzML")
 dbDisconnect(dbb)
 
 ####Selecting the msot intense files

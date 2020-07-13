@@ -276,14 +276,14 @@ class openMSBuilder(inputBuilder):
                 path_ms = "NOT PROCESSED"
             else :
                 pid += 1
-            path_msms = os.path.join(path_msms,"msms_"+str(vid)+"_"+hash_sample+".csv")
+            path_msms_s = os.path.join(path_msms,"msms_"+str(vid)+"_"+hash_sample+".mgf")
             try:
-                ctuple = (pid, 1, vid, path, hash_sample, path_ms, path_msms, 1, 1)
+                ctuple = (pid, 1, vid, path, hash_sample, path_ms, path_msms_s, 1, 1)
                 c.execute("""INSERT INTO processing VALUES (?,?,?,?,?,?,?,?,?)""", ctuple)
                 counter_to_process += 1
             except sqlite3.IntegrityError as e:
                 counter_processed += 1
 
-        print(str(counter_to_process), " peakpicking added.")
+        print(str(counter_to_process), " peakpicking added")
         conn.commit()
         conn.close()

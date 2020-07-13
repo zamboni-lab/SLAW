@@ -14,6 +14,10 @@ from shutil import copyfile
 def get_scorer(name):
     if name=="ipopeak":
         return PeakpickingScorerIPO
+    if name=="slawpeak":
+        return PeakpickingScorerSLAW
+    if name=="combined":
+        return CombinedPeakScorer
     if name=="ipoalign":
         return AlignmentScorerIPO
     if name=="cvalign":
@@ -37,8 +41,7 @@ class PeakpickingScorer(ExperimentScorer):
     def require_alignement(self):
         return False
 
-    @staticmethod
-    def get_weight():
+    def get_weight(self):
         temp = [1.0]
         return temp
 
@@ -54,7 +57,7 @@ class AlignmentScorer(ExperimentScorer):
 class PeakpickingScorerIPO(PeakpickingScorer):
     def __init__(self,exp):
         self.exp = exp
-    def score(self,output,ppm=10,tol_rt=0.015):
+    def score(self,ppm=10,tol_rt=0.015):
         all_peaktables = self.exp.get_query("SELECT output_ms FROM processing WHERE valid=1")
         all_peaktables=[p[0] for p in all_peaktables]
         ##We change all the value with their actual path in the sampling folder
@@ -124,6 +127,69 @@ class PeakpickingScorerIPO(PeakpickingScorer):
             val += RP**2/(all_peaks-LIP)
         return val
 
+class PeakpickingScorerSLAW(PeakpickingScorer):
+    def __init__(self, exp):
+        self.exp = exp
+
+    def score(self, threshold=0.2):
+        all_peaktables = self.exp.get_query("SELECT output_ms FROM processing WHERE valid=1")
+        all_peaktables = [p[0] for p in all_peaktables]
+        ##We change all the value with their actual path in the sampling folder
+        all_peaktables = [pd.read_csv(path, header=0, sep=",") for path in all_peaktables]
+        for i in range(len(all_peaktables)):
+            pp = all_peaktables[i]
+            pp["sample"] = [i] * pp.shape[0]
+
+        ###We concatenate the data
+
+        # 5ppm = 0.02 peaks peakwidth =
+        btab = pd.concat(all_peaktables)
+
+        norm_rt = max(btab.rt) / 20
+        btab.mz = btab.mz / 0.005
+        btab.rt = btab.rt / norm_rt
+
+        ####We get the n
+        sum_btab = btab[["mz", "rt"]]
+        ktree = sp.KDTree(sum_btab)
+        neighbours = ktree.query(sum_btab, k=len(all_peaktables))[1]
+        ###We check if all the sample are different
+        sel_idx = np.apply_along_axis(lambda x, idx: len(np.unique(idx.iloc[x])), 1, neighbours,
+                                      idx=btab['sample'])
+
+        ###To avoid 0 cases just select the one with
+        vmax = max(sel_idx)
+        sel_idx = sel_idx==vmax
+        neighbours = neighbours[sel_idx]
+        if np.sum(neighbours)==0:
+            print("No feature found in every sample.")
+            return -1
+
+        ####THe thresold is the number of feature with very few
+
+        peakwidths = np.apply_along_axis(lambda x, idx: idx.iloc[x], 0, neighbours, idx=btab["peakwidth"])
+        cv_peakwidth = np.apply_along_axis(lambda x: np.std(x) / np.mean(x), 1, peakwidths)
+        num_correct = np.sum(cv_peakwidth < threshold)
+        if num_correct==0:
+            print("No feature with reproducible peakwidth found.")
+            return -1
+        return ((num_correct ** 2) / len(btab))
+
+class CombinedPeakScorer(PeakpickingScorer):
+    def __init__(self,exp):
+        self.sc1 = PeakpickingScorerSLAW(exp)
+        self.sc2 = PeakpickingScorerIPO(exp)
+
+    def get_weight(self):
+        return (1,1)
+
+    def score(self,output):
+        v1 = self.sc1.score()
+        v2 = self.sc2.score()
+        if v1==-1 or v2==-1:
+            return (-1,-1)
+        return (v1,v2)
+
 class AlignmentScorerIPO(AlignmentScorer):
     def score(self,output):
         ###We build a data matrix with all tthe retention time
@@ -167,11 +233,12 @@ class AlignmentScorerIPO(AlignmentScorer):
         return RCS,GS
 
 
+
 def modif_exp(x,alpha=6):
-    return (np.exp(1-alpha*(0.5-x))-np.exp(1-alpha/2))/(np.exp(1+alpha/2)-np.exp(1-alpha/2))
+    return (np.exp(alpha*x)-1)/(np.exp(alpha)-1)
 
 class exponentialScorer(AlignmentScorer):
-    def score(self, output, alpha = 2):
+    def score(self, output, alpha = 10):
         ###We build a data matrix with all tthe retention time
         fake_pp = ("", "", "", "temphash")
         dir_blocks = self.exp.output.getDir(cr.TEMP["GROUPING"]["BLOCKS"])
@@ -196,14 +263,15 @@ class exponentialScorer(AlignmentScorer):
         subprocess.call(cli, shell=True, timeout=900)
         if not os.path.exists(dm_path):
             return -1.0, -1.0
-        tdata = pd.read_csv(dm_path, header=0)
+        tdata = pd.read_csv(dm_path, header=0,sep=",")
         cnames = [cc for cc in tdata.columns if cc.startswith(hdat)]
         num_sample = len(cnames)
         rt_tab = tdata[cnames]
         val = rt_tab.apply(lambda x: np.absolute(np.nanmean(x - np.nanmedian(x))), axis=1)
+        rt_tab.apply(lambda x: x, axis=1)
         ARTS = np.nanmean(val)
         RCS = 1 / ARTS
-        summed_probas = np.sum(modif_exp(tdata.num_detection / len(cnames)))**2/tdata.shape[0]
+        summed_probas = np.sum(modif_exp(tdata.num_detection / len(cnames),alpha=alpha))
         ###We just have to comnpare the column
         return RCS, summed_probas
 

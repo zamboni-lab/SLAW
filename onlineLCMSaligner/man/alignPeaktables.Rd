@@ -18,6 +18,7 @@ alignPeaktables(
   supp_data = c("peakwidth", "SN", "right_on_left_assymetry"),
   lim = 0.1,
   graphical = FALSE,
+  correct_rt = TRUE,
   bpp = NULL
 )
 }

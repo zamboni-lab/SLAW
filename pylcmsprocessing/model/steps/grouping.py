@@ -66,7 +66,7 @@ class OnlineGrouper:
         self.fused_mgf=fused_mgf+row[3]+".mgf"
         self.dm_1=temp_dm_1
         self.dm_2=temp_dm_2
-        self.num_workers=num_workers
+        self.num_workers=max(int(num_workers/2),1)
         self.figure=outfig+row[3]+".pdf"
         self.filter_qc = filter_qc
         self.fold_blank = fold_blank

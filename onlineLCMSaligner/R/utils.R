@@ -137,7 +137,7 @@ generateID <- function(lid,ndigits=3){
 
 write_dgCMatrix_csv <- function(mat,
                                 filename,
-                                chunk_size = 1000,
+                                chunk_size = 1000,digits=8,
                                 replace_old="NONE",replace_new=NA,
                                 append = FALSE) {
   
@@ -171,7 +171,7 @@ write_dgCMatrix_csv <- function(mat,
   }
   
   chunk_df <- as.data.frame(chunk_mat)
-  
+
   data.table::fwrite(chunk_df, file = filename, append = append)
   if(chunk_end < (chunk_size * chunk)){
     return(NULL)

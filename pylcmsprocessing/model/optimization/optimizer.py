@@ -45,9 +45,23 @@ def fit_surface(points, values):
   mftable = make_interaction_table(points)
   scaler = StandardScaler()
   stable = scaler.fit_transform(mftable)
-  lr = LinearRegression(fit_intercept=True,normalize=False)
+  calpha=1
+
+  num_needed = 3
+  if num_needed>points.shape[1]:
+    num_needed = points.shape[1]
+
+  lr = Lasso(fit_intercept=True,normalize=False,alpha=calpha)
   vlr = lr.fit(stable, values)
   coef = vlr.coef_
+  max_its = 10
+  num_its = 0
+  while np.sum(coef!=0)<num_needed and num_its < max_its:
+    calpha = calpha/2
+    lr = Lasso(fit_intercept=True, normalize=False, alpha=calpha)
+    vlr = lr.fit(stable, values)
+    coef = vlr.coef_
+    num_its += 1
   inter = vlr.intercept_
   return scaler, coef, inter
 
@@ -61,6 +75,10 @@ def find_approximate_maximum(points, values,impacting=0.1):
   scaler, coef, inter = fit_surface(points, nvalues)
   ###We sum the linear and square coefficient for each variable.
   nvar = points.shape[1]
+  ##We first check if the Lasso converged, if not we just return a 0
+  if np.sum(coef!=0)==0:
+    non_valid = [False]*nvar
+    return 0.0,0.0,non_valid
   ntotal = len(coef)
   lb, ub = get_range(points)
   bounds = Bounds(lb=lb, ub=ub)
@@ -71,8 +89,8 @@ def find_approximate_maximum(points, values,impacting=0.1):
   coef_linear = abs(coef[0:nvar])
   coef_squared = abs(coef[(ntotal-nvar):ntotal])
   max_contrib = max(max(coef_linear),max(coef_squared))
-  threshold = max_contrib*0.1
-  valid = [(coef_linear[idx]>threshold or coef_squared[idx]>threshold) for idx in range(len(coef_linear))]
+  # threshold = max_contrib*0.2
+  valid = [(coef_linear[idx]!=0 or coef_squared[idx]!=0) for idx in range(len(coef_linear))]
   return vmax.x,-vmax.fun-inter,valid
 
 class rsmOptimizer:

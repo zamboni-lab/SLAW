@@ -453,7 +453,7 @@ class Experiment:
         print("Peak picking finished",num_incorrect_files,"files not processed on a total of",tot_files)
         self.close_db()
 
-    def run_openms(self,min_fwhm,max_fwhm,snt,ppm,min_int,max_outlier,min_points,quant,silent=True, log = None,batch_size=2000):
+    def run_openms(self,min_fwhm,max_fwhm,fwhm_fac,snt,ppm,min_int,max_outlier,min_points,quant,silent=True, log = None,batch_size=10000):
         ###We collect the output path
         builder = ib.openMSBuilder(self.db,output=self.output)
         builder.build_inputs_single_parameter_set(min_fwhm,max_fwhm,snt,ppm,min_int,max_outlier,min_points,quant)
@@ -469,31 +469,31 @@ class Experiment:
             if not rows: break
             if quant=="intensity":
                 quant = "area"
-            peakpickings = [mp.PeakPickingOpenMS(row, min_fwhm,max_fwhm,snt,ppm,min_int,max_outlier,min_points,quant) for row in rows]
+            peakpickings = [mp.PeakPickingOpenMS(row, min_fwhm,max_fwhm,fwhm_fac,snt,ppm,min_int,max_outlier,min_points,quant) for row in rows]
             ids = [row[0] for row in rows]
             need_processing = [x.need_computing() for x in peakpickings]
-            ids_to_convert = [id for id,pp in zip(ids,need_processing) if pp]
+            ids_to_convert = [idv for idv,pp in zip(ids,need_processing) if pp]
             ####Peak picking
-            clis = [x.command_line_processing() for x in peakpickings if x.need_computing()]
+            temp = [(x.get_output(),x.command_line_processing()) for x in peakpickings if x.need_computing()]
+            clis = [x[1] for x in temp]
+            names_output = [x[0] for x in temp]
             ####We run the jobs actually
             if len(clis) > 0:
                 runner.run(clis, silent=silent, log = log, timeout = cr.CONSTANT["PEAKPICKING_TIMOUT"])
-            names_output = [x.get_output() for x in peakpickings]
             #We convert the peaktables back to the data.
             pjoin = os.path.join(ct.find_rscript(), "FromFeaturesMLToDf.R")
             # ###CWe create the command line to allow the peakpicking
-            names_converted = [x.split(".")[0]+".csv" for x in names_output]
-            clis_conversion = ["Rscript " + pjoin + " " +old+ " " +new for old,new in zip(names_output,names_converted)]
-            if len(clis_conversion) > 0:
+            if len(names_output) > 0:
+                names_converted = [x.split(".")[0] + ".csv" for x in names_output]
+                clis_conversion = ["Rscript " + pjoin + " " +old+ " " +new for old,new in zip(names_output,names_converted)]
                 runner.run(clis_conversion, silent=silent, log = log, timeout = cr.CONSTANT["PEAKPICKING_TIMOUT"])
-
-            for pid,nn in zip(ids_to_convert,names_converted):
-                if os.path.isfile(nn):
-                    update_query = self.update_query_construction("processing", "id", str(pid), "output_ms", nn)
-                    c.execute(update_query)
-                else:
-                    update_query = self.update_query_construction("processing", "id", str(pid), "valid", "0")
-                    c.execute(update_query)
+                for pid,nn in zip(ids_to_convert,names_converted):
+                    if os.path.isfile(nn):
+                        update_query = self.update_query_construction("processing", "id", str(pid), "output_ms", nn)
+                        c.execute(update_query)
+                    else:
+                        update_query = self.update_query_construction("processing", "id", str(pid), "valid", "0")
+                        c.execute(update_query)
         self.close_db()
 
     ###Try to correct he MZmine ocrrection in case processing was interrupted
@@ -579,11 +579,11 @@ class Experiment:
         self.save_db()
 
 
-    def extract_ms2(self,output,noise_level=0):
+    def extract_ms2(self,output,noise_level=0,all=False):
         num_workers = self.get_workers()
         dir_out= self.output.getDir(output)
         pscript = os.path.join(ct.find_rscript(),"extractingMGFfromMZML.R")
-        cli = " ".join(["Rscript",pscript,self.db,dir_out,str(noise_level),str(num_workers)])
+        cli = " ".join(["Rscript",pscript,self.db,dir_out,str(noise_level),str(num_workers),str(all)])
         subprocess.call(cli,shell=True)
         print("MS2 extraction finished")
 
@@ -633,7 +633,7 @@ class Experiment:
     def group_online(self,intensity="int",
     ppm = 15,mztol=0.007,rttol=0.02,n_ref = 150,
                      ms2_mz_tol=0.01,ms2_rt_tol=0.05,
-                     alpha = 0.1,filter_qc=0.5,fold_blank=3,log=None):
+                     alpha = 0.1,filter_qc=0.5,fold_blank=3,log=None,post_processing=True):
         num_workers = self.get_workers()
         runner = pr.ParallelRunner(num_workers)
         ####We create all the grouper eventually
@@ -682,9 +682,13 @@ class Experiment:
             clis_fusing = [g.command_line_fusing_msms() for g in groupers if g.need_computing()]
             # print(clis[0])
             if len(clis_align) > 0:
+                print("Aligning")
                 runner.run(clis_align, log=log)
-                runner.run(clis_filtering, log=log)
-                runner.run(clis_fusing, log=log)
+                if post_processing:
+                    print("Filtering")
+                    runner.run(clis_filtering, log=log)
+                    print("Extracting consensus MS-MS spectra")
+                    runner.run(clis_fusing, log=log)
         self.save_db()
         print("Alignment finished")
 
@@ -817,10 +821,6 @@ class Experiment:
             ie = ic.InformationExpander(self.db, pp[4], path_temp_1, path_rt_model, path_isotopes,
                                          max_iso, max_charge, quant,
                                          margin_mz, ppm, dmz, num_workers)
-            # path_datamatrice_filled = ie.get_output()
-            # query = self.update_query_construction("peakpicking", "id", str(pp[0]), "peaktable",
-            #                                        path_datamatrice_filled)
-            # c.execute(query)
             expanders[count_expand] = ie
             count_expand += 1
         if count_expand != 0:
@@ -828,7 +828,7 @@ class Experiment:
             clis = [iexp.command_line() for iexp in expanders if iexp.need_computing()]
             if len(clis) > 0:
                 runner.run(clis, silent=True)
-        print("Gap filling and isotopic pattern extraction finsihed.")
+        print("Gap filling and isotopic pattern extraction finished.")
 
     def post_processing(self,targets,path_raw_files=None,mztol=0.05,rttol=0.03):
         if path_raw_files is None:

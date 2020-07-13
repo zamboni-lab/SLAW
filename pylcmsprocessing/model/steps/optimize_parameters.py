@@ -57,6 +57,7 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
                                    peakpicking__peaks_deconvolution__SN,peakpicking__peaks_deconvolution__noise_level,
                                    peakpicking__peaks_deconvolution__peak_width__const,
                                    peakpicking__peaks_deconvolution__peak_width__add,
+                                   peakpicking__peaks_deconvolution__peak_width_fac,
                                    peakpicking__peaks_deconvolution__rt_wavelet__const,
                                    peakpicking__peaks_deconvolution__rt_wavelet__add,
                                    peakpicking__peaks_deconvolution__coefficient_area_threshold,grouping__ppm,
@@ -101,8 +102,13 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
     if not reset:
         processed = is_processed(stored_param,SUMMARY_YAML)
         if processed[0]:
-            return float(processed[1])
-
+            val = processed[1]
+            if isinstance(val,str):
+                val = val.split("|")
+                val = tuple([float(v) for v in val])
+                return val
+            else:
+                return float(val)
     ###We write the header
     if not os.path.isfile(SUMMARY_YAML):
         ##We write the path name.
@@ -129,6 +135,15 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
     PATH_XML = os.path.join(OUTPUT_DIR,"temp_par"+str(hash_val)+".xml")
 
     exp = me.Experiment(PATH_DB,save_db = PATH_SAVE_DB,reset=False)
+
+    weights = scorer(exp).get_weight()
+    def_val = (-1,)*len(weights)
+    def_str = "-1"
+    if len(def_val)>=2:
+        def_str = "|".join([str(sc) for sc in def_val])
+
+
+
     ###We create the UI
     vui = UI(OUTPUT_DIR, path_samples, polarity=polarity, mass_spec="Exactive", num_workers=num_cpus,
              path_yaml=stored_param)
@@ -163,26 +178,27 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
                 add = peakpicking__peaks_deconvolution__peak_width__add
                 min_fwhm = float(const) * 60
                 max_fwhm = float(const+add) * 60
+                fwhm_fac = float(peakpicking__peaks_deconvolution__peak_width_fac)
                 sn = float(peakpicking__peaks_deconvolution__SN)
                 min_int = float(peakpicking__noise_level_ms1)
                 min_scan = math.floor(float(peakpicking__traces_construction__min_scan))
                 max_outlier = math.floor(float(peakpicking__traces_construction__num_outliers))
                 quant = "area"
                 ppm = float(peakpicking__traces_construction__ppm)
-                exp.run_openms(min_fwhm, max_fwhm, sn, ppm, min_int, max_outlier, min_scan, quant, log=LOG_PATH)
+                exp.run_openms(min_fwhm, max_fwhm, fwhm_fac, sn, ppm, min_int, max_outlier, min_scan, quant, log=LOG_PATH)
 
         except Exception as e:
-            # try:
-            #     if not reset:
-            #         os.remove(PATH_DB)
-            #         subprocess.call("rm -r " + OUTPUT_DIR)
-            # except Exception:
-            #     pass
-            to_write = stored_param + "," + PATH_DB + "," + PATH_SAVE_DB + "," + OUTPUT_DIR + "," + str(
-                -1) + "," + ",".join(to_join) + "\n"
+            try:
+                if not reset:
+                    os.remove(PATH_DB)
+                    subprocess.call("rm -r " + OUTPUT_DIR)
+            except Exception:
+                pass
+
+            to_write = stored_param + "," + PATH_DB + "," + PATH_SAVE_DB + "," + OUTPUT_DIR + "," + def_str + "," + ",".join(to_join) + "\n"
             with open(SUMMARY_YAML, "a") as ff:
                 ff.write(to_write)
-            return -1
+            return def_val
 
     ##We check te scorer if it is a peak sorer we don t need the data matrix
     scorer = scorer(exp)
@@ -193,9 +209,10 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
                          rttol=float(convert_val(grouping__drt)),
                          n_ref=int(convert_val(grouping__num_references)),
                          alpha=float(convert_val(grouping__alpha)),
-                         log=LOG_PATH)
+                         filter_qc=0, fold_blank=0,
+                         log=LOG_PATH,post_processing=False)
         scorer.exp=exp
-    tvscore = -1.0
+    tvscore = def_val
     try:
         ###We authorize 1 jump
         vscore = scorer.score(output=OUTPUT_DIR)
@@ -205,21 +222,20 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
     except Exception as e:
         print(e)
             ###We write the score in the table
-        to_write = stored_param + "," +PATH_DB+","+PATH_SAVE_DB+","+OUTPUT_DIR+","+str(tvscore) +","+",".join(to_join) + "\n"
+        to_write = stored_param + "," +PATH_DB+","+PATH_SAVE_DB+","+OUTPUT_DIR+","+def_str +","+",".join(to_join) + "\n"
         with open(SUMMARY_YAML, "a") as ff:
             ff.write(to_write)
-        # if parallel:
-        #     try:
-        #         if not reset:
-        #             os.remove(PATH_DB)
-        #             shutil.rmtree(OUTPUT_DIR)
-        #     except Exception:
-        #         pass
+        if parallel:
+            try:
+                if not reset:
+                    os.remove(PATH_DB)
+                    shutil.rmtree(OUTPUT_DIR)
+            except Exception:
+                pass
         ###In all case we write the parameter in
-        return -1
+        return def_val
     ###We write the score in the table
     to_write = stored_param + "," +PATH_DB+","+PATH_SAVE_DB+","+OUTPUT_DIR+","+str(tvscore) +","+",".join(to_join) + "\n"
-
 
     with open(SUMMARY_YAML, "a") as ff:
         ff.write(to_write)
@@ -275,12 +291,13 @@ class ParametersOptimizer:
         for ss in sel_samples:
             shutil.copy(ss[0],self.path_samples)
 
-    def determine_initial_parameters(self):
+    def determine_initial_parameters(self,output_par=None):
         pscript = os.path.join(ct.find_rscript(),"initial_parameters.R")
 
         # we tun the optimization ins a signle thread.
         path_db = self.path_db
-        output_par = self.temp_yaml
+        if output_par is None:
+            output_par = self.temp_yaml
         initial_par = self.input_par
         num_cores = self.num_workers
         cli = " ".join(["Rscript",pscript,path_db,initial_par,output_par,str(num_cores)])
@@ -291,6 +308,9 @@ class ParametersOptimizer:
 
     ###Thoe optimization is always two steps
     def do_optimize_parameters(self,optim_string="bbd_rsm",max_its=10,num_points=50,**kwargs):
+        if num_points<=20:
+            print("Number of sampled points set to 20")
+            num_points=20
 
         ### We get the optimization algorithm.
         psampler,poptimizer,pscorer,gsampler,goptimizer,gscorer = parse_optim_option(optim_string)
@@ -301,11 +321,11 @@ class ParametersOptimizer:
 
         ###We collect the wiegth for the score optimizer
         pscorer = ms.get_scorer(pscorer)
-        pweight = pscorer.get_weight()
+        pweight = pscorer(None).get_weight()
         psampler.set_weight(pweight)
 
         gscorer = ms.get_scorer(gscorer)
-        gweight = gscorer.get_weight()
+        gweight = gscorer(None).get_weight()
         gsampler.set_weight(gweight)
 
         pdb = "NONE"
@@ -376,8 +396,10 @@ class ParametersOptimizer:
 
             ##We read the correct parameter to copy the experiment
             if os.path.isfile(summary_peakpicking):
+                pdb = None
                 pda = pd.read_csv(summary_peakpicking)
-                idmax = pda.score.idxmax()
+                idmax = pda.shape[0]-1
+
                 pdb = pda.db[idmax]
 
                 ###In any case we recompute a single parameters with enough cores
@@ -420,7 +442,7 @@ class ParametersOptimizer:
         pfh.write_parameters(outpath)
 
 
-    def optimize_parameters(self,output_par,optimizer="lipo_rsm",max_its=10,num_files= 10,num_points=100,**kwargs):
+    def optimize_parameters(self,output_par,optimizer="lipo_rsm",max_its=10,num_files= 10,num_points=100,initial_estimation=True,**kwargs):
 
         ###The memory of JAVA is always more limited for optimization, 700 less Mbs.
         memory_by_core = int(os.environ["MEMORY"])*0.7
@@ -428,8 +450,8 @@ class ParametersOptimizer:
         ###We set the JAVA option for the peak picking evnetually
         os.environ["JAVA_OPTS"] = "-Xms" + str(math.floor(memory_by_core / 2)) + "m -Xmx" + str(
             math.floor(memory_by_core) - 200) + "m"
-
-        self.determine_initial_parameters()
+        if initial_estimation:
+            self.determine_initial_parameters()
         self.select_samples(num_files = num_files)
         print("Finished initial parameters estimation")
         print("Optimizing remaining parameters")

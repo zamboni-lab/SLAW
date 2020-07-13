@@ -75,6 +75,8 @@ LCMSAlignerModel <-
     if (!is.null(lar)) {
       message("lar furnished num_peaks argument is ignored.")
       lam@references <- lar
+      
+      
     } else{
       lam@references <-
         LCMSAlignerReferences(
@@ -104,48 +106,60 @@ LCMSAlignerModel <-
         aligner_type = algorithm
       )
 
+    
     lam@max_id <- 0
 
     ###Parameter settled
-    p_ref <- NULL
-    if (is.null(ref_file)) {
-      p_ref <- which.max(sapply(peaktables, nrow))
-      ref_file <- peaktables[[which.max(sapply(peaktables, nrow))]]
-    } else{
-      p_ref <- match(ref_file, paths)
-      if (is.na(p_ref))
-        stop('ref_file should be a name corresponding to the reference file used.')
-    }
+    p_ref <-1
+    # if (is.null(ref_file)) {
+    #   p_ref <- 1
+    # } else{
+    #   p_ref <- match(ref_file, paths)
+    #   if (is.na(p_ref))
+    #     stop('ref_file should be a name corresponding to the reference file used.')
+    # }
 
     ref_file <-
       fortifyPeaktable(peaktables[[p_ref]], lar = lam@references)
-
-    ####WWe generate the new object
-
-    lam@files <- LCMSAlignerFileHandler()
-
-    set.seed(seed)
-
-
-
+    
+    temp <- correctPeaktable(lam@references,peaks = data.frame(mz=numeric(0),rt=numeric(0)),
+                                 peaktable = peaktables[[p_ref]])
+    ref_file <- temp[[1]]
+    rt_dev <- temp[[2]]
+    
     ###Alll the element of the peak tbale are designated as a dataset
-    lam@peaks <-
-      data.frame(
-        mz = numeric(0),
-        rt = numeric(0),
-        rtdev = numeric(0),
-        rtfactor = numeric(0),
-        num = numeric(0),
-        current_num = numeric(0),
-        id = numeric(0),
-        stringsAsFactors = FALSE
-      )
+      lam@peaks <-
+        data.frame(
+          mz = numeric(0),
+          rt = numeric(0),
+          num = integer(0),
+          current_num = integer(0),
+          id = integer(0),
+          stringsAsFactors = FALSE
+        )
+      lam@max_id <- 0
+    # browser()
+    ####WWe generate the new object
+    lam@files <- LCMSAlignerFileHandler()
+    ef <- addFile(lam,paths[p_ref])
+    lam <- ef$obj
     lam@data <- matrix(ncol = 6+length(supp_data), nrow = 0)
     colnames(lam@data) <- c('mz', 'rt', 'rt_cor', 'int',supp_data, 'sample', 'id')
+    
+    lam <- addPeaktableToModel(lam, peaktables[[p_ref]], peaktables[[p_ref]],
+                               rep(NA,nrow(peaktables[[p_ref]])),id_sample = ef$id,supp_data=supp_data)
 
-    # lam <- alignPeaktable(lam,
-    #                       paths[p_ref])
-
+    ###We add LOESS sample to RT correction
+    
+    opeaktable <- order(ref_file[,"mz"])
+    cpeaktable <- ref_file[opeaktable,,drop=FALSE]
+    tpeaktable <- peaktables[[p_ref]][opeaktable,,drop=FALSE]
+    
+    aoo <- order(tpeaktable[,2])
+    vsel <- ceiling(seq(1,length(aoo)-1,length=150))
+    tcor <- matrix(c(tpeaktable[aoo[vsel],2],cpeaktable[aoo[vsel],2]-tpeaktable[aoo[vsel],2]),ncol=2,byrow=FALSE)
+    lam@rt_correction[[1]] <- tcor
+    lam@order_peaks <- order(lam@peaks[,1])
     return(lam)
   }
 
@@ -319,13 +333,14 @@ LCMSAlignerModelFromDirectoryByBatch <-
            clustering=TRUE,
            bpp=NULL,
            graphical=FALSE,
+           correct_rt=TRUE,
            ...) {
     if(length(directory)==1){
       message("Processing of directory ", directory, ".")
     }else{
       message("Processing of ", length(directory), " files.")
     }
-    if(is.null(maxAlign)) maxAlign <- 100000
+    if(is.null(maxAlign)) maxAlign <- 200
     if(is.null(bpp)) bpp <- bpparam()
     
     ###Two cases or the furnished vector is a set of chracter or the furnished data table is a set of character
@@ -420,16 +435,17 @@ LCMSAlignerModelFromDirectoryByBatch <-
         ###We align each file individually
         lam <- alignPeaktables(lam,
                               batch_files, path_aligner = path_model, span = span,
-                              supp_data=supp_data,ransac_l1=ransac_l1,
+                              supp_data=supp_data,ransac_l1=ransac_l1,ransac_niter=maxAlign,
                               ransac_dist_threshold = ransac_dist_threshold,ransac_span=ransac_span,
-                              lim = max_cor, graphical = graphical, bpp = bpp)
+                              lim = max_cor, graphical = graphical,correct_rt=correct_rt, bpp = bpp)
       }
-      ## we initilaize the clusteritng
     }
-    lam@clustering <- 1:nrow(lam@peaks)
+    #if Necessary we initialise the clustering
+    if(length(lam@clustering)<=nrow(lam@peaks)){
+      lam@clustering <- 1:nrow(lam@peaks)
+    }
+
     ###We initialize the
-    
-    ##We do the ifnal clustering mode
     if(nrow(lam@data)!=0){
       #lam <- saveAligner(lam, path_model,supp_data=supp_data)
       ##We save a copy

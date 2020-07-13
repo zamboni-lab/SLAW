@@ -54,59 +54,84 @@ findReferencesPoints <- function(lar,rtree_data,peaktable_data,rt_scaling = 1){
 }
 
 
+
+identity_fun <- function(){
+  x <- 1:10
+  y <- rep(0,10)
+  rloess <- lm(y ~ x)
+  return(rloess)
+}
+
 ###the RT is estimated as a RANSAC LOESS AS We don t want a mistake
 estimatesRTDeviationModel <- function(lar,peaktable,peaks,rt_scaling = c(0.9,0.95,1,1.05,1.1),
                                       ransac_niter=10000,ransac_dist_threshold=0.1,ransac_l1=0.05,
-                                      span=span,frac_found=0.3,graphical=FALSE){
+                                      span=span,frac_found=0.3,ratio=1.0,graphical=FALSE){
   if(!is.matrix(peaktable)) peaktable <- as.matrix(peaktable[,c(1,2,3)])
-
   rtree <- RTree(peaktable[,c(1,2)])
   rmatch <- findReferencesPoints(lar,rtree,peaktable,rt_scaling = rt_scaling)
-
+  
   ###We remove the unmatched peaks
   rloess <- NULL
   non_matched <- is.na(rmatch)
   psel <- which(!non_matched)
-
+  
+  maxDmz <- NULL
+  maxDrt <- NULL
+  matchedDrt <- NULL
+  deviations <- NULL
+  
   if((length(psel)/nrow(lar@peaks))<frac_found){
-    warning("No enough references points found, no correction is done")
+    warning("No enough references points found, default parameters used")
     ###We don t correct anything
-    x <- 1:10
-    y <- rep(0,10)
-    rloess <- lm(y ~ x)
+    maxDmz <- lar@parameters$dmz
+    maxDrt <- lar@parameters$rt*2
+    matchedDrt <- max(lar@parameters$rt/2,diff(range(peaktable[,2]))/200)
   }else{
-  deviations <- (lar@peaks[psel,c(1,2)]-peaktable[rmatch[psel],c(1,2)])
+    deviations <- (lar@peaks[psel,c(1,2)]-peaktable[rmatch[psel],c(1,2)])
+    
+    ###We get the maximum deviation on references peaks 
+    maxDmz <- max(median(abs(deviations[,1]))*3,0.002)
+    maxDrt <- median(abs(deviations[,2]))*3
+    matchedDrt <- max(median(abs(deviations[,2]))/2,diff(range(peaktable[,2]))/200)
+  }
   
-  ###We get the maximum deviation on references peaks 
-  maxDmz <- max(median(abs(deviations[,1]))*3,0.002)
-  maxDrt <- median(abs(deviations[,2]))*3
-  matchedDrt <- max(median(abs(deviations[,2]))/2,diff(range(peaktable[,2]))/200)
-  
+  # message("Init_par")
   ###We find the candidates
   df_ransac <- NULL
-  num_points <- ceiling(nrow(deviations)/2)
-  min_inliers <- ceiling(num_points*1.3)
+  num_points <- NULL
+  # num_points <- ceiling(nrow(deviations)/2)
+  min_inliers <- ceiling(num_points*1.3*ratio)
   unique_p <- 0
   if(nrow(peaks)>0){
+    num_points <- ceiling(nrow(peaktable)/3)
     matched_mz <- xcms:::fastMatch(peaktable[,1],peaks[,1],tol=maxDmz)
+    matched_rt <- xcms:::fastMatch(peaktable[,2],peaks[,2],tol=maxDrt)
+    unique_p <- 0
     for(i in seq_along(matched_mz)){
-      if(is.null(matched_mz[[i]])) next
-      num_candidates <- length(matched_mz[[i]])
-      matched_mz[[i]] <- cbind(rep(peaktable[i,2],num_candidates),peaks[matched_mz[[i]],2]-peaktable[i,2])
+      if(is.null(matched_mz[[i]])|is.null(matched_rt[[i]])) next
+      tcand <- intersect(matched_mz[[i]],matched_rt[[i]])
+      if(length(tcand)==0) next
+      unique_p <- unique_p+1
+      num_candidates <- length(tcand)
+      matched_mz[[i]] <- cbind(rep(peaktable[i,2],num_candidates),peaks[tcand,2]-peaktable[i,2])
     }
-    unique_p <- sum(!sapply(matched_mz,is.null))
+    if(unique_p==nrow(peaktable)){
+      return(identity_fun())
+    }
     df_ransac <- do.call(rbind,matched_mz)
     colnames(df_ransac) <- c("x","y")
     df_ransac <- as.data.frame(df_ransac)
-    num_points <- min(nrow(deviations)*2,0.5*nrow(peaktable))
-    min_inliers <- min(floor(nrow(peaktable)/4),nrow(df_ransac)/2)
+    num_points <- ceiling(nrow(peaktable)/3)
+    min_inliers <- ceiling(min(floor(nrow(peaktable)/4),nrow(df_ransac)/2)*ratio)
   }else{
     ####A first correction is always applied as the number of peak increase
     ###We now return the deviation.
+    if(is.null(deviations)) return(identity_fun())
+    num_points <- length(unique(rmatch[psel]))
     df_ransac <- data.frame(x=peaktable[rmatch[psel],2],y=deviations[,2])
     unique_p <- nrow(df_ransac)
   }
-  
+  # message("Next")
   ###In every case we remove the datapoint moving by more than 20% by more than 20%
   threshold <- 0.2*diff(range(peaktable[,2]))
   df_ransac <- df_ransac[abs(df_ransac[,2])<threshold,]
@@ -116,29 +141,23 @@ estimatesRTDeviationModel <- function(lar,peaktable,peaks,rt_scaling = c(0.9,0.9
   num_model <- length(psel)
   min_inliers <- ceiling((unique_p-length(psel))/2)
   
-  
-    if(num_points>nrow(df_ransac)){
-      warning("Not enough references point found. No correction is applied.")
-      rloess <- NA
-    }else{
-      rloess <- loRansacLoss(df_ransac,max_iter = ransac_niter,fitting_point = num_points,
-                            min_inliers = min_inliers,dist_threshold = matchedDrt,L1=ransac_l1,span=span,
-                            graphical=graphical)
-    }
-
+  if(num_points>nrow(df_ransac)){
+    warning("Not enough references point found. No correction is applied.")
+    rloess <- NA
+  }else{
+    rloess <- loRansacLoss(df_ransac,max_iter = ransac_niter,fitting_point = num_points,
+                          min_inliers = min_inliers,dist_threshold = matchedDrt,L1=ransac_l1,span=span,
+                          graphical=graphical)
   }
-
-
+  # message("Loess done")
   ###We dont ocrrect anything os linear model.
   if(is.null(rloess)||is.na(rloess)){
-    x <- 1:10
-    y <- rep(0,10)
-    rloess <- lm(y ~ x)
+    return(identity_fun())
   }
 
 
   if((length(rloess)==1) && is.na(rloess)){
-    warning("LOESS model did  not fit well enough try to tune the ransac_dist_threshold parameter")
+    warning("LOESS modeldid  not fit well enough.")
   }
 
   ####We need to be sure that the loess alway include on correction
@@ -209,12 +228,12 @@ correctRt <- function(rtmodel,peaktable,extensions=c(4,0.05),maxCor = NULL,lim =
 }
 
 correctPeaktable <- function(lar,peaktable,peaks,rt_scaling = c(0.9,0.95,1,1.05,1.1),
-                             ransac_niter=5000,ransac_dist_threshold=0.1,ransac_l1=0.05,extensions=c(4,0.15),
-                             ransac_span=0.6,lim=0.1,graphical=FALSE){
+                             ransac_niter=2000,ransac_dist_threshold=0.1,ransac_l1=0.05,extensions=c(4,0.15),
+                             ransac_span=0.6,lim=0.1,ratio = 1.0,graphical=FALSE){
 
   rtmodel <- estimatesRTDeviationModel(lar,peaktable,peaks=peaks,rt_scaling = rt_scaling,ransac_niter=ransac_niter,
                                        span=ransac_span,ransac_dist_threshold=ransac_dist_threshold,
-                                       ransac_l1=ransac_l1,graphical=graphical)
+                                       ransac_l1=ransac_l1,ratio=ratio,graphical=graphical)
 
   corrected_peaktable <- correctRt(rtmodel,peaktable,extensions=extensions,lim=lim)
 

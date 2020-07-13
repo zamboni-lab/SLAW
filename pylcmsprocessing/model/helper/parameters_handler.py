@@ -71,7 +71,7 @@ class ParametersFileHandler:
     def find_ranges(self):
         for path in self.param_path:
             val = self[path]
-            if isinstance(val["value"],list):
+            if isinstance(val["value"],list) and len(val["value"])==2 and all([isinstance(x,float) for x in val["value"]]):
                 self.ranges.append(path)
 
     def set_all_parameters(self,keys,values):
@@ -196,6 +196,7 @@ class ParametersFileHandler:
 
 if __name__=="__main__":
     PATH_PARAMS = "E:/parameters.txt"
+    PATH_PARAMS = "U:/users/Alexis/data/slaw_evaluation/MSV83010/output_cluster/parameters.txt"
     pfh = ParametersFileHandler(PATH_PARAMS)
     pfh.get_parameters_values().keys()
 

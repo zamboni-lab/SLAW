@@ -1,5 +1,6 @@
 import math
 import numpy as np
+from scipy.stats import hmean
 import inspect
 import concurrent.futures
 
@@ -37,39 +38,51 @@ class samplingOptimizer:
         self.optimizer=optimizer
 
     def optimize(self,func,num_points=100,relative_increase = 0.02,
-                 max_its=10,contraction = 0.6, extension = 0.1,num_cores=1):
+                 max_its=10,contraction = 0.6, extension = 0.1,num_cores=1,max_jumps = 1,last_batch=True):
 
-        max_jumps = 2
         ###We add some points
-        global_best_point = None
         global_best_value = 0.01
         num_its = 1
         self.sampler.sample(bounds=self.bounds,func=func,num_cores=num_cores,num_points=num_points,fixed_arguments=self.fixed_arguments)
-        current_best_point,current_best_value,valid = self.optimizer.get_maximum(self.sampler.get_points(),self.sampler.get_values())
+        best_idx,current_best_value = self.sampler.get_max()
+        global_idx = best_idx
+        current_best_point,empty,valid = self.optimizer.get_maximum(self.sampler.get_points(last_batch=last_batch),self.sampler.get_values(last_batch=last_batch))
 
         num_jumps=0
         names_vars = self.sampler.get_names()
         first = True
         ###We always test the best point
-        print("Iteration:", num_its, "on", max_its, "current best score:", current_best_value)
-        while (first and num_its < max_its) or ((current_best_value-global_best_value)/global_best_value > (relative_increase) or num_jumps <= max_jumps) and num_its < max_its :
-            if (current_best_value-global_best_value)/global_best_value <= (relative_increase):
+        # print("Iteration:", num_its, "on", max_its, "current best score:", "%0.2f" % current_best_value,
+        #       "impactful parameters:",)
+        while (first) or ((num_jumps <= max_jumps) and num_its < max_its):
+            print("Iteration:", num_its, "on", max_its, "current best score:", "%0.2f" % current_best_value)
+            self.bounds.print_bounds(names_vars,valid=valid)
+
+            if best_idx == global_idx:
                 num_jumps = num_jumps+1
+            else:
+                global_idx = best_idx
+                global_best_value = current_best_value
             dpoint = dict(zip(list(names_vars),list(current_best_point)))
             first = False
 
             ###We restrain thge constraints using the newly determined best points
             self.bounds.contract_bound(current_best_point,self.sampler.get_names(),valid=valid,contraction=contraction, extension=extension,
-                                     extreme=0.02, only_positive=True)
+                                     extreme=0.1, only_positive=True)
             self.sampler.sample(bounds=self.bounds,func=func,num_cores=num_cores,num_points=num_points,add_point=[dpoint],fixed_arguments=self.fixed_arguments)
-            current_best_point, current_best_value, valid = self.optimizer.get_maximum(self.sampler.get_points(), self.sampler.get_values(),removed=-1.0)
+            ###At each step we extract the best sample values
+            best_idx,current_best_value = self.sampler.get_max()
+            print(self.sampler.get_values())
+            current_best_point, empty, valid = self.optimizer.get_maximum(self.sampler.get_points(), self.sampler.get_values(),removed=-1.0)
             num_its += 1
-            print("Iteration:", num_its, "on ",max_its," current best score:",current_best_value)
         ##We pick the bset sampled points
         all_values = self.sampler.get_values()
         all_points = self.sampler.get_points()
         cnames = self.sampler.get_names()
         pindex = all_values.index(max(all_values))
+        ###we corect the ids for filtered out values
+
+
         return dict(zip(cnames,list(all_points[pindex,:])))
 
 
@@ -92,6 +105,7 @@ class bounds:
 
     def upper_bound(self):
         return self.ub
+
 
     def contract_bound(self,best_point,names,valid=None, contraction=0.5, extension=0.1,
                                  extreme=0.02, only_positive=True):
@@ -135,6 +149,16 @@ class bounds:
         self.lb = tnlb
         self.ub = tnub
 
+    def print_bounds(self,names=None,valid=None):
+        if names is None:
+            names = list(self.lb.keys())
+
+        if valid is None:
+            valid = [False] * len(names)
+
+        for name,val in zip(names,valid):
+            print("PAR:",name," SIGNIFICANT:",val," RANGE: ["+str(self.lb[name])+"-"+str(self.ub[name])+"]")
+
 
 class boundedSampler:
     def __init__(self):
@@ -142,6 +166,7 @@ class boundedSampler:
         self.points = []
         self.values = []
         self.names = []
+        self.batch_size = []
         self.weight = None
         self.parallel=True
 
@@ -158,15 +183,23 @@ class boundedSampler:
         self.weight = weight
 
     def append_points(self,points,values):
+        self.batch_size.append(len(values))
         self.points.append(points)
         self.values.append(values)
 
-    def get_points(self):
+    def get_points(self,last_batch = False,filtered=True):
+        tpoints =self.points
+        if last_batch:
+            tpoints = tpoints[-self.batch_size[-1]:]
         if isinstance(self.points[0],dict):
-            vpoints = [list(v.values()) for v in self.points]
+            vpoints = [list(v.values()) for v in tpoints]
         else:
-            vpoints = self.points
-        return np.concatenate(vpoints,axis = 0)
+            vpoints = tpoints
+        temp =  np.concatenate(vpoints,axis = 0)
+        if filtered:
+            temp = temp[self.get_filter()]
+        return temp
+
 
     def get_names(self):
         if len(self.names)>0:
@@ -175,19 +208,44 @@ class boundedSampler:
             return []
         return list(self.points[0].keys())
 
-    def get_values(self):
-
-        sub_l = [y for x in self.values for y in x]
+    def get_filter(self):
+        tvalues =self.values
+        sub_l = [y for x in tvalues for y in x]
         if not isinstance(sub_l[0],float) and not isinstance(sub_l[0],int):
             res = np.stack(sub_l)
-            norm_val = np.apply_along_axis(lambda x: ((x - np.mean(x)) / np.std(x)), 0, res)
-            weight = [1]*(norm_val.shape[0])
-            if self.weight is not None:
-                weight=self.weight
-            norm_val = norm_val*weight
-            return list(np.sum(norm_val, axis=1))
+            filters = np.apply_along_axis(lambda x: x[0] != -1.0, 1, res)
+            return filters
+        return [ff != -1.0 for ff in sub_l]
+
+
+    ###Values are normalized
+    def get_values(self,last_batch=False,filtered=True):
+        # print(self.values)
+        tvalues =self.values
+        if last_batch:
+            tvalues = tvalues[-self.batch_size[-1]:]
+        sub_l = [y for x in tvalues for y in x]
+        if not isinstance(sub_l[0],float) and not isinstance(sub_l[0],int):
+            res = np.stack(sub_l)
+            max_val = np.amax(res,axis=0)
+            norm_val = np.copy(res)
+            for idx in range(res.shape[1]):
+                norm_val[:,idx] = (0.0001+norm_val[:,idx]/max_val[idx])
+            if filtered:
+                # print("filtering:",self.get_filter())
+                norm_val = norm_val[self.get_filter()]
+            ###We remove any negative value
+            norm_val = norm_val[:,norm_val.min(axis=0)>=0]
+            return list(np.apply_along_axis(hmean,1,norm_val))
         else:
             return sub_l
+
+    def get_max(self):
+        values = self.get_values()
+        vmax = max(values)
+        vidx = [idx for idx,val in enumerate(values) if val==vmax]
+        vidx = vidx[0]
+        return vidx,vmax
 
 
     def is_parallel(self):
