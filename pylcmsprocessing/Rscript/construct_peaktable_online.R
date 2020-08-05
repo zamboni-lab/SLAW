@@ -18,6 +18,7 @@ get_os <- function() {
   }
 }
 
+
 args <- commandArgs(trailingOnly = TRUE)
 # args <- c("U:/users/Alexis/data/slaw_evaluation/test_data/output/processing_db.sqlite",
 #           "U:/users/Alexis/data/slaw_evaluation/test_data/output/temp/blocks",

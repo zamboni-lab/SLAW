@@ -3,28 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="84dbd36f-9766-4ce4-bf5b-1769fdcb59a6" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/onlineLCMSaligner_0.1.0.tar.gz" beforeDir="false" afterPath="$PROJECT_DIR$/onlineLCMSaligner_0.1.0.tar.gz" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/FromFeaturesMLToDf.R" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/FromFeaturesMLToDf.R" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/annotating_mixed_method.R" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/annotating_mixed_method.R" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/cliques_matching.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/cliques_matching.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/construct_peaktable_online.R" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/construct_peaktable_online.R" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/createSQLiteexperiment.R" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/createSQLiteexperiment.R" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/extractingMGFfromMZML.R" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/extractingMGFfromMZML.R" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/filter_datamatrix.R" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/filter_datamatrix.R" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/gap_filling.R" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/gap_filling.R" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/Rscript/initial_parameters.R" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/Rscript/initial_parameters.R" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/data/parameters_set.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/data/parameters_set.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/experiment.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/experiment.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/helper/inputbuilder.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/helper/inputbuilder.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/helper/parallel_runner.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/helper/parallel_runner.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/helper/parameters_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/helper/parameters_handler.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/optimizer.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/optimizer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/sampling.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/sampling.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/score_experiment.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/optimization/score_experiment.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/steps/grouping.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/steps/grouping.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/steps/optimize_parameters.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/steps/optimize_parameters.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pylcmsprocessing/model/steps/peakpicking.py" beforeDir="false" afterPath="$PROJECT_DIR$/pylcmsprocessing/model/steps/peakpicking.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wrapper_docker.py" beforeDir="false" afterPath="$PROJECT_DIR$/wrapper_docker.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
