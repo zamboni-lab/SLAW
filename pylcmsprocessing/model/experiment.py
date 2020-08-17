@@ -104,8 +104,6 @@ class Experiment:
         output = self.output.getFile(cr.OUT["POLARITY"])
         pscript = os.path.join(ct.find_rscript(), "get_polarity.R")
 
-
-
         if input_path is None:
             raw_files = self.get_query("SELECT path FROM samples WHERE level='MS1'")
             sel_samp = len(raw_files)//2
@@ -125,7 +123,6 @@ class Experiment:
         self.polarity = polarity
         os.environ["POLARITY"]=polarity
         return polarity
-
 
 
     def get_polarity(self, open=True):

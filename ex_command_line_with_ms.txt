@@ -1,3 +1,0 @@
-##We define the command list eventually
-
-bsub -n 17 -N -R singularity -R "rusage[mem=5500]" -o ~/logs/ITER_NEW_out.txt -e ~/logs/ITER_NEW_err.txt -W 5:00  "SINGULARITYENV_NCORES=17 SINGULARITYENV_MEMORY=5000 SINGULARITYENV_CLUSTER=1 SINGULARITYENV_MS2=/input_ms2 singularity run -C -W /cluster/scratch/dalexis/FIAPLUS/ITER_NEW -B /cluster/scratch/dalexis/FIAPLUS/ITER_NEW/MS2:/input_ms2 -B /cluster/scratch/dalexis/FIAPLUS/ITER_NEW/output:/output  -B /cluster/scratch/dalexis/FIAPLUS/ITER_NEW/mzML:/input lcms_workflow_zamboni.simg"
