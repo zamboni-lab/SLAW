@@ -16,6 +16,7 @@ import model.helper.comparing_evaluation as mce
 import model.steps.annotating_adducts_isotopes as mai
 import model.steps.post_processing as pp
 import model.steps.information_completion as ic
+import common.slaw_exception as cs
 import pandas as pd
 import shutil
 
