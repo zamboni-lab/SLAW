@@ -12,7 +12,7 @@ FROM adelabriere/basis_workflow
 #RUN pip3 install numpy==1.17
 #RUN pip3 install sklearn statsmodels
 RUN apt-get -y --no-install-recommends install openms
-
+RUN strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
 
 ##The copying is always a file.
 COPY onlineLCMSaligner /onlineLCMSaligner
@@ -26,5 +26,6 @@ COPY MZmine-2.52-Linux /MZmine-2.52-Linux
 #The data needs to be run inside the docker.
 COPY wrapper_docker.py /wrapper_docker.py
 
+# Fic for singularity on HPC
 
 ENTRYPOINT bash run_workflow.sh
