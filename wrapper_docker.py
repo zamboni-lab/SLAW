@@ -178,7 +178,6 @@ if __name__=="__main__":
 
     if peakpicking=="OPENMS":
         ###In this case arugment are read directly
-        #run_openms(self, min_fwhm, max_fwhm, snt, ppm, min_int, max_outlier, min_points, quant
         min_fwhm = float(raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width"]["value"][0])*60
         max_fwhm = float(raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width"]["value"][1])*60
         sn = float(raw_yaml["peakpicking"]["peaks_deconvolution"]["SN"]["value"])
@@ -193,6 +192,21 @@ if __name__=="__main__":
         exp.run_openms(min_fwhm, max_fwhm, fwhm_fac, sn, ppm, min_int, max_outlier, min_scan, quant,log = LOG)
         exp.extract_ms2(noise_level=float(raw_yaml["peakpicking"]["noise_level_ms2"]["value"]),output=pcr.OUT["OPENMS"]["MSMS"],all=True)
         exp.post_processing_peakpicking_openms()
+
+    if peakpicking=="CENTWAVE":
+        min_peakwidth = float(raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width"]["value"][0]) * 60
+        max_peakwidth = float(raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width"]["value"][1]) * 60
+        sn = float(raw_yaml["peakpicking"]["peaks_deconvolution"]["SN"]["value"])
+        min_int = float(raw_yaml["peakpicking"]["noise_level_ms1"]["value"])
+        min_scan = math.floor(float(raw_yaml["peakpicking"]["traces_construction"]["min_scan"]["value"]))
+        if "peak_width_fac" in raw_yaml["peakpicking"]["peaks_deconvolution"]:
+            fwhm_fac = float(raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width_fac"]["value"])
+        ppm = float(raw_yaml["peakpicking"]["traces_construction"]["ppm"]["value"])
+        exp.run_xcms(min_peakwidth, max_peakwidth, sn, ppm, min_int, max_outlier, min_scan, quant, log=LOG)
+        exp.extract_ms2(noise_level=float(raw_yaml["peakpicking"]["noise_level_ms2"]["value"]),
+                        output=pcr.OUT["CENTWAVE"]["MSMS"], all=True)
+        exp.post_processing_peakpicking_xcms()
+
     ###As openMS does not give nativelyt MS-MS
     timer.store_point("peakpicking")
     timer.print_point("peakpicking")

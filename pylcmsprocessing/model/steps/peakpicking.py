@@ -102,3 +102,38 @@ class PeakPickingOpenMS(PeakPicking):
 # -algorithm:epd:min_fwhm 3 -algorithm:ffm:use_smoothed_intensities true -algorithm:mtd:mass_error_ppm 20
 # -algorithm:mtd:min_sample_rate 0.5 -algorithm:mtd:quant_method area -algorithm:mtd:trace_termination_criterion outlier
 # -algorithm:mtd:trace_termination_outliers 5 -algorithm:mtd:min_trace_length 5
+
+class PeakPickingXCMS(PeakPicking):
+    def __init__(self,row,min_peakwidth,max_peakwidth,snt,ppm,min_int,min_points):
+        self.input = row[3]
+        self.min_peakwidth = min_peakwidth
+        self.max_peakwidth = max_peakwidth
+        self.snt = snt
+        self.ppm = ppm
+        self.min_int = min_int
+        self.min_points = min_points
+        self.point_prefilter = max(int(min_points/2),3)
+        self.int_prefilter = min_int/2
+        self.output = row[5]
+
+    def need_computing(self):
+        return not os.path.isfile(self.output)
+
+    def get_output(self):
+        return self.output
+
+    def command_line_processing(self):
+        pjoin = os.path.join(find_rscript(), "wrapper_xcms_peak_picking.R")
+        # PATH_RAW < - args[1]
+        # PATH_OUTPUT < - args[2]
+        # PPM < - as.numeric(args[3])
+        # PEAKWDITH < - as.numeric(c(args[4], args[5]))
+        # SNT < - as.numeric(args[6])
+        # PREFILTER < - as.numeric(c(args[7], args[8]))
+        # NOISE < - as.numeric(args[9])
+        cli_args = [pjoin,self.input,self.output,self.ppm,self.min_peakwidth,
+                    self.max_peakwidth,self.snt,
+                    self.point_prefilter,self.int_prefilter,self.min_int]
+        cli_args = [str(arg) for arg in cli_args]
+        cli =  " ".join([pjoin]+cli_args)
+        return cli

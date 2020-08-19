@@ -20,6 +20,15 @@ class inputBuilder:
     def clean(self):
         pass
 
+    def get_first_id(self, c, table):
+        c.execute("SELECT MAX(id) FROM " + table)
+        vid = c.fetchone()
+        if vid[0] is None:
+            vid = 1
+        else:
+            vid = vid[0] + 1
+        return vid
+
 
 ###build the nput and return a
 class MZMineBuilder(inputBuilder):
@@ -107,16 +116,6 @@ class MZMineBuilder(inputBuilder):
         conn.commit()
         conn.close()
 
-
-
-    def get_first_id(self, c, table):
-        c.execute("SELECT MAX(id) FROM " + table)
-        vid = c.fetchone()
-        if vid[0] is None:
-            vid = 1
-        else:
-            vid = vid + 1
-        return vid
 
     def filter_inputs(self):
         conn = sqlite3.connect(self.db)
@@ -230,15 +229,6 @@ class openMSBuilder(inputBuilder):
         self.db = db
         self.output = output
 
-    def get_first_id(self, c, table):
-        c.execute("SELECT MAX(id) FROM " + table)
-        vid = c.fetchone()
-        if vid[0] is None:
-            vid = 1
-        else:
-            vid = vid[0] + 1
-        return vid
-
     def build_inputs_single_parameter_set(self,*args):
 
         conn = sqlite3.connect(self.db)
@@ -284,6 +274,59 @@ class openMSBuilder(inputBuilder):
             except sqlite3.IntegrityError as e:
                 counter_processed += 1
 
+        print(str(counter_to_process), " peakpicking added")
+        conn.commit()
+        conn.close()
+
+class xcmsBuilder(inputBuilder):
+    def __init__(self, db, output):
+        self.db = db
+        self.output = output
+
+    def build_inputs_single_parameter_set(self,*args):
+
+        conn = sqlite3.connect(self.db)
+        c = conn.cursor()
+        cid = self.get_first_id(c, "peakpicking")
+
+        ###We create the necessary directories
+        path_peaktables = self.output.getDir(common.references.OUT["CENTWAVE"]["PEAKTABLES"])
+        path_msms = self.output.getDir(common.references.OUT["CENTWAVE"]["MSMS"])
+        # hash_val = common.tools.md5sum(xml_file)
+
+        conn = sqlite3.connect(self.db)
+        c = conn.cursor()
+        hash_val = hash_list(args)
+
+        try:
+            ctuple = (cid, 3, "", hash_val, "", "", "", "")
+            c.execute("""INSERT INTO peakpicking VALUES (?,?,?,?,?,?,?,?)""", ctuple)
+        except sqlite3.IntegrityError as e:
+            pass
+
+        ###We just insert the sample name
+        samples = c.execute("SELECT id,path,level FROM samples").fetchall()
+        pid = 0
+        counter_to_process = 0
+        counter_processed = 0
+        ###We create the processing table and add the input if they don t exists.
+        for vid,path,level in samples:
+            temp_l = list(args)+[path]
+            hash_sample = hash_list(temp_l)
+            # / output / ADAP / msms / msms_1_3146b653da32a8d0806ec9c635c629e5.mgf
+            # / output / ADAP / peaktables / peaktable_1_3146b653da32a8d0806ec9c635c629e5.csv
+            path_ms = os.path.join(path_peaktables,"peaktable_"+str(vid)+"_"+hash_sample+".csv")
+            if level=="MS2":
+                path_ms = "NOT PROCESSED"
+            else :
+                pid += 1
+            path_msms_s = os.path.join(path_msms,"msms_"+str(vid)+"_"+hash_sample+".mgf")
+            try:
+                ctuple = (pid, 1, vid, path, hash_sample, path_ms, path_msms_s, 1, 1)
+                c.execute("""INSERT INTO processing VALUES (?,?,?,?,?,?,?,?,?)""", ctuple)
+                counter_to_process += 1
+            except sqlite3.IntegrityError as e:
+                counter_processed += 1
         print(str(counter_to_process), " peakpicking added")
         conn.commit()
         conn.close()

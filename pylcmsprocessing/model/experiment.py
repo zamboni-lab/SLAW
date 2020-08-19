@@ -494,6 +494,48 @@ class Experiment:
                         c.execute(update_query)
         self.close_db()
 
+    def run_xcms(self,min_peakwidth,max_peakwidth,snt,ppm,min_int,min_points,silent=True, log = None,batch_size=10000):
+        ###We collect the output path
+        builder = ib.xcmsBuilder(self.db,output=self.output)
+        builder.build_inputs_single_parameter_set(min_peakwidth,max_peakwidth,snt,ppm,min_int,min_points)
+        num_workers = self.get_workers()
+        runner = pr.ParallelRunner(num_workers)
+        ####we generate the command line for all the inputs
+        self.open_db()
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM processing WHERE output_ms!='NOT PROCESSED'")
+
+        while True:
+            rows = c.fetchmany(batch_size)
+            if not rows: break
+            #row, min_fwhm, max_fwhm, snt, ppm, min_int, min_points
+            peakpickings = [mp.PeakPickingXCMS(row, min_peakwidth,max_peakwidth,snt,ppm,min_int,min_points) for row in rows]
+            ids = [row[0] for row in rows]
+            need_processing = [x.need_computing() for x in peakpickings]
+            ids_to_convert = [idv for idv,pp in zip(ids,need_processing) if pp]
+            ####Peak picking
+            temp = [(x.get_output(),x.command_line_processing()) for x in peakpickings if x.need_computing()]
+            clis = [x[1] for x in temp]
+            names_output = [x[0] for x in temp]
+            ####We run the jobs actually
+            if len(clis) > 0:
+                runner.run(clis, silent=silent, log = log, timeout = cr.CONSTANT["PEAKPICKING_TIMOUT"])
+            #We convert the peaktables back to the data.
+            pjoin = os.path.join(ct.find_rscript(), "FromFeaturesMLToDf.R")
+            # ###CWe create the command line to allow the peakpicking
+            if len(names_output) > 0:
+                names_converted = [x.split(".")[0] + ".csv" for x in names_output]
+                clis_conversion = ["Rscript " + pjoin + " " +old+ " " +new for old,new in zip(names_output,names_converted)]
+                runner.run(clis_conversion, silent=silent, log = log, timeout = cr.CONSTANT["PEAKPICKING_TIMOUT"])
+                for pid,nn in zip(ids_to_convert,names_converted):
+                    if os.path.isfile(nn):
+                        update_query = self.update_query_construction("processing", "id", str(pid), "output_ms", nn)
+                        c.execute(update_query)
+                    else:
+                        update_query = self.update_query_construction("processing", "id", str(pid), "valid", "0")
+                        c.execute(update_query)
+        self.close_db()
+
     ###Try to correct he MZmine ocrrection in case processing was interrupted
     def correct_conversion(self):
         path_temp = self.output.getFile(cr.TEMP["CONVERSION"])
@@ -573,6 +615,27 @@ class Experiment:
             query = self.update_query_construction("processing", "id", id, "output_ms", new_name)
             c.execute(query)
 
+        self.close_db()
+        self.save_db()
+
+    ###This step is always done before grouping
+    def post_processing_peakpicking_xcms(self):
+        ###We rename the peaktable to get more meaningful names.
+        self.open_db()
+        c = self.conn.cursor()
+        c.execute("SELECT processing.id,path,output_ms,output_ms2 FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")
+        res = c.fetchall()
+        ###Now we jsut rename all the files
+        for id,sample,peaktable,ms2 in res:
+            ##Correcting if needed convert he ms files
+            out_dir = os.path.dirname(peaktable)
+            raw_samp = os.path.basename(sample).split(".")[0]
+            new_name = os.path.join(out_dir,raw_samp+".csv")
+            if os.path.isfile(new_name):
+                continue
+            os.rename(peaktable,new_name)
+            query = self.update_query_construction("processing", "id", id, "output_ms", new_name)
+            c.execute(query)
         self.close_db()
         self.save_db()
 

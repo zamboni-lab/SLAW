@@ -1,6 +1,7 @@
 ALGORITHMS_TABLE = {
     "ADAP": ["MZmine", "adap.json", "/pylcmsprocessing/data/batch_adap_2_52.xml"],
-    "FeatureFinderMetabo": ["openMS", "openms.json", None, None]
+    "FeatureFinderMetabo": ["openMS", "openms.json", None, None],
+    "centWave": ["centWave",None,None,None]
 }
 
 SUMMARY_DIR = "summary_parameters"
@@ -23,14 +24,9 @@ OUT={"DB":"processing.sqlite",
      },"OPENMS":{
         "PEAKTABLES": "OPENMS/peaktables",
         "MSMS": "OPENMS/msms"
-    },"CENTWAVE":
-          {"SUMMARY":"ADAP/ADAP_parameters.csv",
-    "SUMMARY_TEMPLATES": "ADAP/summary_templates.csv",
-    "JSON":"ADAP/temp_json.json",
-    "XML": "ADAP/xml",
-    "XML_TEMPLATES":"ADAP/xml_templates",
-    "CANDIDATES": "ADAP/candidates.csv",
-    "PEAKTABLES": "ADAP/peaktables"
+    },"CENTWAVE":{
+        "PEAKTABLES": "CENTWAVE/peaktables",
+        "MSMS": "CENTWAVE/msms"
      },
     "FIGURES":{"RT_DEV":"figures/rt_dev_",
     "PEAKS":"figures/peaks",
