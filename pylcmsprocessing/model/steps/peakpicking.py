@@ -84,8 +84,9 @@ class PeakPickingOpenMS(PeakPicking):
 
     def command_line_processing(self):
         snt_str = "true"
-        if self.snt<1:
+        if self.snt<=0:
             snt_str = "false"
+            self.snt=0
         cli =  " ".join(["FeatureFinderMetabo","-in",self.input,"-out",self.output,
                          "-algorithm:common:chrom_peak_snr",str(self.snt),"-algorithm:common:noise_threshold_int",
                          str(self.min_int),"-algorithm:epd:masstrace_snr_filtering",snt_str,"-algorithm:epd:max_fwhm",

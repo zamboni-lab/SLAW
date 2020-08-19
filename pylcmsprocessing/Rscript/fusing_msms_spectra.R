@@ -12,7 +12,7 @@ suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
 mergeSpectra <- function(x,specs,tab_summary,cos_thresh=0.7,round=10){
 
     ###We always bin the spectra
-    binv <- seq(0.5,2000.5,by=1)
+    binv <- seq(0.5,2000.5,by=0.1)
 
     approxCos <- function(s1,s2,npeaks=2){
         v1 <- .bincode(s1[,1],breaks = binv)
@@ -149,7 +149,7 @@ args <- commandArgs(trailingOnly = TRUE)
 # args <- c("U:/users/Alexis/data/all_2mins/res_neg_2/processing_db.sqlite",
 #           "4","E:/fused_mgf.mgf","E:/out_csv.csv","E:/tmp_rename_csv.csv")
 # 
-# args <- c("/sauer1/users/Alexis/examples_lcms_workflow/output/processing_db.sqlite","5",
+# args <- c("/sauer1/users/Alexis/examples_lcms_workflow/output/processing_db.sqlite","0.05","0.1","5",
 # "/sauer1/users/Alexis/examples_lcms_workflow/output/fused_mgf/fused_mgf_3063282bcc8e77018d0b6912579a4115.mgf",
 # "/sauer1/users/Alexis/examples_lcms_workflow/output/temp/temp1",
 # "/sauer1/users/Alexis/examples_lcms_workflow/output/temp/temp2")
@@ -218,7 +218,18 @@ rtt <- RTree(vmat)
 vmgf <- bplapply(PATH_MSMS,readMgfData,BPPARAM = bpp)
 
 #### Building a summary table
-tab_summary <- sapply(vmgf,function(x){header(x)[,c(2,3)]},simplify=FALSE)
+tab_summary <- sapply(vmgf,function(x){
+  header(x)[,c(2,3)]
+  },simplify=FALSE)
+
+###We extract the collision energy 
+collision <- NULL
+if("COLLISIONENERGY" %in% fvarLabels(vmgf[[1]])){
+  collision <- sapply(vmgf,function(x){as.numeric(as.character(fData(x)[,"COLLISIONENERGY"]))},simplify = FALSE)
+}
+
+collision <- unlist(collision)
+
 tab_summary <- mapply(tab_summary,seq_along(vmgf),FUN=function(x,y){
     cnames <- colnames(x)
     x <- cbind(1:nrow(x),x,rep(y,nrow(x)))
@@ -253,21 +264,27 @@ message("Found ",length(is_fragmented)," features with associated MS-MS spectra"
 
 
 ###We aggregate the  data by nearest neighbour
-listidx <- by(is_fragmented,INDICES = unlist(def_val[is_fragmented]),FUN=function(x){x})
+
+vfactor <- apply(cbind(unlist(def_val[is_fragmented]),collision[is_fragmented]),1,paste,collapse="_")
+
+listidx <- by(is_fragmented,INDICES = vfactor,FUN=function(x){x})
 
 ####We now process the data by batch to avoid any overhead
-fcc <- bplapply(listidx,FUN = mergeSpectra,specs=vmgf,
-tab_summary=tab_summary,BPPARAM=bpp)
+fcc <- bplapply(listidx,FUN = mergeSpectra,specs=vmgf,tab_summary=tab_summary,BPPARAM=bpp)
 
 ###We extract all the necessary spectra
-dm_idx <- as.numeric(names(listidx))
+dm_idx <- str_split(names(listidx),fixed("_"),simplify = TRUE)
+dm_idx <- apply(dm_idx,2,as.numeric)
+num_fused <- sapply(fcc,function(x){x[[4]]})
+
+
 spec_idx <- sapply(fcc,"[[",i=2)
 
 ###We build a list for all the spectra.
 consensus_specs <- apply(tab_summary[spec_idx,,drop=FALSE],1,function(x,ref){ref[[x[4]]][[x[1]]]},ref=vmgf)
 
 ###WE make a table of fileds to add
-supp_infos <- data.frame(FEATURE=dm_idx,NUM_CLUSTERED=sapply(fcc,function(x){x[[4]]}))
+supp_infos <- data.frame(FEATURE=dm_idx[,1],ENERGY=dm_idx[,2],NUM_CLUSTERED=sapply(fcc,function(x){x[[4]]}))
 
 ###We store the feature information into a file.
 ##We always writethe spectra
@@ -284,16 +301,18 @@ ocnames <- as.character(fread(PATH_DATAMATRIX,sep = ",",nrows=1,header=FALSE)[1,
 
 ###We detect the position of the first qaunt_columns
 quant_prefix <- paste(str_split(ocnames[length(ocnames)],fixed("_"))[[1]][1],"_",sep="")
-
 to_cut <- which(startsWith(ocnames,quant_prefix))[1]
+df_meta <- data.frame(feature=dm_idx[,1],energy=dm_idx[,2],index=1:nrow(dm_idx))
 
+id_ener_summary <- by(df_meta,INDICES =df_meta$feature,FUN=function(x){
+  paste(x[["index"]],paste("(e",x[["energy"]],")",sep=""),sep="_",collapse = "|")
+})
 
-###Dm idx contain the list of all the necessary features.
-dm_idx <- as.numeric(names(listidx))
-o_dm_idx <- order(dm_idx,decreasing=FALSE)
+num_fused_all <- tapply(num_fused,INDEX = df_meta$feature,FUN = sum)
 
+pos_dm <- as.integer(names(id_ener_summary))
+o_dm_idx <- order(pos_dm,decreasing=FALSE)
 first_spec <- last_spec <- 0
-
 
 seq_cut <- seq(2,nrow(dmm),by=BY_BATCH)
 if(seq_cut[length(seq_cut)]!=nrow(dmm)){
@@ -309,7 +328,7 @@ for(i in 1:(length(seq_cut)-1)){
     first_spec <- last_spec+1
     last_spec <- first_spec
 
-    while((dm_idx[o_dm_idx[last_spec]]<(lastLine-1))&
+    while((pos_dm[o_dm_idx[last_spec]]<(lastLine-1))&
     (last_spec<length(o_dm_idx))){
         last_spec <- last_spec+1
     }
@@ -326,8 +345,8 @@ for(i in 1:(length(seq_cut)-1)){
     ###Adding the supplementary MS2 informations to the table.
     if(last_spec!=first_spec){
         ###We aleays substract the starting line
-        seq_ms2_idx[dm_idx[o_dm_idx[first_spec:last_spec]]-firstLine+1] <- o_dm_idx[first_spec:last_spec]
-        seq_num_ms2[dm_idx[o_dm_idx[first_spec:last_spec]]-firstLine+1] <- supp_infos$NUM_CLUSTERED[o_dm_idx[first_spec:last_spec]]
+        seq_ms2_idx[pos_dm[o_dm_idx[first_spec:last_spec]]-firstLine+1] <- id_ener_summary[o_dm_idx[first_spec:last_spec]]
+        seq_num_ms2[pos_dm[o_dm_idx[first_spec:last_spec]]-firstLine+1] <- num_fused_all[o_dm_idx[first_spec:last_spec]]
     }
 
     ###WE add it to the data table eventually

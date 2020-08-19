@@ -48,6 +48,11 @@ readMS2mzML <- function(path, outfile, noise_level=0) {
         ifelse(sign(raw_info$polarity) == 1, "+", "-"),
         sep = ""
       ),
+      paste(
+        "COLLISIONENERGY=",
+        raw_info$collisionEnergy,
+        sep = ""
+      ),
       "MSLEVEL=2",
       txt_spec,
       "END IONS"
@@ -76,7 +81,7 @@ readMS2mzML <- function(path, outfile, noise_level=0) {
 
 args <- commandArgs(trailingOnly = TRUE)
 # args <- c("U:/users/Alexis/data/slaw_evaluation/test_data/output/processing_db.sqlite",
-#           "U:/users/Alexis/data/slaw_evaluation/test_data/output/tout_ms2","500","4","TRUE")
+#           "U:/users/Alexis/sandbox/test_output","500","4","TRUE")
 PATH_DB <- args[1]
 DIR_OUTPUT <- args[2]
 NOISE_LEVEL <- as.numeric(args[3])
@@ -103,6 +108,8 @@ dbDisconnect(dbb)
 
 raw_files <- infos[, 1]
 # raw_files <- str_replace(raw_files,"/sauer1/","U:/")
+raw_files <- c("U:/users/Alexis/examples_lcms_workflow/input_ms2/BEH30_2min_LipidMix_DDA_1.mzML",
+               "U:/users/Alexis/examples_lcms_workflow/input_ms2/BEH30_2min_LipidMix_DDA_2.mzML")
 vids <- as.integer(infos[, 2])
 num_files <- length(raw_files)
 
