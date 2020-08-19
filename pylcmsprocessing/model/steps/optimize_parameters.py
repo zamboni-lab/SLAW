@@ -164,7 +164,9 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
             builder = ib.openMSBuilder(exp.db, output=exp.output)
             ###Dummy arugment used to initialize the database only.
             builder.build_inputs_single_parameter_set(0.01, 0.1, 10, 10, 500, 3, 5, "intensity")
-        # copyfile(pdb,os.path.join(os.environ["OUTPUT"],os.path.basename(pdb)))
+        if peakpicking=="CENTWAVE":
+            builder = ib.xcmsBuilder(exp.db, output=exp.output)
+            builder.build_inputs_single_parameter_set(0.01, 0.1, 10, 10, 500, 3)
         exp.rebase_experiment(pdb)
     else:
         try:
@@ -173,6 +175,19 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
                 exp.correct_conversion()
                 exp.post_processing_peakpicking_mzmine()
                 exp.save_db()
+            if peakpicking=="CENTWAVE":
+                const = peakpicking__peaks_deconvolution__peak_width__const
+                add = peakpicking__peaks_deconvolution__peak_width__add
+                min_peakwidth = float(const) * 60
+                max_peakwidth = float(const+add) * 60
+                fwhm_fac = float(peakpicking__peaks_deconvolution__peak_width_fac)
+                sn = float(peakpicking__peaks_deconvolution__SN)
+                min_int = float(peakpicking__noise_level_ms1)
+                min_scan = math.floor(float(peakpicking__traces_construction__min_scan))
+                max_outlier = math.floor(float(peakpicking__traces_construction__num_outliers))
+                quant = "area"
+                ppm = float(peakpicking__traces_construction__ppm)
+                exp.run_xcms(min_peakwidth, max_peakwidth, sn, ppm, min_int, max_outlier, min_scan, quant, log=LOG_PATH)
             if peakpicking=="OPENMS":
                 const = peakpicking__peaks_deconvolution__peak_width__const
                 add = peakpicking__peaks_deconvolution__peak_width__add
