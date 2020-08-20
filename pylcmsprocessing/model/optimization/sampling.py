@@ -52,8 +52,6 @@ class samplingOptimizer:
         names_vars = self.sampler.get_names()
         first = True
         ###We always test the best point
-        # print("Iteration:", num_its, "on", max_its, "current best score:", "%0.2f" % current_best_value,
-        #       "impactful parameters:",)
         while (first) or ((num_jumps <= max_jumps) and num_its < max_its):
             print("Iteration:", num_its, "on", max_its, "current best score:", "%0.2f" % current_best_value)
             self.bounds.print_bounds(names_vars,valid=valid)
@@ -72,7 +70,6 @@ class samplingOptimizer:
             self.sampler.sample(bounds=self.bounds,func=func,num_cores=num_cores,num_points=num_points,add_point=[dpoint],fixed_arguments=self.fixed_arguments)
             ###At each step we extract the best sample values
             best_idx,current_best_value = self.sampler.get_max()
-            print(self.sampler.get_values())
             current_best_point, empty, valid = self.optimizer.get_maximum(self.sampler.get_points(), self.sampler.get_values(),removed=-1.0)
             num_its += 1
         ##We pick the bset sampled points
@@ -272,13 +269,10 @@ def do_uniform_random_sampling(lb,ub,func,num_points=1000,num_cores = None,fixed
   :return: The optimized paramters
   '''
   ###We give a signle core by parameters sets.
-  # print("fixed_args:",fixed_arguments)
   if fixed_arguments is None:
     fixed_arguments = {}
   args_name = inspect.getfullargspec(func)[0]
   to_optimize = [name for name in args_name if name not in fixed_arguments]
-  # print("to_optim:",to_optimize)
-  # print("lb:",lb)
 
   ##We read the dimension from the contraints
   ndim = len(lb)
@@ -577,7 +571,3 @@ if __name__=="__main__":
     bb = Bounds(lb,ub)
     rop = scipy.optimize.minimize(wfun,x0=(1,1,5), args=(3,-100),method="L-BFGS-B", bounds=bb )
     largs = list(rop.x)+[3,-100]
-    print("optim: ",test(*largs),largs)
-    print("bbd: ",test(*to_call_bbd),to_call_bbd)
-    print("random: ",test(*to_call_unif),to_call_unif)
-    print("lipo: ", test(*to_call_lipo), to_call_lipo)
