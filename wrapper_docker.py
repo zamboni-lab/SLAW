@@ -202,7 +202,7 @@ if __name__=="__main__":
         if "peak_width_fac" in raw_yaml["peakpicking"]["peaks_deconvolution"]:
             fwhm_fac = float(raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width_fac"]["value"])
         ppm = float(raw_yaml["peakpicking"]["traces_construction"]["ppm"]["value"])
-        exp.run_xcms(min_peakwidth, max_peakwidth, sn, ppm, min_int, max_outlier, min_scan, quant, log=LOG)
+        exp.run_xcms(min_peakwidth, max_peakwidth, sn, ppm, min_int, min_scan, log=LOG)
         exp.extract_ms2(noise_level=float(raw_yaml["peakpicking"]["noise_level_ms2"]["value"]),
                         output=pcr.OUT["CENTWAVE"]["MSMS"], all=True)
         exp.post_processing_peakpicking_xcms()

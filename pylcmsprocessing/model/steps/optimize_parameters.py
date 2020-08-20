@@ -180,14 +180,11 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
                 add = peakpicking__peaks_deconvolution__peak_width__add
                 min_peakwidth = float(const) * 60
                 max_peakwidth = float(const+add) * 60
-                fwhm_fac = float(peakpicking__peaks_deconvolution__peak_width_fac)
                 sn = float(peakpicking__peaks_deconvolution__SN)
                 min_int = float(peakpicking__noise_level_ms1)
                 min_scan = math.floor(float(peakpicking__traces_construction__min_scan))
-                max_outlier = math.floor(float(peakpicking__traces_construction__num_outliers))
-                quant = "area"
                 ppm = float(peakpicking__traces_construction__ppm)
-                exp.run_xcms(min_peakwidth, max_peakwidth, sn, ppm, min_int, max_outlier, min_scan, quant, log=LOG_PATH)
+                exp.run_xcms(min_peakwidth, max_peakwidth, sn, ppm, min_int, min_scan, log=LOG_PATH)
             if peakpicking=="OPENMS":
                 const = peakpicking__peaks_deconvolution__peak_width__const
                 add = peakpicking__peaks_deconvolution__peak_width__add
@@ -203,6 +200,7 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
                 exp.run_openms(min_fwhm, max_fwhm, fwhm_fac, sn, ppm, min_int, max_outlier, min_scan, quant, log=LOG_PATH)
 
         except Exception as e:
+            print(e)
             try:
                 if not reset:
                     os.remove(PATH_DB)

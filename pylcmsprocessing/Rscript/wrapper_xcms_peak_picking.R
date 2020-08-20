@@ -1,8 +1,9 @@
-library(xcms)
-library(data.table)
+suppressWarnings(suppressMessages(library(xcms, warn.conflicts = FALSE)))
+suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
 
 args <- commandArgs(trailingOnly = TRUE)
 
+# print(args)
 # args <- c(
 #   "U:/users/Alexis/examples_lcms_workflow/input/BEH30_2min_LipidMix_3.mzML",
 #   "U:/users/Alexis/examples_lcms_workflow/BEH30_2min_LipidMix_3.csv",
@@ -15,7 +16,6 @@ args <- commandArgs(trailingOnly = TRUE)
 #   "5000"
 # )
 
-
 PATH_RAW <- args[1]
 PATH_OUTPUT <- args[2]
 PPM <- as.numeric(args[3])
@@ -27,14 +27,10 @@ NOISE <- as.numeric(args[9])
 
 xraw <- xcmsRaw(PATH_RAW)
 peaks <- xcms:::findPeaks.centWave(xraw, ppm = PPM, peakwidth = PEAKWDITH, 
-  snthresh = SNT, prefilter = PREFILTER, mzCenterFun = "wMean", 
-  integrate = 1, mzdiff = -0.001, fitgauss = FALSE, scanrange = numeric(), 
-  noise = NOISE, sleep = 0, verbose.columns = FALSE, ROI.list = list(), 
-  firstBaselineCheck = TRUE, roiScales = NULL) 
+  snthresh = SNT, prefilter = PREFILTER) 
 
-###
 
-dtable <- data.table(mz=peaks[,"mz"],rt=peaks[,"rt"],height=peaks[,"maxo"],intensity=peaks[,"into"],
+dtable <- data.table(mz=peaks[,"mz"],rt=peaks[,"rt"]/60,height=peaks[,"maxo"],intensity=peaks[,"into"],
                      rt_min=peaks[,"rtmin"]/60,rt_max=peaks[,"rtmax"]/60,
                      mz_min=peaks[,"mzmin"],mz_max=peaks[,"mzmax"],SN=peaks[,"sn"],
                      peakwidth=(peaks[,"rtmax"]-peaks[,"rtmin"])/60)

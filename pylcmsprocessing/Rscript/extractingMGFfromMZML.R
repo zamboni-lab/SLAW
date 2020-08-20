@@ -107,9 +107,6 @@ count_ms1 <-
 dbDisconnect(dbb)
 
 raw_files <- infos[, 1]
-# raw_files <- str_replace(raw_files,"/sauer1/","U:/")
-raw_files <- c("U:/users/Alexis/examples_lcms_workflow/input_ms2/BEH30_2min_LipidMix_DDA_1.mzML",
-               "U:/users/Alexis/examples_lcms_workflow/input_ms2/BEH30_2min_LipidMix_DDA_2.mzML")
 vids <- as.integer(infos[, 2])
 num_files <- length(raw_files)
 

@@ -22,7 +22,7 @@ import shutil
 
 def check_peakpicking(pp):
     pp = pp.upper()
-    peakpicker = ["OPENMS","ADAP"]
+    peakpicker = ["OPENMS","ADAP","CENTWAVE"]
     if not pp in peakpicker:
         raise  Exception("Unknown peakpicking: "+pp+" known peakpickers are "+",".join(peakpicker))
     return pp
@@ -512,27 +512,18 @@ class Experiment:
             peakpickings = [mp.PeakPickingXCMS(row, min_peakwidth,max_peakwidth,snt,ppm,min_int,min_points) for row in rows]
             ids = [row[0] for row in rows]
             need_processing = [x.need_computing() for x in peakpickings]
-            ids_to_convert = [idv for idv,pp in zip(ids,need_processing) if pp]
+            ids_to_process = [idv for idv,pp in zip(ids,need_processing) if pp]
             ####Peak picking
             temp = [(x.get_output(),x.command_line_processing()) for x in peakpickings if x.need_computing()]
             clis = [x[1] for x in temp]
             names_output = [x[0] for x in temp]
             ####We run the jobs actually
             if len(clis) > 0:
-                runner.run(clis, silent=silent, log = log, timeout = cr.CONSTANT["PEAKPICKING_TIMOUT"])
-            #We convert the peaktables back to the data.
-            pjoin = os.path.join(ct.find_rscript(), "FromFeaturesMLToDf.R")
-            # ###CWe create the command line to allow the peakpicking
+                runner.run(clis, silent=silent, log=log, timeout = cr.CONSTANT["PEAKPICKING_TIMOUT"])
             if len(names_output) > 0:
-                names_converted = [x.split(".")[0] + ".csv" for x in names_output]
-                clis_conversion = ["Rscript " + pjoin + " " +old+ " " +new for old,new in zip(names_output,names_converted)]
-                runner.run(clis_conversion, silent=silent, log = log, timeout = cr.CONSTANT["PEAKPICKING_TIMOUT"])
-                for pid,nn in zip(ids_to_convert,names_converted):
-                    if os.path.isfile(nn):
-                        update_query = self.update_query_construction("processing", "id", str(pid), "output_ms", nn)
-                        c.execute(update_query)
-                    else:
-                        update_query = self.update_query_construction("processing", "id", str(pid), "valid", "0")
+                for nn,vid in zip(names_output,ids_to_process):
+                    if not os.path.isfile(nn):
+                        update_query = self.update_query_construction("processing", "id", str(vid), "valid", "0")
                         c.execute(update_query)
         self.close_db()
 

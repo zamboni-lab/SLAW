@@ -131,9 +131,9 @@ class PeakPickingXCMS(PeakPicking):
         # SNT < - as.numeric(args[6])
         # PREFILTER < - as.numeric(c(args[7], args[8]))
         # NOISE < - as.numeric(args[9])
-        cli_args = [pjoin,self.input,self.output,self.ppm,self.min_peakwidth,
+        cli_args = ["Rscript",pjoin,self.input,self.output,self.ppm,self.min_peakwidth,
                     self.max_peakwidth,self.snt,
                     self.point_prefilter,self.int_prefilter,self.min_int]
         cli_args = [str(arg) for arg in cli_args]
-        cli =  " ".join([pjoin]+cli_args)
+        cli =  " ".join(cli_args)
         return cli

@@ -14,22 +14,7 @@ ISO_NAME_COL <- "isotopic_pattern_annot"
 
 ##Argument passed by Python
 args <- commandArgs(trailingOnly = TRUE)
-print(args)
 
-# args <- c("U:/users/Alexis/data/slaw_evaluation/all_2mins/output/processing_db.sqlite",
-#           "U:/users/Alexis/data/slaw_evaluation/all_2mins/output/temp/temp1",
-#           "U:/users/Alexis/data/slaw_evaluation/all_2mins/output/datamatrices/dm_fillled.csv",
-#           "U:/users/Alexis/data/slaw_evaluation/all_2mins/output/temp/alignement.rds",
-#           "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/isotopes.tsv",
-#           "4","2","intensity","0.002","15","0.002","2"
-# )
-
-# args <- c("U:/users/Alexis/data/slaw_evaluation/MTBLS1129/output/processing_db.sqlite",
-# "U:/users/Alexis/data/slaw_evaluation/MTBLS1129/output/temp/temp1",
-# "U:/users/Alexis/data/slaw_evaluation/MTBLS1129/output/temp/temp11",
-# "U:/users/Alexis/data/slaw_evaluation/MTBLS1129/output/temp/alignement.rds",
-# "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/isotopes.tsv",
-# "4","2","intensity","0.001","15.0","0.01","16")
 
 PATH_DB <- args[1]
 PATH_DM <- args[2]

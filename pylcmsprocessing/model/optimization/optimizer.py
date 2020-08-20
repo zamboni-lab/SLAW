@@ -54,10 +54,10 @@ def fit_surface(points, values):
   lr = Lasso(fit_intercept=True,normalize=False,alpha=calpha)
   vlr = lr.fit(stable, values)
   coef = vlr.coef_
-  max_its = 10
+  max_its = 50
   num_its = 0
   while np.sum(coef!=0)<num_needed and num_its < max_its:
-    calpha = calpha/2
+    calpha = calpha*0.8
     lr = Lasso(fit_intercept=True, normalize=False, alpha=calpha)
     vlr = lr.fit(stable, values)
     coef = vlr.coef_
@@ -88,8 +88,6 @@ def find_approximate_maximum(points, values,impacting=0.1):
   ###We calculate the one for which the coefficient is
   coef_linear = abs(coef[0:nvar])
   coef_squared = abs(coef[(ntotal-nvar):ntotal])
-  max_contrib = max(max(coef_linear),max(coef_squared))
-  # threshold = max_contrib*0.2
   valid = [(coef_linear[idx]!=0 or coef_squared[idx]!=0) for idx in range(len(coef_linear))]
   return vmax.x,-vmax.fun-inter,valid
 

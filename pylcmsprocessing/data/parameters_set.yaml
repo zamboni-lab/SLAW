@@ -2,83 +2,83 @@
 optimization:
   description: Parameters of optimization method for peakpicking, grouping and annotation.
   need_optimization:
-    description: If set to True parameters optimization will be performed. If set to false not optimization will be done.
+    description: Boolean. If set to True parameters optimization will be performed. If set to false not optimization will be done.
     value: false
   files_used:
     priority: LOW
-    description: The number of files in optimization. You can specify it by providing a usmmary.txt files
+    description: Integer. The number of QC files used for optimization. If no peakpicking is performed
     value: 10
   number_of_points:
     priority: LOW
-    description: The number of points sampled at each surface estimation steps.
-    value: 20
+    description: Integer. The number of points sampled at each surface estimation steps.
+    value: 30
   num_iterations:
     priority: LOW
-    description: The maximum number of surface estimated. If no improvment happens at any iteration the optimization stops
+    description: Integer. The maximum number of surface estimated. If no improvement happens at any iteration the optimization stops anyway.
     value: 10
   initial_estimation:
     priority: LOW
-    description: Shall initial parameters and ranges be estimated from raw files. This will override the provided values.
-    value: True
+    description: Boolean. Shall initial parameters and ranges be estimated from raw files. This will override the provided values.
+    value: False
 peakpicking:
-  description: This step includes all the necessary sub steps to pass from an individual .mzML file to a processed peaktable. The data are processed using the ADAP algorithm implemented in MZmine or the openMS FeatureFinderMetabo algorithm.
+  description: This step includes all the necessary sub steps to pass from an individual .mzML file to a processed peaktable. The data are processed using one of the three algorithms provided by the algorithm fields..
   algorithm:
-    description: The algorithm used fo rpeakpikcing. Authorized value are ADAP and openMS.
+    description: Character. The algorithm used for peakpikcing. Authorized value are ADAP, OPENMS and CENTWAVE.
     value: openMS
   noise_level_ms1:
     priority: ESSENTIAL
     description: Integer. An absolute noise threshold to be used on MS1. Any points in a RAW file below this file will be discarded. This should not be too high, as low intensity part can still occurs at the border of a peak,
-    value: 10000
+    value: 0
   noise_level_ms2:
     priority: ESSENTIAL
     description: Integer. An absolute noise threshold to be used on MS2. Any points in a RAW file below this file will be discarded. This should not be too high, as low intensity part can still occurs at the border of a peak,
-    value: 5000
+    value: 0
   traces_construction:
-    description: Detection of consecutive mass points with similar masses in different acquisitions.
+    description: Parameters used in the detection of consecutive mass points with similar masses in different acquisitions.
     ppm:
       priority: ESSENTIAL
-      description: Float. The tolerance in part per million between different scans to be considered. Mass tolerance for a point of mass m/z is given by max(ppm x m/z x 1e-6,dmz).
+      description: Float. (All peakpicker) The tolerance in part per million between different scans to be considered. Mass tolerance for a point of mass m/z is given by max(ppm x m/z x 1e-6,dmz).
       value: 15
       range:
         - 3
-        - 20
+        - 30
     dmz:
       priority: ESSENTIAL
-      description: Float. The minimum tolerance in Da to be considered. Mass tolerance for a point of mass m/z is given by max(ppm x m/z x 1e-6,dmz).
+      description: Float. (All peakpicker) The minimum tolerance in Da to be considered. Mass tolerance for a point of mass m/z is given by max(ppm x m/z x 1e-6,dmz).
       value: 0.007
       range:
-        - 0.003
+        - 0.002
         - 0.01
     min_scan:
       priority: ESSENTIAL
-      description: Integer. The minimum number of points detected in consecutive scans for a trace to be valid. Any trace containing less than min_scan point is discarded.
+      description: Integer. (All peakpicker) The minimum number of points detected in consecutive scans for a trace to be valid. Any trace containing less than min_scan point is discarded.
       value: 15
       range:
-        - 4.5
-        - 20.5
+        - 2.5
+        - 8.5
     num_outliers:
       priority: LOW
-      description: openMS only the maximum number of outliers allowed in a mass traces.
+      description: Integer. (OPENMS only) the maximum number of outliers allowed in a mass traces.
       value: 5
       range:
-        - 2
-        - 7
+        - 1.5
+        - 5.5
   peaks_deconvolution:
-    description: Deconvolute traces to extract peaks corresponding to individuals ions.
+    description: This step Deconvolute traces to extract peaks corresponding to individuals ions.
     SN:
       priority: HIGH
-      description: Float. The signal-over-noise threshold for a peak to be discarded.
+      description: Float. (All peakpicker) The signal-over-noise threshold for a peak to be discarded.
       value: 15
       range:
-        - 3
-        - 20
+        - 0
+        - 15
     noise_level:
       priority: HIGH
-      description: Float. The min feature height for a deconvoluted peak to be kept.
+      description: Float. (All peakpicker) The min feature height for a deconvoluted peak to be kept.
       value: 50000
     peak_width:
       priority: ESSENTIAL
-      description: Floats. The minimum and maximum width of a peak in minutes. This parameter is highly dependent of you chromatography setup.
+      description: Floats. (All peakpicker) The minimum and maximum width of a peak in minutes. This parameter is highly dependent of you chromatography setup.
       value:
         - 0.02
         - 0.1
@@ -87,20 +87,18 @@ peakpicking:
           - 0.015
           - 0.15
         max:
-          - 0.07
-          - 0.3
+          - 0.05
+          - 0.5
     peak_width_fac:
       priority: HIGH
-      description: (Open MS only) FLoat between 0 and 1 a factor fivinf the main peakwidth for feature finder metabo.
+      description: Float. (OPENMS only) FLoat between 0 and 1 a factor fivinf the main peakwidth for feature finder metabo.
       value: 0.2
       range:
         - 0.0
         - 1.0
-
-
     rt_wavelet:
       priority: ESSENTIAL
-      description: Floats. Float. The minimum and width width the wavelets used for peak detection.
+      description: Floats. (ADAP only) The minimum and width width the wavelets used for peak detection.
       value:
         - 0.0005
         - 0.005
@@ -113,18 +111,18 @@ peakpicking:
           - 0.02
     coefficient_area_threshold:
       priority: LOW
-      description: Float. Coefficient over area filtering for ADAP.
+      description: Float. (OPENMS only) Coefficient over area filtering.
       value: 50
       range:
         - 20
         - 200
     ms2_mz_tol:
       priority: LOW
-      description: Float. The tolerance in mz for MS-MS pairing.
+      description: Float. (All peakpickers) The tolerance in mz for MS-MS pairing.
       value: 0.1
     ms2_rt_tol:
       priority: LOW
-      description: Float. The tolerance in rt for MS-MS pairing in minutes.
+      description: Float. (All peakpickers) The tolerance in rt for MS-MS pairing in minutes.
       value: 0.1
 grouping:
   description: Alignment of peaktables of different samples and building of a common data matrix. This step is done using a personnalized package for retention time correction.
@@ -134,11 +132,11 @@ grouping:
     value: 15
   drt:
     priority: HIGH
-    description: Float. The size of the bandwitdth of th gaussian to be considered. Should be half of the rt deviation expected approximately.
+    description: Float. The bandwitdth of the gaussian to be considered. This should be half of the rt deviation expected approximately.
     value: 0.03
     range:
       - 0.02
-      - 0.15
+      - 0.3
   extracted_quantity:
     priority: HIGH
     description: String. The extracted type of information. Can be 'intensity' or 'height'
@@ -175,7 +173,7 @@ ion_annotation:
     description: Grouping of ions originating form the same metabolite and annotations of adducts and fragments. The detection is done using a modified MScliques the annotation of ion is done using the InterpretMSSpectrum package.
     polarity:
       priority: ESSENTIAL
-      description: The polarity of the acquired mass spectrometry data, can be 'positive' or 'negative'
+      description: String. The polarity of the acquired mass spectrometry data, can be 'positive' or 'negative'
       value: positive
     ppm:
       priority: HIGH
@@ -187,27 +185,27 @@ ion_annotation:
       value: 0.01
     max_isotopes:
       priority: LOW
-      description: The maximum number of isotopic pattern extracted.
+      description: Integer. The maximum number of isotopic pattern extracted.
       value: 4
     max_charge:
       priority: LOW
-      description: THe maiximum number of charge allowed.
-      value: 2
+      description: Integer. The maximum number of charges allowed.
+      value: 3
     adducts_negative:
       priority: HIGH
-      description: Character. A list of adducts to be considered as chemical formula. See the provided examples for syntax.
+      description: Strings. A list of adducts to be considered as chemical formula. See the provided examples for syntax.
       value: NONE
     main_adducts_negative:
       priority: HIGH
-      description: Character. A list of adducts to be considered as possibly most intense peaks. See the provided examples for syntax.
+      description: Strings. A list of adducts to be considered as possibly most intense peaks. See the provided examples for syntax.
       value: NONE
     adducts_positive:
       priority: HIGH
-      description: Character. A list of adducts to be considered as chemical formula. See the provided examples for syntax.
+      description: Strings. A list of adducts to be considered as chemical formula. See the provided examples for syntax.
       value: NONE
     main_adducts_positive:
       priority: HIGH
-      description: Character. A list of adducts to be considered as possibly most intense peaks. See the provided examples for syntax.
+      description: Strings. A list of adducts to be considered as possibly most intense peaks. See the provided examples for syntax.
       value: NONE
     min_filter:
       priority: HIGH
