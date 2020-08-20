@@ -75,7 +75,7 @@ peakpicking:
     noise_level:
       priority: HIGH
       description: Float. (All peakpicker) The min feature height for a deconvoluted peak to be kept.
-      value: 50000
+      value: 20000
     peak_width:
       priority: ESSENTIAL
       description: Floats. (All peakpicker) The minimum and maximum width of a peak in minutes. This parameter is highly dependent of you chromatography setup.
