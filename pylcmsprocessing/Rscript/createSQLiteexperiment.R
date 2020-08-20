@@ -9,7 +9,7 @@ suppressWarnings(suppressMessages(library(tools,warn.conflicts = FALSE,quietly =
 DBSAMPLES <-  "samples" ###Containing peak and path
 DBPROCESSINGSAMPLE <-  "processing" ###Containing peak and path
 DBPEAKSPICKING <- "peakpicking"
-DBNAME <-    "MSexperiment" ###b
+DBNAME <-    "MSexperiment"
 
 
 option_list = list(
@@ -119,6 +119,9 @@ if (file.exists(opt$summary)) {
     stop("Missing files :", paste(expected_paths[vm], sep = ", "))
   ##We reorder path
   
+  if (anyDuplicated(vm)){
+    stop("Duplicated paths in summary.txt:",paste(expected_paths[duplcated[vm]], sep = ", "))
+  }
   
   rnames <- opt$summary
   if (opt$summaryreplicate %in% colnames(tsummary)) {
@@ -126,11 +129,10 @@ if (file.exists(opt$summary)) {
   } else{
     replicates <-  rep(1, length(paths))
   }
-
+  
+  paths <- paths[vm]
   if (opt$summarytype %in% colnames(tsummary)){
     types <- tsummary[[opt$summarytype]]
-    ###We reorder the ACs files eventually.
-    types <- types[vm]
 
 
     ###Three type of terminology are authorized, QC,blank,sample and QC and a number.
@@ -156,10 +158,14 @@ if (file.exists(opt$summary)) {
   replicates <-  rep(1, length(paths))
 }
 
+levels_str <- rep("MS2",length(paths))
+ms1_str <- rep("MS1",length(paths))
+levels_str <- ifelse(types=="MS2",levels_str,ms1_str)
+
 sample_tab <- data.frame(
   id = seq_along(paths),
   path = paths,
-  level = rep("MS1",length(paths)),
+  level = levels_str,
   types = types,
   replicate = as.integer(as.factor(replicates)),
   stringsAsFactors = FALSE
