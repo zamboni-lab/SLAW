@@ -70,7 +70,7 @@ class samplingOptimizer:
             self.sampler.sample(bounds=self.bounds,func=func,num_cores=num_cores,num_points=num_points,add_point=[dpoint],fixed_arguments=self.fixed_arguments)
             ###At each step we extract the best sample values
             best_idx,current_best_value = self.sampler.get_max()
-            current_best_point, empty, valid = self.optimizer.get_maximum(self.sampler.get_points(), self.sampler.get_values(),removed=-1.0)
+            current_best_point, empty, valid = self.optimizer.get_maximum(self.sampler.get_points(last_batch=True), self.sampler.get_values(last_batch=True),removed=-1.0)
             num_its += 1
         ##We pick the bset sampled points
         all_values = self.sampler.get_values()

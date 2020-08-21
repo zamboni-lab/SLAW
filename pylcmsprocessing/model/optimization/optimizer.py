@@ -15,6 +15,13 @@ class maxOptimizer:
     pindex = values.index(max(values))
     return points[pindex, :], values[pindex] , [True]*nvar
 
+def index_interactions_term(points):
+  inter_term = []
+  for i in range(points.shape[1] - 1):
+    for j in range(i + 1, points.shape[1]):
+      inter_term.append((i,j))
+  return inter_term
+
 def compute_interactions_terms(points):
   inter_term = []
   for i in range(points.shape[1] - 1):
@@ -52,9 +59,11 @@ def fit_surface(points, values):
     num_needed = points.shape[1]
 
   lr = Lasso(fit_intercept=True,normalize=False,alpha=calpha)
+  # lr = LinearRegression(fit_intercept=True,normalize=False)
   vlr = lr.fit(stable, values)
   coef = vlr.coef_
-  max_its = 50
+  # coef = coef/np.max(coef)
+  max_its = 30
   num_its = 0
   while np.sum(coef!=0)<num_needed and num_its < max_its:
     calpha = calpha*0.8
@@ -73,6 +82,7 @@ def get_range(points):
 def find_approximate_maximum(points, values,impacting=0.1):
   nvalues = [-v for v in values]
   scaler, coef, inter = fit_surface(points, nvalues)
+  coef = coef/np.max(coef)
   ###We sum the linear and square coefficient for each variable.
   nvar = points.shape[1]
   ##We first check if the Lasso converged, if not we just return a 0
@@ -88,7 +98,14 @@ def find_approximate_maximum(points, values,impacting=0.1):
   ###We calculate the one for which the coefficient is
   coef_linear = abs(coef[0:nvar])
   coef_squared = abs(coef[(ntotal-nvar):ntotal])
-  valid = [(coef_linear[idx]!=0 or coef_squared[idx]!=0) for idx in range(len(coef_linear))]
+  valid = [(coef_linear[idx]>0 or coef_squared[idx]>0) for idx in range(len(coef_linear))]
+  ##Changing interaction
+  coef_interactions = abs(coef[nvar:(ntotal-nvar)])
+  idx_interaction = index_interactions_term(points)
+  for idx in range(len(idx_interaction)):
+    if coef_interactions[idx]>0:
+      valid[idx_interaction[idx][0]]=True
+      valid[idx_interaction[idx][1]]=True
   return vmax.x,-vmax.fun-inter,valid
 
 class rsmOptimizer:

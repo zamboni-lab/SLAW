@@ -68,7 +68,7 @@ peakpicking:
     SN:
       priority: HIGH
       description: Float. (All peakpicker) The signal-over-noise threshold for a peak to be discarded.
-      value: 15
+      value: 3
       range:
         - 0
         - 15
