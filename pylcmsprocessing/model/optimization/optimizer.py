@@ -82,9 +82,14 @@ def get_range(points):
 def find_approximate_maximum(points, values,impacting=0.1):
   nvalues = [-v for v in values]
   scaler, coef, inter = fit_surface(points, nvalues)
-  coef = coef/np.max(coef)
-  ###We sum the linear and square coefficient for each variable.
+  mcoef = np.max(coef)
   nvar = points.shape[1]
+  if mcoef==0:
+    coef = coef/np.max(coef)
+  else:
+    valid = [False]*nvar
+    return None,None,valid
+  ###We sum the linear and square coefficient for each variable.
   ##We first check if the Lasso converged, if not we just return a 0
   if np.sum(coef!=0)==0:
     non_valid = [False]*nvar

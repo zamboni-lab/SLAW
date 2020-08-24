@@ -12,6 +12,7 @@ import math
 
 import model.experiment as me
 import common.references as cr
+import common.slaw_exception as cse
 import model.optimization.score_experiment as ms
 import model.optimization.sampling as mos
 import model.helper.parameters_handler as ph
@@ -412,9 +413,11 @@ class ParametersOptimizer:
                 pdb = None
                 pda = pd.read_csv(summary_peakpicking)
                 idmax = pda.shape[0]-1
-
-                pdb = pda.db[idmax]
-
+                try:
+                    pdb = pda.db[idmax]
+                except AttributeError as e:
+                    print(e)
+                    print(pdb.head())
                 ###In any case we recompute a single parameters with enough cores
                 ###In every case we recompute a single paramters with the best peakpicking
                 dic_call = dic_fixed_grouping

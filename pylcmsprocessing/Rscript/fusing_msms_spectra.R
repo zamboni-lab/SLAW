@@ -226,6 +226,9 @@ tab_summary <- sapply(vmgf,function(x){
 collision <- NULL
 if("COLLISIONENERGY" %in% fvarLabels(vmgf[[1]])){
   collision <- sapply(vmgf,function(x){as.numeric(as.character(fData(x)[,"COLLISIONENERGY"]))},simplify = FALSE)
+}else{
+  ###In this case we don t know the collision energy, we put it to 0
+  collision <- sapply(vmgf,function(x){rep(0,length(x))},simplify = FALSE)
 }
 
 collision <- unlist(collision)

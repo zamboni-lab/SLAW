@@ -38,7 +38,7 @@ class samplingOptimizer:
         self.optimizer=optimizer
 
     def optimize(self,func,num_points=100,relative_increase = 0.02,
-                 max_its=10,contraction = 0.6, extension = 0.1,num_cores=1,max_jumps = 1,last_batch=True):
+                 max_its=10,contraction = 0.6, extension = 0.1,num_cores=1,max_jumps = 2,last_batch=True):
 
         ###We add some points
         global_best_value = 0.01
@@ -60,13 +60,15 @@ class samplingOptimizer:
                 num_jumps = num_jumps+1
             else:
                 global_idx = best_idx
-                global_best_value = current_best_value
             dpoint = dict(zip(list(names_vars),list(current_best_point)))
             first = False
 
             ###We restrain thge constraints using the newly determined best points
-            self.bounds.contract_bound(current_best_point,self.sampler.get_names(),valid=valid,contraction=contraction, extension=extension,
-                                     extreme=0.1, only_positive=True)
+            if sum(valid)!=0:
+                self.bounds.contract_bound(current_best_point,self.sampler.get_names(),valid=valid,contraction=contraction, extension=extension,
+                                         extreme=0.1, only_positive=True)
+            else:
+                num_jumps = 1
             self.sampler.sample(bounds=self.bounds,func=func,num_cores=num_cores,num_points=num_points,add_point=[dpoint],fixed_arguments=self.fixed_arguments)
             ###At each step we extract the best sample values
             best_idx,current_best_value = self.sampler.get_max()
@@ -77,9 +79,7 @@ class samplingOptimizer:
         all_points = self.sampler.get_points()
         cnames = self.sampler.get_names()
         pindex = all_values.index(max(all_values))
-        ###we corect the ids for filtered out values
-
-
+        ###we correct the ids for filtered out values
         return dict(zip(cnames,list(all_points[pindex,:])))
 
 
@@ -155,6 +155,10 @@ class bounds:
 
         for name,val in zip(names,valid):
             print("PAR:",name," SIGNIFICANT:",val," RANGE: ["+str(self.lb[name])+"-"+str(self.ub[name])+"]")
+
+def harm_mean(x,pow=1):
+    np.power(np.mean(np.power(x,-pow)),-pow)
+
 
 
 class boundedSampler:
@@ -233,7 +237,7 @@ class boundedSampler:
                 norm_val = norm_val[self.get_filter()]
             ###We remove any negative value
             norm_val = norm_val[:,norm_val.min(axis=0)>=0]
-            return list(np.apply_along_axis(hmean,1,norm_val))
+            return list(np.apply_along_axis(harm_mean,1,norm_val,pow=2))
         else:
             return sub_l
 
