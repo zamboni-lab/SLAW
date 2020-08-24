@@ -80,8 +80,15 @@ option_list = list(
 )
 
 
+
+
 opt_parser <-  OptionParser(option_list = option_list)
 opt <- parse_args(opt_parser)
+if(FALSE){
+  opt <- list(directory="U:/users/Alexis/data/BioMarCoAlaaPos",summary="U:/users/Alexis/data/BioMarCoAlaaPos/summary.csv",
+              summarypath="path",summarytype="type",mzml="U:/users/Alexis/data/BioMarCoAlaaPos")
+  
+}
 
 
 #####We move to the target experiment repostory.
@@ -116,13 +123,15 @@ if (file.exists(opt$summary)) {
   expected_paths <- tsummary[[opt$summarypath]]
   vm <- match(basename(expected_paths), basename(paths))
   if (any(is.na(vm)))
-    stop("Missing files :", paste(expected_paths[vm], sep = ", "))
+    stop("Missing files :", paste(expected_paths[is.na(vm)], sep = ", "))
   ##We reorder path
   
   if (anyDuplicated(vm)){
-    stop("Duplicated paths in summary.txt:",paste(expected_paths[duplcated[vm]], sep = ", "))
+    stop("Duplicated paths in summary.txt:",paste(expected_paths[duplicated(vm)], sep = ", "))
   }
   
+  
+  paths <- paths[vm]
   rnames <- opt$summary
   if (opt$summaryreplicate %in% colnames(tsummary)) {
     replicates <-  tsummary[[opt$summaryreplicate]]
@@ -130,7 +139,6 @@ if (file.exists(opt$summary)) {
     replicates <-  rep(1, length(paths))
   }
   
-  paths <- paths[vm]
   if (opt$summarytype %in% colnames(tsummary)){
     types <- tsummary[[opt$summarytype]]
 

@@ -100,12 +100,12 @@ def find_approximate_maximum(points, values,impacting=0.1):
   coef_squared = abs(coef[(ntotal-nvar):ntotal])
   valid = [(coef_linear[idx]>0 or coef_squared[idx]>0) for idx in range(len(coef_linear))]
   ##Changing interaction
-  coef_interactions = abs(coef[nvar:(ntotal-nvar)])
-  idx_interaction = index_interactions_term(points)
-  for idx in range(len(idx_interaction)):
-    if coef_interactions[idx]>0:
-      valid[idx_interaction[idx][0]]=True
-      valid[idx_interaction[idx][1]]=True
+  # coef_interactions = abs(coef[nvar:(ntotal-nvar)])
+  # idx_interaction = index_interactions_term(points)
+  # for idx in range(len(idx_interaction)):
+  #   if coef_interactions[idx]>0:
+  #     valid[idx_interaction[idx][0]]=True
+  #     valid[idx_interaction[idx][1]]=True
   return vmax.x,-vmax.fun-inter,valid
 
 class rsmOptimizer:

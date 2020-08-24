@@ -14,6 +14,17 @@ ISO_NAME_COL <- "isotopic_pattern_annot"
 
 ##Argument passed by Python
 args <- commandArgs(trailingOnly = TRUE)
+# 
+# if(DEBUG){
+# args <- c(
+#   "U:/users/Alexis/data/slaw_evaluation/MTBLS1129/output_cluster/output_openms/processing_db.sqlite",
+#   "U:/users/Alexis/data/datamatrix_31eb4257c5cdc54aabd59692e18f690c.csv",
+#   "U:/users/Alexis/data/dm_output.csv",
+#   "U:/users/Alexis/data/slaw_evaluation/MTBLS1129/output_cluster/output_openms/temp/alignement.rds",
+#   "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/isotopes.tsv",
+#   "4","3","intensity","0.001","15","0.01","5"
+# )
+# }
 
 
 PATH_DB <- args[1]
@@ -30,6 +41,10 @@ DMZ <- as.numeric(args[11])
 NUM_WORKERS <- as.integer(args[12])
 
 TEMP_NAME <- paste(PATH_FILLED,2,sep="")
+
+###This is jsut for evaluation
+TEMP_FILLED <- paste(TEMP_NAME,"non_filled.csv",sep="_")
+nullvar <- file.copy(PATH_DM,TEMP_FILLED)
 
 get_os <- function() {
   if (.Platform$OS.type == "windows") {
@@ -57,9 +72,10 @@ if (get_os() == "win") {
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
 all_peaktables <- dbGetQuery(dbb, "SELECT output_ms FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")[, 1]
 all_samples <- dbGetQuery(dbb, "SELECT path FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")[, 1]
-# all_peaktables <- paste("U:/users/Alexis/data/slaw_evaluation/MTBLS1129",all_peaktables,sep="")
-# all_samples <- paste("U:/users/Alexis/data/slaw_evaluation/MTBLS1129",all_samples,sep="")
-
+# if(DEBUG){
+# all_peaktables <- paste("U:/users/Alexis/data/slaw_evaluation/MTBLS1129/output_cluster/output_openms/OPENMS/peaktables/",basename(all_peaktables),sep="")
+# all_samples <- paste("U:/users/Alexis/data/slaw_evaluation/MTBLS1129/mzML/",basename(all_samples),sep="")
+# }
 dbDisconnect(dbb)
 
 isotopes_table <- fread(PATH_ISOTOPES,sep = " ")
@@ -110,8 +126,9 @@ for(idx in 1:(length(batches)-1)){
   isotopes_to_extract[vord] <- by_sample
   align <- readRDS(PATH_MODEL)
   rmz <- range(dm[["mean_mz"]])
-  max_iso <- seq(rmz[1],rmz[2],by=20)
+  max_iso <- seq(rmz[1],rmz[2]+200,by=20)
   maxC <- ceiling(max_iso/14)
+  maxC <- maxC
   dist_iso <- sapply(maxC,function(x,miso,c13){
     res <- rep(0,miso)
     for(is in 1:miso){
@@ -128,6 +145,9 @@ for(idx in 1:(length(batches)-1)){
                                          table_iso,dist_c13,dm,quant,margin_mz=0.001,
                                          max_iso = 4,max_charge = 2, ppm = 8,dmz = 0.002){
     
+    ###We create default vector to return if needed
+    def_isotopes <- rep(NA,length(isotopes))
+    def_missing <- rep(0.0,length(to_infer))
   
     suppressWarnings(suppressMessages(library(xcms,warn.conflicts = FALSE)))
     suppressWarnings(suppressMessages(library(pracma,warn.conflicts = FALSE)))
@@ -180,8 +200,10 @@ for(idx in 1:(length(batches)-1)){
       }
       return(val)
     }
-    inferred_values <- mapply(dm[["min_mz"]][infer[ort]],dm[["max_mz"]][infer[ort]],rt_corr,dm[["mean_peakwidth"]][infer[ort]],
-                              infer[ort],FUN = extractIntensity,MoreArgs = list(quant=quant,xraw=xraw, margin_mz = margin_mz))
+    inferred_values <- tryCatch(mapply(dm[["min_mz"]][infer[ort]],dm[["max_mz"]][infer[ort]],rt_corr,dm[["mean_peakwidth"]][infer[ort]],
+                              infer[ort],FUN = extractIntensity,MoreArgs = list(quant=quant,xraw=xraw, margin_mz = margin_mz)),
+                              error=function(e){return(def_missing)})
+    
     
     inferred_values <- inferred_values[order(ort,decreasing = FALSE)]
     
@@ -243,7 +265,7 @@ for(idx in 1:(length(batches)-1)){
         maxCp <- (peak["mz_max"]/14)
         massC13 <- iso_table[["massdiff"]][1]
         massdiffC13 <- massC13*(1:max_iso)
-        idp <- floor(maxCp/20)+1
+        idp <- floor(maxCp/20)
         distC13 <- dist_iso[,idp]
         tol <- min((ppm*mz_peak*1e-6),dmz)
         max_theo_int <- int_peak*distC13
@@ -310,32 +332,35 @@ for(idx in 1:(length(batches)-1)){
           return(df_to_return)
         }
       }
-      visotopes <- apply(peaks[vmap],1,extractIsotopes,xraw=xraw,
+      visotopes <- tryCatch(apply(peaks[vmap],1,extractIsotopes,xraw=xraw,
             iso_table=table_iso,dist_iso=dist_c13,
             noise_level=noise_level,
-            max_iso = max_iso,max_charge = max_charge, ppm = ppm,dmz = dmz)
+            max_iso = max_iso,max_charge = max_charge, ppm = ppm,dmz = dmz),error=function(e){return(def_isotopes)})
     }
     return(list(inferred_values,visotopes))
   }
   # 
-  # if(FALSE){
-    #  idx <- 61
-    # exm <- extractMissingInformations("U:/users/Alexis/data/slaw_evaluation/MTBLS1129/mzML/menLCCstage2_373.mzML",
-    #                            "U:/users/Alexis/data/slaw_evaluation/MTBLS1129/output/openMS/peaktables/menLCCstage2_373.csv",
-    #                            isotopes_to_extract[[idx]],
-    #                            to_infer[[idx]],
-    #                            align@rt_correction[[idx]],
-    #                            dm=dm_peaks,quant=QUANT,table_iso=isotopes_table,
-    # dist_c13=dist_iso,margin_mz=MARGIN_MZ,max_iso = MAX_ISO,
-    # max_charge = MAX_CHARGE, ppm = PPM,dmz = DMZ)
+  vmap <- vector(mode="list",length=length(all_samples))
+  # if(DEBUG){
+  # for(aidx in seq_along(all_samples)){
+  #   print(aidx)
+  # vmap[[aidx]] <- extractMissingInformations(all_samples[[aidx]],
+  #                            all_peaktables[[aidx]],
+  #                            isotopes_to_extract[[aidx]],
+  #                            to_infer[[aidx]],
+  #                            align@rt_correction[[aidx]],
+  #                            dm=dm_peaks,quant=QUANT,table_iso=isotopes_table,
+  # dist_c13=dist_iso,margin_mz=MARGIN_MZ,max_iso = MAX_ISO,
+  # max_charge = MAX_CHARGE, ppm = PPM,dmz = DMZ)
+  }
   # }
   
-
+  # if(!DEBUG){
   vmap <- bpmapply(all_samples,all_peaktables,isotopes_to_extract,to_infer,align@rt_correction,
                  FUN = extractMissingInformations,MoreArgs = list(dm=dm_peaks,quant=QUANT,table_iso=isotopes_table,
                                                                   dist_c13=dist_iso,margin_mz=MARGIN_MZ,max_iso = MAX_ISO,
                                                                   max_charge = MAX_CHARGE, ppm = PPM,dmz = DMZ),SIMPLIFY = FALSE,BPPARAM = bpp)
-  
+  # }
   ###We fill the column 
   for(iquant in seq_along(quant_cols)){
     if(length(to_infer[[iquant]])==0) next
@@ -378,7 +403,6 @@ for(idx in 1:(length(batches)-1)){
     name_col[isotopes_to_extract[[is]]] <- names
     dist_col[isotopes_to_extract[[is]]] <- dists
   }
-  message("Gap filling finished")
   ###The data matrix is expanded
   infos_idx <- 1:(quant_cols[1]-1)
   quant_idx <- quant_cols
@@ -388,5 +412,6 @@ for(idx in 1:(length(batches)-1)){
   colnames(dm) <- new_names
   ww <- fwrite(dm,TEMP_NAME,append=TRUE)
 }
+message("Gap filling finished")
 ww <- file.rename(PATH_DM, PATH_FILLED)
 ww <- file.rename(TEMP_NAME,PATH_DM)
