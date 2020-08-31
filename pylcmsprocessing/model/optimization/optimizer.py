@@ -66,12 +66,17 @@ def fit_surface(points, values):
   max_its = 30
   num_its = 0
   while np.sum(coef!=0)<num_needed and num_its < max_its:
-    calpha = calpha*0.8
+    calpha = calpha*0.7
     lr = Lasso(fit_intercept=True, normalize=False, alpha=calpha)
     vlr = lr.fit(stable, values)
     coef = vlr.coef_
     num_its += 1
   inter = vlr.intercept_
+  ###If all coef are null, we try to fit a linera regression just sample
+  if np.sum(coef==0)==0:
+    lr = LinearRegression()
+    vlr = lr.fit(stable, values)
+    coef = vlr.coef_
   return scaler, coef, inter
 
 def get_range(points):
@@ -83,17 +88,16 @@ def find_approximate_maximum(points, values,impacting=0.1):
   nvalues = [-v for v in values]
   scaler, coef, inter = fit_surface(points, nvalues)
   mcoef = np.max(coef)
+  # print("Valids coef:",np.sum(coef!=0))
   nvar = points.shape[1]
-  if mcoef==0:
-    coef = coef/np.max(coef)
+  if mcoef!=0:
+    coef = coef/mcoef
   else:
-    valid = [False]*nvar
-    return None,None,valid
+    non_valid = [False]*nvar
+    return np.zeros(coef.shape),0.0,non_valid
   ###We sum the linear and square coefficient for each variable.
   ##We first check if the Lasso converged, if not we just return a 0
-  if np.sum(coef!=0)==0:
-    non_valid = [False]*nvar
-    return 0.0,0.0,non_valid
+  frac_threshold = 0.005*mcoef
   ntotal = len(coef)
   lb, ub = get_range(points)
   bounds = Bounds(lb=lb, ub=ub)
@@ -103,7 +107,7 @@ def find_approximate_maximum(points, values,impacting=0.1):
   ###We calculate the one for which the coefficient is
   coef_linear = abs(coef[0:nvar])
   coef_squared = abs(coef[(ntotal-nvar):ntotal])
-  valid = [(coef_linear[idx]>0 or coef_squared[idx]>0) for idx in range(len(coef_linear))]
+  valid = [(coef_linear[idx]>frac_threshold or coef_squared[idx]>frac_threshold) for idx in range(len(coef_linear))]
   ##Changing interaction
   # coef_interactions = abs(coef[nvar:(ntotal-nvar)])
   # idx_interaction = index_interactions_term(points)

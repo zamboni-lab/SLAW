@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from shutil import copyfile
 import math
+import traceback
 
 import model.experiment as me
 import common.references as cr
@@ -135,6 +136,7 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
     parameters.write_parameters(stored_param)
     PATH_XML = os.path.join(OUTPUT_DIR,"temp_par"+str(hash_val)+".xml")
 
+    print("Creating experiment in ",PATH_DB)
     exp = me.Experiment(PATH_DB,save_db = PATH_SAVE_DB,reset=False)
 
     weights = scorer(exp).get_weight()
@@ -168,6 +170,8 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
         if peakpicking=="CENTWAVE":
             builder = ib.xcmsBuilder(exp.db, output=exp.output)
             builder.build_inputs_single_parameter_set(0.01, 0.1, 10, 10, 500, 3)
+        if peakpicking=="ADAP":
+            exp.run_mzmine("/MZmine-2.52-Linux", PATH_XML, int(num_cpus), log=LOG_PATH, input_only=True)
         exp.rebase_experiment(pdb)
     else:
         try:
@@ -322,9 +326,9 @@ class ParametersOptimizer:
 
     ###Thoe optimization is always two steps
     def do_optimize_parameters(self,optim_string="bbd_rsm",max_its=10,num_points=50,**kwargs):
-        if num_points<=20:
-            print("Number of sampled points set to 20")
-            num_points=20
+        if num_points<=15:
+            print("Number of sampled points set to 15")
+            num_points=15
 
         ### We get the optimization algorithm.
         psampler,poptimizer,pscorer,gsampler,goptimizer,gscorer = parse_optim_option(optim_string)
@@ -361,7 +365,6 @@ class ParametersOptimizer:
         ##We get the bounds of the optimizable parameters.
         summary_peakpicking = self.path_summary + "_peakpicking.csv"
 
-        # print("Optimizing:",to_optimize_peakpicking)
         if len(to_optimize_peakpicking) > 0 and pscorer!="none":
             lb_peakpicking = [x[0] for x in to_optimize_peakpicking.values()]
             ub_peakpicking = [x[1] for x in to_optimize_peakpicking.values()]
@@ -381,6 +384,7 @@ class ParametersOptimizer:
                 pvoptim = psoptim.optimize(peak_picking_alignment_scoring,max_its=max_its,num_points=num_points, num_cores=self.num_workers)
             except Exception as e:
                 print("Exception occured:",e)
+                print(traceback.format_exc())
                 pass
             print("Peakpicking optimization finished.")
         else:
@@ -436,16 +440,16 @@ class ParametersOptimizer:
                     dic_fixed_grouping[ik] = convert_val(pvoptim[ik])
 
             gsoptim = mos.samplingOptimizer(gsampler, goptimizer, bounds_grouping, fixed_arguments=dic_fixed_grouping)
-            try:
-                mfloor = math.floor(self.num_workers/2)
-                if mfloor<1:
-                    mfloor = 1
+            mfloor = math.floor(self.num_workers/2)
+            if mfloor<1:
+                mfloor = 1
+            print("Grouping optimization finished.")
+            final_dic = dic_fixed_grouping
+            try :
                 gvoptim = gsoptim.optimize(peak_picking_alignment_scoring,max_its=max_its, num_points=num_points, num_cores=mfloor)
-                print("Grouping optimization finished.")
-                final_dic = dic_fixed_grouping
                 for ik in gvoptim:
                     final_dic[ik] = convert_val(gvoptim[ik])
-            except Exception:
+            except Exception as e:
                 pass
         # The best paramters is stroed
         self.best_par = final_dic

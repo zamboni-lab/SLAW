@@ -63,9 +63,7 @@ class PeakpickingScorerIPO(PeakpickingScorer):
         ##We change all the value with their actual path in the sampling folder
         val = 0
         for path in all_peaktables:
-            # print(path)
             if not os.path.exists(path):
-                # print("PATH_NOT_FOUND")
                 return -1.0
             vdata = pd.read_csv(path,header=0,sep=",")
             MASS_C13 = 1.003355
@@ -94,7 +92,6 @@ class PeakpickingScorerIPO(PeakpickingScorer):
             mz_tree = sp.KDTree(spatial_mz)
             rt_tree = sp.KDTree(spatial_rt)
             for io in order:
-                # print(io)
                 mz = spatial_mz.mz[order[io]]
                 int = int_vec[order[io]]
 
@@ -144,7 +141,6 @@ class PeakpickingScorerSLAW(PeakpickingScorer):
 
         # 5ppm = 0.02 peaks peakwidth =
         btab = pd.concat(all_peaktables)
-
         norm_rt = max(btab.rt) / 20
         btab.mz = btab.mz / 0.005
         btab.rt = btab.rt / norm_rt

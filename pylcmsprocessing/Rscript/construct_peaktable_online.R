@@ -20,12 +20,6 @@ get_os <- function() {
 
 
 args <- commandArgs(trailingOnly = TRUE)
-# args <- c("U:/users/Alexis/data/slaw_evaluation/test_data/output/processing_db.sqlite",
-#           "U:/users/Alexis/data/slaw_evaluation/test_data/output/temp/blocks",
-#           "U:/users/Alexis/data/slaw_evaluation/test_data/output/temp/alignement.rds",
-# "U:/users/Alexis/data/slaw_evaluation/test_data/output/datamatrices/datamatrix_4210d8f4e26b0e4f6f8b8a8e5b93bede.csv",
-# "intensity","0.3383769","0.01","15.0","150","0.1","4",
-# "U:/users/Alexis/data/slaw_evaluation/test_data/output/figures/rt_dev_4210d8f4e26b0e4f6f8b8a8e5b93bede.pdf")
 PATH_DB<- args[1]
 PATH_BLOCKS <- args[2]
 PATH_ALIGNMENT <- args[3]
@@ -49,13 +43,6 @@ if(get_os()=="win"){
 if(NUM_CORES==1){
     bpp <- SerialParam()
 }
-# if(NUM_CORES==1){
-#   bpp <- SerialParam()
-# }
-
-
-
-
 
 
 if(!file.exists(PATH_OUT_DATAMATRIX)){
@@ -64,11 +51,8 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
     all_peaktables <- dbGetQuery(dbb, "SELECT output_ms FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")[, 1]
     dbDisconnect(dbb)
     
-    
     ###We check the number of file by batch. No more than 300000 peaks
     to_check <- sample(all_peaktables,min(length(all_peaktables),10))
-    
-    
     MAX_PEAKS <- 700000
     peaks_by_sample <- mean(sapply(to_check,function(x){
       tt <- read.table(x,sep=",",header=TRUE)
@@ -76,8 +60,6 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
     }))
     
     max_by_batch <- floor(MAX_PEAKS/peaks_by_sample)
-    
-    
 
     if(FALSE){
       library(stringr)
@@ -129,9 +111,6 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
     }
     
     message("Alignment done")
-    
-    
-    
     
 }else{
   message("Data matrix already exists alignement won t be performed: ",PATH_OUT_DATAMATRIX)

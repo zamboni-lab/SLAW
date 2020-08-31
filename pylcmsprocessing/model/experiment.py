@@ -396,10 +396,11 @@ class Experiment:
         self.close_db()
         return softwares
 
-    def run_mzmine(self, pmzmine, xml_file, batch_size=2000, silent=True, log = None):
+    def run_mzmine(self, pmzmine, xml_file, batch_size=2000, silent=True, log = None, input_only=False):
 
         self.building_inputs_single_processing(xml_file)
-
+        if input_only:
+            return None
         num_workers = self.get_workers()
         runner = pr.ParallelRunner(num_workers)
         softwares = self.find_software_from_peakpicking()
@@ -537,7 +538,7 @@ class Experiment:
         p_conversion = os.path.join(ct.find_rscript(), "wrapper_MZmine_peak_table_conversion.R ")
         to_convert = [x[0] + "\n" for x in processings if not is_converted(x[0])]
         if len(to_convert) > 0:
-            print("correcting " + str(len(to_convert)) + " files")
+            print("correcting " + str(len(to_convert)) + " files:","|".join(to_convert))
             with open(path_temp, "w+") as summary:
                 summary.writelines(to_convert)
             cline = "Rscript " + p_conversion + " " + path_temp + " " + str(self.get_workers(open=False))

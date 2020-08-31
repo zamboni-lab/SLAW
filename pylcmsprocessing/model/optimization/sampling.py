@@ -41,7 +41,6 @@ class samplingOptimizer:
                  max_its=10,contraction = 0.6, extension = 0.1,num_cores=1,max_jumps = 2,last_batch=True):
 
         ###We add some points
-        global_best_value = 0.01
         num_its = 1
         self.sampler.sample(bounds=self.bounds,func=func,num_cores=num_cores,num_points=num_points,fixed_arguments=self.fixed_arguments)
         best_idx,current_best_value = self.sampler.get_max()
@@ -68,12 +67,17 @@ class samplingOptimizer:
                 self.bounds.contract_bound(current_best_point,self.sampler.get_names(),valid=valid,contraction=contraction, extension=extension,
                                          extreme=0.1, only_positive=True)
             else:
-                num_jumps = 1
+                num_jumps += 1
             self.sampler.sample(bounds=self.bounds,func=func,num_cores=num_cores,num_points=num_points,add_point=[dpoint],fixed_arguments=self.fixed_arguments)
             ###At each step we extract the best sample values
             best_idx,current_best_value = self.sampler.get_max()
             current_best_point, empty, valid = self.optimizer.get_maximum(self.sampler.get_points(last_batch=True), self.sampler.get_values(last_batch=True),removed=-1.0)
             num_its += 1
+        ##I
+        if num_jumps>max_jumps:
+            pass
+        elif num_its>=max_its:
+            print("Optimization stopped because no improvement was achieved in the last round. ")
         ##We pick the bset sampled points
         all_values = self.sampler.get_values()
         all_points = self.sampler.get_points()
@@ -137,10 +141,9 @@ class bounds:
             else:
                 if nub > self.ub[key]:
                     nub = self.ub[key]
-
             if only_positive:
-                if nlb < 0: nlb = 0
-
+                if nlb < 0:
+                    nlb = 0
             tnlb[key] = nlb
             tnub[key] = nub
         self.lb = tnlb
@@ -157,7 +160,7 @@ class bounds:
             print("PAR:",name," SIGNIFICANT:",val," RANGE: ["+str(self.lb[name])+"-"+str(self.ub[name])+"]")
 
 def harm_mean(x,pow=1):
-    np.power(np.mean(np.power(x,-pow)),-pow)
+    return np.power(np.mean(np.power(x,-pow)),-pow)
 
 
 
@@ -221,7 +224,6 @@ class boundedSampler:
 
     ###Values are normalized
     def get_values(self,last_batch=False,filtered=True):
-        # print(self.values)
         tvalues =self.values
         if last_batch:
             tvalues = tvalues[-self.batch_size[-1]:]
@@ -233,11 +235,10 @@ class boundedSampler:
             for idx in range(res.shape[1]):
                 norm_val[:,idx] = (0.0001+norm_val[:,idx]/max_val[idx])
             if filtered:
-                # print("filtering:",self.get_filter())
                 norm_val = norm_val[self.get_filter()]
             ###We remove any negative value
             norm_val = norm_val[:,norm_val.min(axis=0)>=0]
-            return list(np.apply_along_axis(harm_mean,1,norm_val,pow=2))
+            return list(np.apply_along_axis(harm_mean,1,norm_val,pow=1.5))
         else:
             return sub_l
 
