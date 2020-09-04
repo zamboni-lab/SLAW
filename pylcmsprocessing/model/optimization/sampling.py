@@ -5,9 +5,10 @@ import inspect
 import concurrent.futures
 
 from model.optimization.rsm import bbdesign
+from model.optimization.equidistant_sampling import boundedGrid
 from model.optimization.optimizer import rsmOptimizer,maxOptimizer
 
-SAMPLER = ["random","bbd","lipo"]
+SAMPLER = ["random","bbd","lipo","balanced"]
 def getSampler(name="lipo"):
     if name == "random":
         return uniformBoundedSampler
@@ -15,7 +16,9 @@ def getSampler(name="lipo"):
         return bbdSampler
     elif name=="lipo":
         return lipoSampler
-    return bbdSampler
+    elif name=="balanced":
+        return gridBoundedSampler
+    return uniformBoundedSampler
 
 def getOptimizer(name="rsm"):
     if name=="rsm":
@@ -38,14 +41,14 @@ class samplingOptimizer:
         self.optimizer=optimizer
 
     def optimize(self,func,num_points=100,relative_increase = 0.02,
-                 max_its=10,contraction = 0.6, extension = 0.1,num_cores=1,max_jumps = 2,last_batch=True):
+                 max_its=10,contraction = 0.8, extension = 0.1,num_cores=1,max_jumps = 2,last_batch=True):
 
         ###We add some points
         num_its = 1
         self.sampler.sample(bounds=self.bounds,func=func,num_cores=num_cores,num_points=num_points,fixed_arguments=self.fixed_arguments)
         best_idx,current_best_value = self.sampler.get_max()
         global_idx = best_idx
-        current_best_point,empty,valid = self.optimizer.get_maximum(self.sampler.get_points(last_batch=last_batch),self.sampler.get_values(last_batch=last_batch))
+        current_best_point,empty,valid,coefs = self.optimizer.get_maximum(self.sampler.get_points(last_batch=last_batch),self.sampler.get_values(last_batch=last_batch))
 
         num_jumps=0
         names_vars = self.sampler.get_names()
@@ -53,8 +56,8 @@ class samplingOptimizer:
         ###We always test the best point
         while (first) or ((num_jumps <= max_jumps) and num_its < max_its):
             print("Iteration:", num_its, "on", max_its, "current best score:", "%0.2f" % current_best_value)
-            self.bounds.print_bounds(names_vars,valid=valid)
-
+            ###We print the name of the impactful variable this round.
+            # self.bounds.print_bounds(names_vars,valid=valid)
             if best_idx == global_idx:
                 num_jumps = num_jumps+1
             else:
@@ -68,10 +71,11 @@ class samplingOptimizer:
                                          extreme=0.1, only_positive=True)
             else:
                 num_jumps += 1
-            self.sampler.sample(bounds=self.bounds,func=func,num_cores=num_cores,num_points=num_points,add_point=[dpoint],fixed_arguments=self.fixed_arguments)
+            self.sampler.sample(bounds=self.bounds,func=func,num_cores=num_cores,num_points=num_points,add_point=[dpoint],fixed_arguments=self.fixed_arguments,coefs=coefs)
             ###At each step we extract the best sample values
             best_idx,current_best_value = self.sampler.get_max()
-            current_best_point, empty, valid = self.optimizer.get_maximum(self.sampler.get_points(last_batch=True), self.sampler.get_values(last_batch=True),removed=-1.0)
+            current_best_point, empty, valid, coefs = self.optimizer.get_maximum(self.sampler.get_points(last_batch=True), self.sampler.get_values(last_batch=True),removed=-1.0)
+            coefs = coefs+np.max(coefs)*0.1
             num_its += 1
         ##I
         if num_jumps>max_jumps:
@@ -115,7 +119,7 @@ class bounds:
 
         tnlb = self.lb.copy()
         tnub = self.ub.copy()
-        crange = {k:(self.ub[k] - self.lb[k]) / 2 for k in self.lb}
+        crange = {k:(self.ub[k] - self.lb[k]) *0.5 for k in self.lb}
         key_list = list(self.lb.keys())
         for ip in range(len(names)):
             if not valid[ip]:
@@ -142,7 +146,7 @@ class bounds:
                 if nub > self.ub[key]:
                     nub = self.ub[key]
             if only_positive:
-                if nlb < 0:
+                if nlb < 0 and self.lb[key]>0:
                     nlb = 0
             tnlb[key] = nlb
             tnub[key] = nub
@@ -175,11 +179,11 @@ class boundedSampler:
         self.parallel=True
 
     ##This method jsut need to inherit the first one
-    def sample(self,bounds,func,num_points=100,num_cores=1,add_point=None,fixed_arguments=None):
+    def sample(self,bounds,func,num_points=100,num_cores=1,add_point=None,coefs=None,fixed_arguments=None):
         if add_point is None:
             add_point=[]
 
-        points,values,names=self.sample_points(bounds,func,num_points,num_cores=num_cores,add_point=add_point,fixed_arguments=fixed_arguments)
+        points,values,names=self.sample_points(bounds,func,num_points,num_cores=num_cores,add_point=add_point,coefs=coefs,fixed_arguments=fixed_arguments)
         self.append_points(points,values)
         self.names = names
 
@@ -331,6 +335,75 @@ class uniformBoundedSampler(boundedSampler):
         points,values,to_optim = do_uniform_random_sampling(limits.lower_bound(), limits.upper_bound(), func, num_points=num_points,
                                                    num_cores=num_cores,add_point=add_point,fixed_arguments=fixed_arguments)
         return points,values,to_optim
+
+####
+def do_grid_sampling(lb,ub,func,num_points=1000,num_cores = None,fixed_arguments=None, add_center=True, add_point=None,weight=None):
+  '''
+  :param constraints: a scipy.optimize.Bounds object
+  :param func: The function ot be optimized
+  :param max_call: The maximum number of call to the function allowed INCLUDING the initial points
+  :param initial_points: The number of initial point sused for bounds estimation
+  :return: The optimized paramters
+  '''
+  ###We give a signle core by parameters sets.
+  if fixed_arguments is None:
+    fixed_arguments = {}
+  args_name = inspect.getfullargspec(func)[0]
+  to_optimize = [name for name in args_name if name not in fixed_arguments]
+
+  ##We read the dimension from the contraints
+  ndim = len(lb)
+  if len(to_optimize) != ndim:
+    raise Exception("Arguments don't match.")
+  ###We just sample every parameters across the different
+  dic_arg = {}
+  num_points_sampled = num_points-int(add_center)-len(add_point)
+
+  lbv = [lb[k] for k in to_optimize]
+  ubv = [ub[k] for k in to_optimize]
+  ##We optimize the points
+  bg = boundedGrid(lb=lbv,ub=ubv,weight=weight)
+  vpoints = bg.sample(num_points_sampled)
+  icounter = 0
+  for k in to_optimize:
+    par_seq = vpoints[icounter,:]
+    icounter +=1
+    if add_center:
+        mid_point =  (ub[k]+lb[k])/2
+        par_seq=np.append(par_seq,mid_point)
+    if len(add_point)>0:
+        for point in add_point:
+            par_seq = np.append(par_seq, point[k])
+    dic_arg[k] = par_seq
+  optimized_args = [dict(zip(dic_arg.keys(),[dic_arg[x][idx] for x in dic_arg])) for idx in range(num_points)]
+  single_args = [None]*num_points
+  for idx in range(num_points):
+      single_args[idx] = {**optimized_args[idx],**fixed_arguments,"fun":func}
+
+
+  # vres = map(wrap_func_dic, all_dict)
+  with concurrent.futures.ProcessPoolExecutor(max_workers=num_cores) as executor:
+    vres = list(executor.map(wrap_func_dic, single_args))
+  # vres = map(wrap_func_dic,single_args)
+  list_for_numpy = [None]*len(single_args)
+  for idx,cargs in zip(range(len(list_for_numpy)),optimized_args):
+      list_for_numpy[idx] = list(cargs.values())
+
+  ###We build a tuple of parameters
+  np_table = np.array(list_for_numpy)
+  return np_table,list(vres),to_optimize
+
+
+class gridBoundedSampler(boundedSampler):
+    def __init__(self):
+        self.parallel=True
+        super().__init__()
+
+    def sample_points(self,limits,func,num_points,num_cores=None,add_point=None,fixed_arguments=None,coefs=None):
+        points,values,to_optim = do_grid_sampling(limits.lower_bound(), limits.upper_bound(), func, num_points=num_points,
+                                                   num_cores=num_cores,add_point=add_point,weight=coefs,fixed_arguments=fixed_arguments)
+        return points,values,to_optim
+
 
 ##################
 ## BDD sampling ##

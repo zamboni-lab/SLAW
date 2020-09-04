@@ -553,8 +553,11 @@ class Experiment:
         ###We rename the peaktable to get more meaningful names.
         self.open_db()
         c = self.conn.cursor()
+        # c.execute("SELECT path,id,output_ms,output_ms2 FROM samples INNER JOIN processing on samples.id=processing.sample WHERE output_ms!='NOT PROCESSED' AND valid=1")
+        # all_infos = c.fetchall()
         c.execute("SELECT id,output_ms,output_ms2 FROM processing WHERE output_ms!='NOT PROCESSED' AND valid=1")
         all_peaktable = c.fetchall()
+
         c.execute("SELECT path FROM samples WHERE level='MS1'")
         all_samples = c.fetchall()
         dirname = self.output.getDir(cr.OUT["ADAP"]["PEAKTABLES"])

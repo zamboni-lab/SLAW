@@ -362,6 +362,23 @@ class ParametersOptimizer:
         if not os.path.isfile(self.temp_yaml):
             self.temp_yaml = self.input_par
 
+        ###We filter out the parameters if they are not used by the algorithm
+        parameters = ph.ParametersFileHandler(self.temp_yaml)
+        peakpicking = parameters.get_peakpicking()
+        peakpicking = me.check_peakpicking(peakpicking)
+        if peakpicking!="ADAP":
+            to_remove =["peakpicking__peaks_deconvolution__rt_wavelet__const",
+            "peakpicking__peaks_deconvolution__rt_wavelet__add",
+            "peakpicking__peaks_deconvolution__coefficient_area_threshold"]
+            for rr in to_remove:
+                if rr in to_optimize_peakpicking:
+                    del to_optimize_peakpicking[rr]
+        if peakpicking!="OPENMS":
+            to_remove =["peakpicking__traces_construction__num_outliers"]
+            for rr in to_remove:
+                if rr in to_optimize_peakpicking:
+                    del to_optimize_peakpicking[rr]
+
         ##We get the bounds of the optimizable parameters.
         summary_peakpicking = self.path_summary + "_peakpicking.csv"
 

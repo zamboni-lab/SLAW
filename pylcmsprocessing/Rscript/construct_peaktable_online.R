@@ -49,6 +49,7 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
     message("Beginning grouping using metric, ",VAL_INTENSITY)
     dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
     all_peaktables <- dbGetQuery(dbb, "SELECT output_ms FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")[, 1]
+    all_pt <- dbGetQuery(dbb, "SELECT * FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")
     dbDisconnect(dbb)
     
     ###We check the number of file by batch. No more than 300000 peaks

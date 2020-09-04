@@ -44,9 +44,11 @@ if __name__=="__main__":
         if not "MEMORY" in os.environ:
             memory_by_core = avail_memory/num_cpus
 
+    ###Specific case on EULER cluster
     if "LSB_MAX_NUM_PROCESSORS" in os.environ and int(os.environ["LSB_MAX_NUM_PROCESSORS"])<num_cpus:
         num_cpus = int(os.environ["LSB_MAX_NUM_PROCESSORS"])
 
+    ##Command line arguments
     if "NCORES" in os.environ and int(os.environ["NCORES"])<num_cpus:
         num_cpus = int(os.environ["NCORES"])
 
@@ -151,7 +153,11 @@ if __name__=="__main__":
                 os.makedirs(DB_STORAGE)
             ###We optimize the parameters
             par_opt = ParametersOptimizer(exp, PATH_OPTIM,DB_STORAGE,num_workers=num_cpus, input_par=PATH_YAML)
-            par_opt.optimize_parameters(output_par=vui.path_yaml, optimizer="random_rsm_combined_random_rsm_expalign", max_its=max_its,
+            optim_string = "balanced_rsm_combined_balanced_rsm_expalign"
+            if "SAMPLER" in os.environ:
+                optim_string = os.environ["SAMPLER"]+"_rsm_combined_"+os.environ["SAMPLER"]+"_rsm_expalign"
+                print("The optimisation string is:"+optim_string)
+            par_opt.optimize_parameters(output_par=vui.path_yaml, optimizer=optim_string, max_its=max_its,
                                         num_points=num_points,num_files =optim_files,num_cores=num_cpus, initial_estimation=initial_estimation)
             timer.store_point("optimization")
             timer.print_point("optimization")

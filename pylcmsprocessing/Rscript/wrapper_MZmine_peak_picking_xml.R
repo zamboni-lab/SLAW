@@ -35,6 +35,7 @@ num_workers <- as.numeric(dbGetQuery(db, "SELECT max_jobs FROM common")[, 1])
 samplist <-NULL
 
 samplist <- dbGetQuery(db, "SELECT path FROM samples WHERE level='MS1'")[, 1]
+samplist_ids <- dbGetQuery(db, "SELECT id FROM samples WHERE level='MS1'")[, 1]
 dbDisconnect(db)
 
 
@@ -109,7 +110,7 @@ allsampseq <-
   bpmapply(
     FUN = singleXMLgeneration,
     samplist,
-    seq_along(samplist),
+    samplist_ids,
     MoreArgs = list(
       mxml = mxml,
       prefix = prefix_xml,

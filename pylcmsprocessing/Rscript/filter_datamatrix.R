@@ -22,15 +22,18 @@ get_os <- function() {
 }
 
 
-# args <- c("U:/users/Alexis/examples_lcms_workflow/output_optim/processing_db.sqlite",
-#           "U:/users/Alexis/examples_lcms_workflow/output_optim/datamatrices/datamatrix_4777fec3cb98be147c6611e2d4f1403e.csv",
-#           "U:/users/Alexis/examples_lcms_workflow/output_optim/datamatrices/datamatrix_temp.csv",
-#           "10",
-#           "0.75"
-#           )
+
 
 # ##Argument passed by Python
 args <- commandArgs(trailingOnly = TRUE)
+if(FALSE)
+args <- c("U:/users/Alexis/data/BioMarCoAlaaPos/res_slaw_adap/processing_db.sqlite",
+          "U:/users/Alexis/data/BioMarCoAlaaPos/res_slaw_adap/debug_dm.csv",
+          "U:/users/Alexis/data/BioMarCoAlaaPos/res_slaw_adap/debug_dm2.csv",
+          "3",
+          "0.001"
+)
+
 PATH_DB <- args[1]
 PATH_DM <- args[2]
 TEMP_DM <- args[3]
@@ -40,8 +43,8 @@ QC_FRACTION <- as.numeric(args[5])
 
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
 all_types <- dbGetQuery(dbb, "SELECT types FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")[, 1]
+all_samples <- dbGetQuery(dbb, "SELECT path FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")[, 1]
 dbDisconnect(dbb)
-
 
 ###We get the size of the data matrix.
 dm <- fread(PATH_DM,nrows = 2)
@@ -51,6 +54,14 @@ cnames <- colnames(dm)
 int_prefix <- str_split(cnames,"_")[length(cnames)][[1]][1]
 
 sel_int <- which(str_starts(cnames,int_prefix))
+
+
+sampled_match_name <- str_match(basename(all_samples),"(.+)\\.[a-zA-Z]+")[,2]
+col_match_names <- str_match(cnames[sel_int],paste(int_prefix,"_(.+)\\.csv",sep=""))[,2]
+vma <- match(sampled_match_name,col_match_names)
+
+
+
 
 first_line <- 0
 batch_size <- ceiling((4000**2)/ncol(dm))

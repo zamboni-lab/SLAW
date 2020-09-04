@@ -52,31 +52,32 @@ def fit_surface(points, values):
   mftable = make_interaction_table(points)
   scaler = StandardScaler()
   stable = scaler.fit_transform(mftable)
-  calpha=1
+  calpha=0.1
 
   num_needed = 3
   if num_needed>points.shape[1]:
     num_needed = points.shape[1]
 
-  lr = Lasso(fit_intercept=True,normalize=False,alpha=calpha)
-  # lr = LinearRegression(fit_intercept=True,normalize=False)
+  # lr = Lasso(fit_intercept=True,normalize=False,alpha=calpha)
+  # # lr = LinearRegression(fit_intercept=True,normalize=False)
+  # vlr = lr.fit(stable, values)
+  # coef = vlr.coef_
+  # # coef = coef/np.max(coef)
+  # max_its = 30
+  # num_its = 0
+  # while np.sum(coef!=0)<num_needed and num_its < max_its:
+  #   calpha = calpha*0.7
+  #   lr = Lasso(fit_intercept=True, normalize=False, alpha=calpha)
+  #   vlr = lr.fit(stable, values)
+  #   coef = vlr.coef_
+  #   num_its += 1
+  # inter = vlr.intercept_
+  ###If all coef are null, we try to fit a linera regression just sample
+  # if np.sum(coef==0)==0:
+  lr = LinearRegression()
   vlr = lr.fit(stable, values)
   coef = vlr.coef_
-  # coef = coef/np.max(coef)
-  max_its = 30
-  num_its = 0
-  while np.sum(coef!=0)<num_needed and num_its < max_its:
-    calpha = calpha*0.7
-    lr = Lasso(fit_intercept=True, normalize=False, alpha=calpha)
-    vlr = lr.fit(stable, values)
-    coef = vlr.coef_
-    num_its += 1
   inter = vlr.intercept_
-  ###If all coef are null, we try to fit a linera regression just sample
-  if np.sum(coef==0)==0:
-    lr = LinearRegression()
-    vlr = lr.fit(stable, values)
-    coef = vlr.coef_
   return scaler, coef, inter
 
 def get_range(points):
@@ -97,7 +98,7 @@ def find_approximate_maximum(points, values,impacting=0.1):
     return np.zeros(coef.shape),0.0,non_valid
   ###We sum the linear and square coefficient for each variable.
   ##We first check if the Lasso converged, if not we just return a 0
-  frac_threshold = 0.005*mcoef
+  frac_threshold = 0.02*mcoef
   ntotal = len(coef)
   lb, ub = get_range(points)
   bounds = Bounds(lb=lb, ub=ub)
@@ -115,7 +116,7 @@ def find_approximate_maximum(points, values,impacting=0.1):
   #   if coef_interactions[idx]>0:
   #     valid[idx_interaction[idx][0]]=True
   #     valid[idx_interaction[idx][1]]=True
-  return vmax.x,-vmax.fun-inter,valid
+  return vmax.x,-vmax.fun-inter,valid,coef_linear+coef_squared
 
 class rsmOptimizer:
   def __init__(self):

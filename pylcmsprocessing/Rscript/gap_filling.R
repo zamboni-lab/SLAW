@@ -89,8 +89,6 @@ dbDisconnect(dbb)
 isotopes_table <- fread(PATH_ISOTOPES, sep = " ")
 
 
-
-
 cnames <- fread(PATH_DM,
                 sep = ",",
                 header = TRUE,

@@ -1362,7 +1362,7 @@ exportDataMatrix <- function(object,path,subsample=NULL,subvariable=NULL,
   all_order <- order(mzs,rts,decreasing = FALSE)
   
   names_cols <- paste(quant_var,basename(fnames),sep="_")
-  
+  names_cols <- names_cols[subsample]
   
   ###We split the data matrix to avoid filling the memoery too fast
   ##matrix size = 216+8*num_elemnts bytes
