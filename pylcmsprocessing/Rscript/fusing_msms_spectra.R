@@ -8,6 +8,7 @@ suppressWarnings(suppressMessages(library(igraph, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(rtree, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
 
+sink(file=stdout())
 ###Merging of spectra using the msClust algorithm
 mergeSpectra <- function(x,specs,tab_summary,cos_thresh=0.7,round=10){
 

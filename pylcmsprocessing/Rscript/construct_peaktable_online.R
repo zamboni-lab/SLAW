@@ -17,7 +17,7 @@ get_os <- function() {
     stop("Unknown OS")
   }
 }
-
+sink(file=stdout())
 
 args <- commandArgs(trailingOnly = TRUE)
 PATH_DB<- args[1]
@@ -46,7 +46,7 @@ if(NUM_CORES==1){
 
 
 if(!file.exists(PATH_OUT_DATAMATRIX)){
-    message("Beginning grouping using metric, ",VAL_INTENSITY)
+    # cat("Beginning grouping using metric, ",VAL_INTENSITY,"\n",file=stdout())
     dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
     all_peaktables <- dbGetQuery(dbb, "SELECT output_ms FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")[, 1]
     all_pt <- dbGetQuery(dbb, "SELECT * FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")
@@ -75,13 +75,13 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
 
 
     ##mz and rt are always stored
-        lam <- LCMSAlignerModelFromDirectoryByBatch(all_peaktables,
+        lam <- suppressMessages(suppressWarnings(LCMSAlignerModelFromDirectoryByBatch(all_peaktables,
                           path_model=PATH_ALIGNMENT,
                            output=PATH_BLOCKS,save_interval=max_by_batch,
                            num_file=20,num_peaks=NUM_REF,col_int=VAL_INTENSITY,reset = FALSE,
                            ppm = MZPPM, dmz=MZTOL,rt = RTTOL,rt_dens=RTTOL/2,n_clusters=10,
                            supp_data=supp_args,ransac_l1=ALPHA_RT,bpp=bpp,
-                          max_cor=RTTOL*3,by_batch=max_by_batch,clustering=TRUE)
+                          max_cor=RTTOL*3,by_batch=max_by_batch,clustering=TRUE)))
 
     ###We always remove single peaks.
     if(!file.exists(OUTFIGURE)){
@@ -89,10 +89,10 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
       plotDevRt(lam,int_threshold=0.15)
       dev.off()
     }else{
-      message("Rt deviation figure already exists.")
+      # cat("Rt deviation figure already exists.","\n",file=stdout())
     }
     ###We always filter out the peaks detected only once.
-    vexp <- exportDataMatrix(lam,path=PATH_OUT_DATAMATRIX,quant_var = VAL_INTENSITY,subvariable=which(lam@peaks$num>=2),summary_vars=c("mz","rt","rt_cor",supp_args))
+    vexp <- suppressMessages(suppressWarnings(exportDataMatrix(lam,path=PATH_OUT_DATAMATRIX,quant_var = VAL_INTENSITY,subvariable=which(lam@peaks$num>=2),summary_vars=c("mz","rt","rt_cor",supp_args))))
     
     
     if(VAL_INTENSITY %in% c("area","intensity","height")){
@@ -111,8 +111,8 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
       fwrite(dm,file = PATH_OUT_DATAMATRIX)
     }
     
-    message("Alignment done")
+    # cat("Alignment done\n",file=stdout())
     
 }else{
-  message("Data matrix already exists alignement won t be performed: ",PATH_OUT_DATAMATRIX)
+  cat("Data matrix already exists alignement won t be performed: ",PATH_OUT_DATAMATRIX,"\n",file=stdout())
 }

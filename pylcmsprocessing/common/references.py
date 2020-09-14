@@ -49,7 +49,27 @@ OUT={"DB":"processing.sqlite",
 }
 
 
+##This is the order of the optimization variables, they are optimized by batch.
+ORDER_VARIABLES_PEAKPICKING = ["peakpicking__traces_construction__ppm",
+                   "peakpicking__peaks_deconvolution__peak_width__const",
+                   "peakpicking__peaks_deconvolution__peak_width__add",
+                   "peakpicking__peaks_deconvolution__peak_width__fac",
+                   "peakpicking__peaks_deconvolution__SN",
+                   "peakpicking__traces_construction_min_scan",
+                   "peakpicking__traces_construction__dmz",
+                   "peakpicking__peaks_deconvolution__rt_wavelet__const",
+                   "peakpicking__peaks_deconvolution__rt_wavelet__add",
+                   "peakpicking__peaks_deconvolution__coefficient_area_threshold",
+                   "peakpicking__traces_construction__num_outliers",
+                   "peakpicking__traces_construction__num_outliers",
+                   "peakpicking__peaks_deconvolution__noise_level",
+                   "peakpicking__noise_level__ms1","peakpicking__noise_level__ms2"]
+
+ORDER_VARIABLES_GROUPING = ["grouping__ppm","grouping__drt","grouping__dmz",
+                            "grouping__alpha","grouping__num_references"]
+
 DATA = {
+    "OPTIMIZATION":{"BALANCED_POINTS":"/pylcmsprocessing/data/balanced_samples.pickle"},
     "IONANNOTATION":{
         "XCMS_MODEL" : "/pylcmsprocessing/data/xcms_raw_model.RData",
         "positive":{"FULL":"/pylcmsprocessing/data/adducts_pos.txt","MAIN":"/pylcmsprocessing/data/adducts_main_pos.txt"},

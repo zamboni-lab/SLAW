@@ -10,7 +10,7 @@ suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
 ISO_DIST_COL <- "raw_isotopic_pattern"
 ISO_NAME_COL <- "isotopic_pattern_annot"
 
-
+sink(file=stdout())
 
 ##Argument passed by Python
 args <- commandArgs(trailingOnly = TRUE)

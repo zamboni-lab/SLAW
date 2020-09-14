@@ -1,7 +1,7 @@
 import sqlite3
 import subprocess
 import os
-import glob
+import logging
 import common.references as cr
 import common.tools as ct
 import model.helper.output_handler as oh
@@ -109,8 +109,11 @@ class Experiment:
             sel_samp = len(raw_files)//2
             path_raw = raw_files[sel_samp][0]
         else:
-            all_path = [os.path.join(input_path,pp) for pp in os.listdir(input_path)]
+            all_path = [os.path.join(input_path,pp) for pp in os.listdir(input_path) if
+                        pp.upper().endswith("MZML") or pp.upper().endswith("MZXML")]
             path_raw = all_path[0]
+
+        logging.info("Guessing polarity from file:"+os.path.basename(path_raw))
         args = ["Rscript",pscript,path_raw, output]
         cli = " ".join(args)
         ##We call the script eventually.
@@ -199,7 +202,7 @@ class Experiment:
         try:
             softwares = [cr.ALGORITHMS_TABLE[x] for x in algorithms]
         except KeyError:
-            print("Unknown algorithm ", ",".join(algorithms), " known algorithms are ",
+            logging.warning("Unknown algorithm "+ ",".join(algorithms)+ " known algorithms are "+
                   ",".join(cr.ALGORITHMS_TABLE))
         ####We check that all the parameters exists
         dir_data = ct.find_data()
@@ -236,8 +239,6 @@ class Experiment:
             ###We check all the values of algoirthms
             c.execute("SELECT * FROM algorithms")
             res = c.fetchall()
-            for r in res:
-                print(r)
 
             for v in values:
                 c.execute('INSERT INTO algorithms VALUES (?,?,?,?,?,?,?,?)', v)
@@ -259,6 +260,18 @@ class Experiment:
         if path_ms2 is not None:
             cline = cline + " -o '"+path_ms2+"'"
         subprocess.call(cline, shell=True)
+        ##We check if the database has been created
+        self.open_db()
+
+        cursor = self.conn.cursor()
+        # get the count of tables with the name
+        cursor.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND name='samples' ''')
+        # if the count is 1, then table exists
+        if cursor.fetchone()[0] != 1:
+            raise cs.SlawStepException("Table ''samples' was not created correctly. Check your input files format and your summary.csv file.")
+        cursor.close()
+        self.close_db()
+
 
     def build_peakpicking(self):
         ###For each kind of algorithm we add the
@@ -449,7 +462,7 @@ class Experiment:
                         pid = row[0]
                         update_query = self.update_query_construction("processing","id",str(pid),"valid","0")
                         c.execute(update_query)
-        print("Peak picking finished",num_incorrect_files,"files not processed on a total of",tot_files)
+        logging.info("Peak picking finished"+num_incorrect_files+"files not processed on a total of"+tot_files)
         self.close_db()
 
     def run_openms(self,min_fwhm,max_fwhm,fwhm_fac,snt,ppm,min_int,max_outlier,min_points,quant,silent=True, log = None,batch_size=10000):
@@ -476,6 +489,7 @@ class Experiment:
             temp = [(x.get_output(),x.command_line_processing()) for x in peakpickings if x.need_computing()]
             clis = [x[1] for x in temp]
             names_output = [x[0] for x in temp]
+
             ####We run the jobs actually
             if len(clis) > 0:
                 runner.run(clis, silent=silent, log = log, timeout = cr.CONSTANT["PEAKPICKING_TIMOUT"])
@@ -538,13 +552,13 @@ class Experiment:
         p_conversion = os.path.join(ct.find_rscript(), "wrapper_MZmine_peak_table_conversion.R ")
         to_convert = [x[0] + "\n" for x in processings if not is_converted(x[0])]
         if len(to_convert) > 0:
-            print("correcting " + str(len(to_convert)) + " files:","|".join(to_convert))
+            logging.warning("correcting " + str(len(to_convert)) + " files:","|".join(to_convert))
             with open(path_temp, "w+") as summary:
                 summary.writelines(to_convert)
             cline = "Rscript " + p_conversion + " " + path_temp + " " + str(self.get_workers(open=False))
             subprocess.call(cline, shell=True)
         else:
-            print("No corrections to do")
+            logging.info("No corrections to do")
         self.close_db()
         self.save_db()
 
@@ -641,7 +655,7 @@ class Experiment:
         pscript = os.path.join(ct.find_rscript(),"extractingMGFfromMZML.R")
         cli = " ".join(["Rscript",pscript,self.db,dir_out,str(noise_level),str(num_workers),str(all)])
         subprocess.call(cli,shell=True)
-        print("MS2 extraction finished")
+        logging.info("MS2 extraction finished")
 
     ###At the moment there is a single grouping method
     def group(self, max_workers=2, silent=False, intensity="height",mztol=0.007,rttol=0.02, log=None):
@@ -683,7 +697,7 @@ class Experiment:
                 runner.run(clis, silent=silent, log=log)
         self.close_db()
         self.save_db()
-        print("Grouping finished")
+        logging.info("Grouping finished")
 
 
     def group_online(self,intensity="int",
@@ -736,17 +750,16 @@ class Experiment:
             clis_align = [g.command_line_aligning() for g in groupers if g.need_computing()]
             clis_filtering = [g.command_line_filtering() for g in groupers if g.need_computing()]
             clis_fusing = [g.command_line_fusing_msms() for g in groupers if g.need_computing()]
-            # print(clis[0])
             if len(clis_align) > 0:
-                print("Aligning")
+                logging.info("Aligning")
                 runner.run(clis_align, log=log)
                 if post_processing:
-                    print("Filtering")
+                    logging.info("Filtering")
                     runner.run(clis_filtering, log=log)
-                    print("Extracting consensus MS-MS spectra")
+                    logging.info("Extracting consensus MS-MS spectra")
                     runner.run(clis_fusing, log=log)
         self.save_db()
-        print("Alignment finished")
+        logging.info("Alignment finished")
 
     def evaluate(self, max_workers=2, silent=False):
         num_workers = self.get_workers()
@@ -853,7 +866,7 @@ class Experiment:
                 runner.run(clis, silent=True)
         self.close_db()
         self.save_db()
-        print("Annotation finished")
+        logging.info("Annotation finished")
         return successfull_processing
 
     def add_missing_informations(self,max_iso, max_charge, quant, ppm, dmz):
@@ -884,7 +897,7 @@ class Experiment:
             clis = [iexp.command_line() for iexp in expanders if iexp.need_computing()]
             if len(clis) > 0:
                 runner.run(clis, silent=True)
-        print("Gap filling and isotopic pattern extraction finished.")
+        logging.info("Gap filling and isotopic pattern extraction finished.")
 
     def post_processing(self,targets,path_raw_files=None,mztol=0.05,rttol=0.03):
         if path_raw_files is None:
@@ -927,7 +940,7 @@ class Experiment:
             clis = [ppv.command_line() for ppv in pprocessors]
             if len(clis) > 0:
                 runner.run(clis, silent=True)
-        print("Diagnosis figures printed")
+        logging.info("Diagnosis figures printed")
 
     ###change the path on an experiment to
     def rebase_experiment(self,path_db):

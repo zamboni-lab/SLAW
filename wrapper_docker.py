@@ -6,6 +6,7 @@ import sys
 import psutil
 import math
 import shutil
+import logging
 
 ##We import the module of python processing.
 sys.path.append('/pylcmsprocessing')
@@ -19,11 +20,12 @@ import pylcmsprocessing.common.references as pcr
 if __name__=="__main__":
 ##Two thing to check the number of CPUs and the ocnsumed meory eventually.
     ###We determine the amount of memory allocated to each process
+    logging.basicConfig(format = "%(asctime)s|%(levelname)s: %(message)s",datefmt='%Y-%m-%d|%H:%M:%S',level=logging.INFO)
     timer = Timer()
     timer.store_point("wstart")
     avail_memory = (psutil.virtual_memory()[1] >> 20)
     ###We allocate the memory to each process
-    num_cpus = multiprocessing.cpu_count()-1
+    num_cpus = int(multiprocessing.cpu_count()-1)
     ###Two limits to check, the number of CPUs and the memory consumption eventually.
     #1.5 Go
     memory_by_core = 1048*1.2
@@ -58,7 +60,7 @@ if __name__=="__main__":
     ###We set the JAVA option for the peak picking evnetually
     os.environ["JAVA_OPTS"] = "-Xms"+str(math.floor(memory_by_core/2))+"m -Xmx"+str(math.floor(memory_by_core)-200)+"m"
     ##We output System information
-    print("Total memory available: "+str(avail_memory)+" and "+str( multiprocessing.cpu_count())+" cores. The workflow will use "+str(math.floor(memory_by_core))+ " Mb by cores on "+str(num_cpus)+" cores.")
+    logging.info("Total memory available: "+str(avail_memory)+" and "+str( multiprocessing.cpu_count())+" cores. The workflow will use "+str(math.floor(memory_by_core))+ " Mb by cores on "+str(num_cpus)+" cores.")
 
     MANDATORY_ARGS = ["INPUT", "OUTPUT"]
     if os.environ['OUTPUT'].startswith('/sauer1') or os.environ['INPUT'].startswith('/sauer1'):
@@ -70,7 +72,7 @@ if __name__=="__main__":
     OUTPUT_DIR = os.environ['OUTPUT']
     if OUTPUT_DIR.startswith("/sauer1"):
         if not os.path.isdir(OUTPUT_DIR):
-            print("Output directory "+OUTPUT_DIR+"does not exist")
+            logging.warning("Output directory "+OUTPUT_DIR+"does not exist, it will be created.")
 
     LOG = os.path.join(OUTPUT_DIR,"log.txt")
 
@@ -87,8 +89,8 @@ if __name__=="__main__":
     PATH_TEMP_XML = os.path.join(OUTPUT_DIR,"batch_xml_adap_temp.xml")
 
     PATH_TARGET = os.path.join(INPUT,"target.csv")
-    if os.path.isfile(PATH_TARGET):
-        print("Detected target list")
+    # if os.path.isfile(PATH_TARGET):
+    #     logging.warning("Detected target list")
 
     setup_params = False
     #If the yaml parameter file already exist we just read it, else. we don t read it
@@ -113,7 +115,7 @@ if __name__=="__main__":
         path_ms2 = os.environ["MS2"]
     ###We try to guess the polarity form the middle file.
     pol = exp.guess_polarity(INPUT)
-    print("Polarity detected: " + exp.polarity)
+    logging.info("Polarity detected: " + exp.polarity)
     exp.initialise_database(num_cpus, OUTPUT_DIR, pol, INPUT, ["ADAP"], 1, path_ms2=path_ms2)
     timer.store_point("initialisation")
     timer.print_point("initialisation")
@@ -126,10 +128,10 @@ if __name__=="__main__":
         vui.generate_yaml_files()
         vui.initialize_yaml_polarity(PATH_YAML, pol)
         # self.determine_initial_parameters()
-        print("Empty directory detected, performing initial guess of SLAW parameters.")
+        logging.info("Empty directory detected, performing initial guess of SLAW parameters.")
         temp_opt = ParametersOptimizer(exp, "FAKE", DB_STORAGE, num_workers=num_cpus, input_par=PATH_YAML)
         temp_opt.determine_initial_parameters(output_par=PATH_YAML)
-        print("Parameters file generated please check the parameters values and/or parameters range before optimization.")
+        logging.info("Parameters file generated please check the parameters values and/or parameters range before optimization.")
         exit(0)
     else:
         ph = ParametersFileHandler(vui.path_yaml)
@@ -152,11 +154,12 @@ if __name__=="__main__":
             if not os.path.isdir(DB_STORAGE):
                 os.makedirs(DB_STORAGE)
             ###We optimize the parameters
+            num_cpus = int(num_cpus)
             par_opt = ParametersOptimizer(exp, PATH_OPTIM,DB_STORAGE,num_workers=num_cpus, input_par=PATH_YAML)
             optim_string = "balanced_rsm_combined_balanced_rsm_expalign"
             if "SAMPLER" in os.environ:
                 optim_string = os.environ["SAMPLER"]+"_rsm_combined_"+os.environ["SAMPLER"]+"_rsm_expalign"
-                print("The optimisation string is:"+optim_string)
+                logging.info("The optimisation string is:"+optim_string)
             par_opt.optimize_parameters(output_par=vui.path_yaml, optimizer=optim_string, max_its=max_its,
                                         num_points=num_points,num_files =optim_files,num_cores=num_cpus, initial_estimation=initial_estimation)
             timer.store_point("optimization")
@@ -167,7 +170,7 @@ if __name__=="__main__":
     if not os.path.isfile(PATH_XML):
         if peakpicking=="ADAP":
             vui.generate_MZmine_XML(path_xml=PATH_XML)
-            print("An ADAP batch file has been generated in the "+OUTPUT_DIR+" directory, you ca use it to refine peakpicking parameters using MZmine.")
+            logging.info("An ADAP batch file has been generated in the "+OUTPUT_DIR+" directory, you ca use it to refine peakpicking parameters using MZmine.")
     exp.initialise_database(num_cpus,OUTPUT_DIR,vui.polarity,INPUT,["ADAP"], 1)
     # exp.building_inputs_single_processing(PATH_XML)
     ###We always read the yaml paramters file.

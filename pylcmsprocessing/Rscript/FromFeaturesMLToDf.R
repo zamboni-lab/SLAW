@@ -2,6 +2,7 @@
 args <-  commandArgs(trailingOnly = TRUE)
 
 # args <- c("U:/users/Alexis/examples_lcms_workflow/tt4.featureML","U:/users/Alexis/examples_lcms_workflow/tt4.csv")
+sink(file=stdout())
 
 suppressMessages(library(XML))
 suppressMessages(library(stringr))

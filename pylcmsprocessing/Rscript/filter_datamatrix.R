@@ -23,16 +23,9 @@ get_os <- function() {
 
 
 
-
+sink(file=stdout())
 # ##Argument passed by Python
 args <- commandArgs(trailingOnly = TRUE)
-if(FALSE)
-args <- c("U:/users/Alexis/data/BioMarCoAlaaPos/res_slaw_adap/processing_db.sqlite",
-          "U:/users/Alexis/data/BioMarCoAlaaPos/res_slaw_adap/debug_dm.csv",
-          "U:/users/Alexis/data/BioMarCoAlaaPos/res_slaw_adap/debug_dm2.csv",
-          "3",
-          "0.001"
-)
 
 PATH_DB <- args[1]
 PATH_DM <- args[2]

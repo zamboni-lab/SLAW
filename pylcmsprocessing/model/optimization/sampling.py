@@ -3,6 +3,7 @@ import numpy as np
 from scipy.stats import hmean
 import inspect
 import concurrent.futures
+import logging
 
 from model.optimization.rsm import bbdesign
 from model.optimization.equidistant_sampling import boundedGrid
@@ -43,6 +44,9 @@ class samplingOptimizer:
     def optimize(self,func,num_points=100,relative_increase = 0.02,
                  max_its=10,contraction = 0.8, extension = 0.1,num_cores=1,max_jumps = 2,last_batch=True):
 
+        ## Fix to be sure
+        num_cores = int(num_cores)
+
         ###We add some points
         num_its = 1
         self.sampler.sample(bounds=self.bounds,func=func,num_cores=num_cores,num_points=num_points,fixed_arguments=self.fixed_arguments)
@@ -55,16 +59,14 @@ class samplingOptimizer:
         first = True
         ###We always test the best point
         while (first) or ((num_jumps <= max_jumps) and num_its < max_its):
-            print("Iteration:", num_its, "on", max_its, "current best score:", "%0.2f" % current_best_value)
+            logging.info("Iteration: "+str(num_its)+ " on "+ str(max_its)+ " current best score: "+ "%0.2f" % current_best_value)
             ###We print the name of the impactful variable this round.
-            # self.bounds.print_bounds(names_vars,valid=valid)
             if best_idx == global_idx:
                 num_jumps = num_jumps+1
             else:
                 global_idx = best_idx
             dpoint = dict(zip(list(names_vars),list(current_best_point)))
             first = False
-
             ###We restrain thge constraints using the newly determined best points
             if sum(valid)!=0:
                 self.bounds.contract_bound(current_best_point,self.sampler.get_names(),valid=valid,contraction=contraction, extension=extension,
@@ -81,7 +83,7 @@ class samplingOptimizer:
         if num_jumps>max_jumps:
             pass
         elif num_its>=max_its:
-            print("Optimization stopped because no improvement was achieved in the last round. ")
+            logging.info("Optimization stopped because no improvement was achieved in the last round. ")
         ##We pick the bset sampled points
         all_values = self.sampler.get_values()
         all_points = self.sampler.get_points()
@@ -331,7 +333,7 @@ class uniformBoundedSampler(boundedSampler):
         self.parallel=True
         super().__init__()
 
-    def sample_points(self,limits,func,num_points,num_cores=None,add_point=None,fixed_arguments=None):
+    def sample_points(self,limits,func,num_points,num_cores=None,coefs=None,add_point=None,fixed_arguments=None):
         points,values,to_optim = do_uniform_random_sampling(limits.lower_bound(), limits.upper_bound(), func, num_points=num_points,
                                                    num_cores=num_cores,add_point=add_point,fixed_arguments=fixed_arguments)
         return points,values,to_optim

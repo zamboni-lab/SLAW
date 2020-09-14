@@ -5,6 +5,7 @@ import subprocess
 import pandas as pd
 import hashlib
 import sqlite3
+import logging
 
 
 class inputBuilder:
@@ -65,7 +66,7 @@ class MZMineBuilder(inputBuilder):
             [scriptMZmine, self.db, self.json, self.xml, xml, self.summary, summary_templates, xml_templates,
              candidates, peaktables, msms, str(self.id)])
 
-        print("Computing MZmine parameters")
+        logging.info("Computing MZmine parameters")
         subprocess.call("Rscript " + commandline, shell=True)
 
     def build_inputs_single_parameter_set(self,xml_file):
@@ -80,7 +81,7 @@ class MZMineBuilder(inputBuilder):
         scriptMZmine = os.path.join(prscript, "wrapper_MZmine_peak_picking_xml.R")
         commandline = " ".join([scriptMZmine, self.db, xml_file, pxml, candidates, peaktables, msms, tjson])
 
-        print("Computing MZmine parameters")
+        logging.info("Computing MZmine parameters")
         subprocess.call("Rscript " + commandline, shell=True)
         hash_val = common.tools.md5sum(xml_file)
 
@@ -112,7 +113,7 @@ class MZMineBuilder(inputBuilder):
             except sqlite3.IntegrityError as e:
                 counter_processed += 1
 
-        print(counter_processed, " existing peak picking ", counter_to_process, " added.")
+        logging.info(str(counter_processed)+" existing peak picking "+ str(counter_to_process)+ " added.")
         conn.commit()
         conn.close()
 
@@ -125,7 +126,7 @@ class MZMineBuilder(inputBuilder):
 
         ###We check if the output already exists. If they do we romve the files
         summary_templates = self.output.getFile(common.references.OUT["ADAP"]["SUMMARY_TEMPLATES"])
-        print("opening ",summary_templates)
+        logging.info("Opening ",summary_templates)
         peakpickings = pd.read_csv(summary_templates,sep=";")
 
         ###We first check if th has of the algorithm exist, if they do
@@ -204,7 +205,7 @@ class MZMineBuilder(inputBuilder):
             except sqlite3.IntegrityError as e:
                 counter_processed += 1
 
-        print(counter_processed, " existing peak picking ", counter_to_process, " added.")
+        logging.info(str(counter_processed)+" existing peak picking "+str(counter_to_process)+" added.")
 
         conn.commit()
         conn.close()
@@ -274,7 +275,7 @@ class openMSBuilder(inputBuilder):
             except sqlite3.IntegrityError as e:
                 counter_processed += 1
 
-        print(str(counter_to_process), " peakpicking added")
+        logging.info(str(counter_to_process)+" peakpicking added")
         conn.commit()
         conn.close()
 
@@ -327,6 +328,6 @@ class xcmsBuilder(inputBuilder):
                 counter_to_process += 1
             except sqlite3.IntegrityError as e:
                 counter_processed += 1
-        print(str(counter_to_process), " peakpicking added")
+        logging.info(str(counter_to_process)+" peakpicking to do.")
         conn.commit()
         conn.close()

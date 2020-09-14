@@ -7,7 +7,7 @@ optimization:
   files_used:
     priority: LOW
     description: Integer. The number of QC files used for optimization. If no peakpicking is performed
-    value: 10
+    value: 3
   number_of_points:
     priority: LOW
     description: Integer. The number of points sampled at each surface estimation steps.
@@ -15,7 +15,7 @@ optimization:
   num_iterations:
     priority: LOW
     description: Integer. The maximum number of surface estimated. If no improvement happens at any iteration the optimization stops anyway.
-    value: 10
+    value: 5
   initial_estimation:
     priority: LOW
     description: Boolean. Shall initial parameters and ranges be estimated from raw files. This will override the provided values.
@@ -75,7 +75,7 @@ peakpicking:
     noise_level:
       priority: HIGH
       description: Float. (All peakpicker) The min feature height for a deconvoluted peak to be kept.
-      value: 20000
+      value: 0
     peak_width:
       priority: ESSENTIAL
       description: Floats. (All peakpicker) The minimum and maximum width of a peak in minutes. This parameter is highly dependent of you chromatography setup.

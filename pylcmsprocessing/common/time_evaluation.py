@@ -1,6 +1,7 @@
 import time
 import timeit
 import os
+import logging
 class Timer:
     def __init__(self):
         self.names= []
@@ -18,7 +19,7 @@ class Timer:
         pindex = self.names.index(name)
         tval = self.measures[pindex]-self.measures[0]
         last_interval = self.measures[pindex]-self.measures[pindex-1]
-        print("STEP:",name,"TOTAL_TIME:","%0.2f" % tval+"s"," LAST_STEP:","%0.2f" % last_interval+"s")
+        logging.info("STEP: "+name+" TOTAL_TIME:"+"%0.2f" % tval+"s"+" LAST_STEP:"+"%0.2f" % last_interval+"s")
 
 
 if __name__=="__main__":

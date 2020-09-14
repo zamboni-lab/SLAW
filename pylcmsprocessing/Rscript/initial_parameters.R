@@ -12,7 +12,8 @@ args <- commandArgs(trailingOnly = TRUE)
 #           "U:/users/Alexis/data/slaw_evaluation/test_data/output/processing_db.sqlite")
 # 
 # 
-# ##
+#
+# print(args)
 PATH_DB <- args[1]
 INITIAL_PAR <- args[2]
 OUTPUT_PAR <- args[3]
@@ -42,21 +43,16 @@ get_os <- function() {
 }
 
 
+# raw_files <- list.files("U:/users/Alaa/Manuscripts/InPreparation/2min_Lipidomics/RAW_DATA/Gradient_Comparison_Experiment/QTOF_02min_30mm_SLAW_openMS/temp_optim/mzML",full.names=TRUE)
+# raw_files
+
+
 ####We get a list of all the raw files.
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
 raw_files <- dbGetQuery(dbb, "SELECT path FROM samples WHERE types='QC'")[, 1]
 if(length(raw_files)==0) raw_files <- dbGetQuery(dbb, "SELECT path FROM samples WHERE types='sample'")[, 1]
 dbDisconnect(dbb)
 
-
-
-# if(FALSE){
-#   raw_files <- list.files("U:/users/Alexis/data/slaw_evaluation/optim_MTBLS1129/mzML",full.names = TRUE)
-#   INITIAL_PAR <- "U:/users/Alexis/data/slaw_evaluation/optim_MTBLS1129/output/parameters.txt"
-#   OUTPUT_PAR <- "U:/users/Alexis/data/slaw_evaluation/optim_MTBLS1129/output/out_parameters.txt"
-#   NUM_CORES <- 4
-#   num_sel <- length(raw_files)  
-# }
 
 if(num_sel>length(raw_files)){
   num_sel <- length(raw_files)
@@ -94,7 +90,7 @@ findPeakswidthParameters <-  function(xraw, widening, min_pw, max_pw){
   ###We get the most intense scan
   best_time <- xraw@scantime[which.max(xraw@tic)]
   
-  extractBiggestPeak <- function(xraw, mzlim) {
+  extractBiggestPeak <- function(xraw, mzlim,graphical=FALSE) {
 
     ttime <- xraw@scantime
     rre <- rawEIC(xraw, mzrange = mzlim)
@@ -106,16 +102,16 @@ findPeakswidthParameters <-  function(xraw, widening, min_pw, max_pw){
     val_filter <- ceiling(length(int_seq) * 1 / 100)
     val_filter <- val_filter + (val_filter + 1) %% 2
     smoothed_seq <- savgol(int_seq, val_filter)
-
+    smoothed_seq <- savgol(int_seq, 15,forder=2)
     ##We detect the biggest peak
     pmm <- which.max(smoothed_seq)
     pmin <- pmm
     pmax <- pmm
     while (pmin > 1 &&
-           int_seq[pmin - 1] < int_seq[pmin])
+           smoothed_seq[pmin - 1] < smoothed_seq[pmin])
       pmin <- pmin - 1
     while (pmax < length(int_seq) &&
-           int_seq[pmax + 1] < int_seq[pmax])
+           smoothed_seq[pmax + 1] < smoothed_seq[pmax])
       pmax <- pmax + 1
     
     if (pmax == length(int_seq))
@@ -129,6 +125,12 @@ findPeakswidthParameters <-  function(xraw, widening, min_pw, max_pw){
                            dseq[pmax] < (-0.1))) {
       pmax <- pmax - 1
     }
+    # if(graphical){
+    #   plot(ttime,int_seq,type="l")
+    #   lines(ttime,smoothed_seq,type="l",col="darkgreen")
+    #   abline(v=ttime[c(pmin,pmax)])
+    # }
+    
     pmin <- pmin
     pmax <- pmax
     return(list(int_seq[pmm], ttime[c(pmin, pmax)], c(pmin, pmax), int_seq[pmin:pmax]))
@@ -142,16 +144,27 @@ findPeakswidthParameters <-  function(xraw, widening, min_pw, max_pw){
     !is.na(x[1]) && (diff(x[[2]]) > 0.8)
   })
   vee <- vee[vsel]
+  eic_mzs <- eic_mzs[vsel]
+  ###We just peak the 50 most intense EICs
+  vint <- sapply(vee,function(x){
+    max(x[[4]])
+  })
   
-  
+  vo <- order(vint,decreasing=TRUE)
+  vee<- vee[vo[1:min(50,length(vo))]]
+  eic_mzs <- eic_mzs[vo[1:min(50,length(vo))]]
   ###We get the peakwidth
   vpeakwidth <- sapply(vee, function(x) {
     x[[2]][2] - x[[2]][1]
   })
   
+  # vde <-lapply(eic_mzs,
+  #                   FUN = extractBiggestPeak,
+  #                   xraw = xraw,graphical=TRUE)
   
   ###The bandidth is always 0.2
   vden <- density(vpeakwidth, bw = 0.2)
+  plot(vden)
   
   pmm <- which.max(vden$y)
   pmin <- pmax <- pmm
@@ -193,7 +206,7 @@ findPeakswidthParameters <-  function(xraw, widening, min_pw, max_pw){
 }
 
 handlers <- suppressWarnings(suppressMessages(lapply(raw_files,xcmsRaw)))
-# r1 <- findPeakswidthParameters(handlers[[1]],widening=WIDENING,min_pw=MIN_PEAKWIDTH,max_pw=MAX_PEAKWIDTH)
+r2 <- findPeakswidthParameters(handlers[[2]],widening=WIDENING,min_pw=MIN_PEAKWIDTH,max_pw=MAX_PEAKWIDTH)
 
 resVal <- bplapply(handlers,FUN=findPeakswidthParameters,widening=WIDENING,min_pw=MIN_PEAKWIDTH,max_pw=MAX_PEAKWIDTH,BPPARAM = bpp)
 estimated_params <- do.call(rbind,resVal)
@@ -208,8 +221,8 @@ maxRtDev <- max(max_time/60,maxRtDev)
 
 ##We read the initial parameter estimation
 params <- yaml.load_file(INITIAL_PAR)
-bmin <- estimated_par[1]/60
-bmax <- estimated_par[2]/60
+bmin <- min(estimated_params[,1])/60
+bmax <- max(estimated_par[2])/60
 
 min_scan <- max(floor(estimated_par[3]),2)
 
@@ -260,7 +273,7 @@ if("range" %in% names(params$peakpicking$traces_construction$min_scan)){
   if(temp_range[1]==temp_range[2]){
     temp_range[2] <- temp_range[2]+2
   }
-  params$peakpicking$traces_construction$min_scan$range <- temp_range
+  params$peakpicking$traces_construction$min_scan$range <- c(3,10)
   
   if("range" %in% names(params$peakpicking$traces_construction$num_outliers)){
     params$peakpicking$traces_construction$num_outliers$value <- ceiling(0.75*min_scan)
@@ -274,8 +287,8 @@ if("range" %in% names(params$peakpicking$traces_construction$min_scan)){
 
 
 ###Noise level
-params$peakpicking$noise_level_ms1$value <- noiseMS1
-params$peakpicking$noise_level_ms2$value <- noiseMS2
+params$peakpicking$noise_level_ms1$value <- 0
+params$peakpicking$noise_level_ms2$value <- 0
 
 params$peakpicking$peaks_deconvolution$noise_level$value <- feature_limits
 ###Grouping parameters

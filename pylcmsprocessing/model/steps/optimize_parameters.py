@@ -10,6 +10,7 @@ import pandas as pd
 from shutil import copyfile
 import math
 import traceback
+import logging
 
 import model.experiment as me
 import common.references as cr
@@ -136,7 +137,6 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
     parameters.write_parameters(stored_param)
     PATH_XML = os.path.join(OUTPUT_DIR,"temp_par"+str(hash_val)+".xml")
 
-    print("Creating experiment in ",PATH_DB)
     exp = me.Experiment(PATH_DB,save_db = PATH_SAVE_DB,reset=False)
 
     weights = scorer(exp).get_weight()
@@ -144,8 +144,6 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
     def_str = "-1"
     if len(def_val)>=2:
         def_str = "|".join([str(sc) for sc in def_val])
-
-
 
     ###We create the UI
     vui = UI(OUTPUT_DIR, path_samples, polarity=polarity, mass_spec="Exactive", num_workers=num_cpus,
@@ -309,6 +307,14 @@ class ParametersOptimizer:
         for ss in sel_samples:
             shutil.copy(ss[0],self.path_samples)
 
+    ###Reduce the size of the optimization file for faster optimization
+    def reduce_samples(self):
+        pscript = os.path.join(ct.find_rscript(),"reducing_mzml.R")
+        # we tun the optimization ins a signle thread.
+        cli = " ".join(["Rscript",pscript,self.path_samples])
+        ###We read the polarity directly
+        subprocess.call(cli, shell=True, env=os.environ.copy())
+
     def determine_initial_parameters(self,output_par=None):
         pscript = os.path.join(ct.find_rscript(),"initial_parameters.R")
 
@@ -327,7 +333,7 @@ class ParametersOptimizer:
     ###Thoe optimization is always two steps
     def do_optimize_parameters(self,optim_string="bbd_rsm",max_its=10,num_points=50,**kwargs):
         if num_points<=15:
-            print("Number of sampled points set to 15")
+            logging.info("Number of sampled points set to 15")
             num_points=15
 
         ### We get the optimization algorithm.
@@ -403,9 +409,9 @@ class ParametersOptimizer:
                 print("Exception occured:",e)
                 print(traceback.format_exc())
                 pass
-            print("Peakpicking optimization finished.")
+            logging.info("Peakpicking optimization finished.")
         else:
-            print("No peakpicking optimization required.")
+            logging.info("No peakpicking optimization required.")
 
         if len(to_optimize_grouping) > 0 and gscorer!="none":
             ###We compute the peak picking a single time
@@ -420,7 +426,174 @@ class ParametersOptimizer:
             dic_pp["fixed_params"] = fixed_pp_single
             dic_pp["reset"]=True
             vss = peak_picking_alignment_scoring(**dic_pp)
+            lb_grouping = [x[0] for x in to_optimize_grouping.values()]
+            ub_grouping = [x[1] for x in to_optimize_grouping.values()]
+            bounds_grouping = mos.bounds(lb_grouping, ub_grouping, list(to_optimize_grouping.keys()))
+            summary_alignment = self.path_summary+"_alignement.csv"
+            fixed_params_grouping = (self.path_exp, self.params_archive, self.dir_db, summary_alignment,\
+                           self.num_workers, self.polarity, self.path_samples, self.temp_yaml, gsampler.is_parallel(), gscorer, pdb, False)
+            dic_fixed_grouping = {"fixed_params":fixed_params_grouping}
 
+            ##We read the correct parameter to copy the experiment
+            if os.path.isfile(summary_peakpicking):
+                pdb = None
+                pda = pd.read_csv(summary_peakpicking)
+                idmax = pda.shape[0]-1
+                try:
+                    pdb = pda.db[idmax]
+                except AttributeError as e:
+                    pass
+                    # print(e)
+                    # print(pdb.head())
+                ###In any case we recompute a single parameters with enough cores
+                ###In every case we recompute a single paramters with the best peakpicking
+                dic_call = dic_fixed_grouping
+
+                fixed_params_grouping = (self.path_exp, self.params_archive, self.dir_db, summary_alignment, \
+                                         self.num_workers, self.polarity, self.path_samples, self.temp_yaml,gsampler.is_parallel(), gscorer,pdb, False)
+                dic_fixed_grouping = {"fixed_params":fixed_params_grouping}
+            ###We fix the paramter which are not yet fixed
+            for ll in all_parameters:
+                if ll not in to_optimize_grouping:
+                    dic_fixed_grouping[ll] = all_parameters[ll]
+
+            # THe best peakpicking parameters are inject into the grouping parameters.
+            if ("pvoptim" in locals()):
+                for ik in pvoptim:
+                    dic_fixed_grouping[ik] = convert_val(pvoptim[ik])
+
+            gsoptim = mos.samplingOptimizer(gsampler, goptimizer, bounds_grouping, fixed_arguments=dic_fixed_grouping)
+            mfloor = math.floor(self.num_workers/2)
+            if mfloor<1:
+                mfloor = 1
+            logging.info("Grouping optimization finished.")
+            final_dic = dic_fixed_grouping
+            try :
+                gvoptim = gsoptim.optimize(peak_picking_alignment_scoring,max_its=max_its, num_points=num_points, num_cores=mfloor)
+                for ik in gvoptim:
+                    final_dic[ik] = convert_val(gvoptim[ik])
+            except Exception as e:
+                pass
+        # The best paramters is stroed
+        self.best_par = final_dic
+
+
+
+    ###Thoe optimization is always two steps
+    def do_optimize_parameters_by_batch(self,optim_string="bbd_rsm",max_its=10,num_points=50,**kwargs):
+        if num_points<=15:
+            logging.info("Number of sampled points set to 15")
+            num_points=15
+
+        ### We get the optimization algorithm.
+        psampler,poptimizer,pscorer,gsampler,goptimizer,gscorer = parse_optim_option(optim_string)
+        psampler = psampler()
+        poptimizer = poptimizer()
+        gsampler = gsampler()
+        goptimizer = goptimizer()
+
+        ###We collect the wiegth for the score optimizer
+        pscorer = ms.get_scorer(pscorer)
+        pweight = pscorer(None).get_weight()
+        psampler.set_weight(pweight)
+
+        gscorer = ms.get_scorer(gscorer)
+        gweight = gscorer(None).get_weight()
+        gsampler.set_weight(gweight)
+
+        pdb = "NONE"
+        ## Reading parameters to optimize and ranges
+        pfh = ph.ParametersFileHandler(self.temp_yaml)
+        to_optimize = pfh.get_optimizable_parameters(string=True)
+        ###Parameterd are split between peakpciking and grouping
+        to_optimize_peakpicking = {ll:to_optimize[ll] for ll in to_optimize if ll.startswith("peakpicking")}
+        to_optimize_grouping =\
+            {ll:to_optimize[ll] for ll in to_optimize if ll.startswith("grouping")}
+        all_parameters = pfh.get_parameters_values()
+
+        final_dic = all_parameters.copy()
+
+        ###if the yaml has not been optimized we create the first value
+        if not os.path.isfile(self.temp_yaml):
+            self.temp_yaml = self.input_par
+
+        ###We filter out the parameters if they are not used by the algorithm
+        parameters = ph.ParametersFileHandler(self.temp_yaml)
+        peakpicking = parameters.get_peakpicking()
+        peakpicking = me.check_peakpicking(peakpicking)
+        if peakpicking!="ADAP":
+            to_remove =["peakpicking__peaks_deconvolution__rt_wavelet__const",
+            "peakpicking__peaks_deconvolution__rt_wavelet__add",
+            "peakpicking__peaks_deconvolution__coefficient_area_threshold"]
+            for rr in to_remove:
+                if rr in to_optimize_peakpicking:
+                    del to_optimize_peakpicking[rr]
+        if peakpicking!="OPENMS":
+            to_remove =["peakpicking__traces_construction__num_outliers"]
+            for rr in to_remove:
+                if rr in to_optimize_peakpicking:
+                    del to_optimize_peakpicking[rr]
+        ## We get the bounds of the optimizable parameters.
+        summary_peakpicking = self.path_summary + "_peakpicking.csv"
+
+        if len(to_optimize_peakpicking) > 0 and pscorer!="none":
+            ### In this case we optimize the parameter by batches of 3
+            batches = []
+            current_batch = []
+            for vname in cr.ORDER_VARIABLES_PEAKPICKING:
+                if vname in to_optimize_peakpicking:
+                    current_batch.append(vname)
+                if len(current_batch)==3:
+                    batches.append(current_batch)
+                    current_batch = []
+
+            ### We check if an incomplete batch exist
+            if len(current_batch)>=1:
+                batches.append(current_batch)
+            ### In this case we improve optimize the batches separatly.
+            for batch in batches:
+                ###Extract the coorect to potimize
+                to_optimize_peakpicking_batch  = {k:(to_optimize_peakpicking[k]) for k in batch}
+
+                lb_peakpicking = [x[0] for x in to_optimize_peakpicking_batch.values()]
+                ub_peakpicking = [x[1] for x in to_optimize_peakpicking_batch.values()]
+                bounds_peakpicking = mos.bounds(lb_peakpicking, ub_peakpicking, list(to_optimize_peakpicking_batch.keys()))
+
+                # Paramters which are always fixed.
+                fixed_params_peakpicking = (self.path_exp, self.params_archive, self.dir_db, summary_peakpicking,\
+                               self.num_workers, self.polarity, self.path_samples, self.temp_yaml, psampler.is_parallel(), pscorer, pdb, False)
+
+                dic_fixed_peakpicking = {"fixed_params":fixed_params_peakpicking}
+                ###We fix the paramters which will not be optimized
+                for ll in all_parameters:
+                    if ll not in to_optimize_peakpicking_batch:
+                        dic_fixed_peakpicking[ll] = all_parameters[ll]
+                try:
+                    psoptim = mos.samplingOptimizer(psampler, poptimizer, bounds_peakpicking, fixed_arguments=dic_fixed_peakpicking)
+                    pvoptim = psoptim.optimize(peak_picking_alignment_scoring,max_its=max_its,num_points=num_points, num_cores=self.num_workers)
+                except Exception as e:
+                    logging.warning("Exception occured:",e)
+                    logging.warning(traceback.format_exc())
+                    pass
+                logging.info("Peakpicking optimization finished.")
+            else:
+                logging.info("No peakpicking optimization required.")
+
+
+
+        if len(to_optimize_grouping) > 0 and gscorer!="none":
+            ###We compute the peak picking a single time
+            dic_pp = all_parameters.copy()
+            fixed_pp_single = (self.path_exp, self.params_archive, self.dir_db, summary_peakpicking,\
+                           self.num_workers, self.polarity, self.path_samples, self.temp_yaml, False, pscorer, pdb, True)
+
+            if ("pvoptim" in locals()):
+                for ik in pvoptim:
+                    dic_pp[ik] = convert_val(pvoptim[ik])
+            ####We add the correct fixed parameters
+            dic_pp["fixed_params"] = fixed_pp_single
+            dic_pp["reset"]=True
+            vss = peak_picking_alignment_scoring(**dic_pp)
             lb_grouping = [x[0] for x in to_optimize_grouping.values()]
             ub_grouping = [x[1] for x in to_optimize_grouping.values()]
             bounds_grouping = mos.bounds(lb_grouping, ub_grouping, list(to_optimize_grouping.keys()))
@@ -460,7 +633,7 @@ class ParametersOptimizer:
             mfloor = math.floor(self.num_workers/2)
             if mfloor<1:
                 mfloor = 1
-            print("Grouping optimization finished.")
+            logging.info("Grouping optimization finished.")
             final_dic = dic_fixed_grouping
             try :
                 gvoptim = gsoptim.optimize(peak_picking_alignment_scoring,max_its=max_its, num_points=num_points, num_cores=mfloor)
@@ -470,6 +643,7 @@ class ParametersOptimizer:
                 pass
         # The best paramters is stroed
         self.best_par = final_dic
+
 
     def export_best_parameters(self,outpath):
         pfh = ph.ParametersFileHandler(self.input_par)
@@ -490,11 +664,12 @@ class ParametersOptimizer:
         if initial_estimation:
             self.determine_initial_parameters()
         self.select_samples(num_files = num_files)
-        print("Finished initial parameters estimation")
-        print("Optimizing remaining parameters")
+        self.reduce_samples()
+        logging.info("Finished initial parameters estimation")
+        logging.info("Optimizing remaining parameters")
         self.do_optimize_parameters(optim_string=optimizer,max_its=max_its,num_points=num_points)
-        print("Finished  optimization")
-        print("Exporting in "+output_par)
+        logging.info("Finished  optimization")
+        logging.info("Exporting in "+output_par)
         self.export_best_parameters(output_par)
 
         ###We reset the jAVA memoery limit
