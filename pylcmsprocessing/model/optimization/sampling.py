@@ -113,7 +113,7 @@ class bounds:
     def upper_bound(self):
         return self.ub
 
-
+    ###In every case the final range should be 0.75% of the previours range
     def contract_bound(self,best_point,names,valid=None, contraction=0.5, extension=0.1,
                                  extreme=0.02, only_positive=True):
         if valid is None:
@@ -130,9 +130,16 @@ class bounds:
             nlb = best_point[ip] - crange[key] * contraction
             nub = best_point[ip] + crange[key] * contraction
 
+            ###We check if the point are compatible with the bound
+            if nub<(self.lb[key]+(crange[key]*contraction)):
+                nub = self.lb[key]+(crange[key]*(contraction))
+
+            if nlb>(self.lb[key]+(crange[key]*(1-contraction))):
+                nlb = self.lb[key]+(crange[key]*(1-contraction))
+
             if (abs((best_point[ip] - self.lb[key]) / crange[key]) - 1) <= extreme:
                 nval = self.lb[key] - crange[key] * contraction * extension * 2
-                if nval < (0.75*self.initial_lb[key]):
+                if nval < ((1-contraction)*self.initial_lb[key]):
                     nval = (0.75*self.initial_lb[key])
                 nlb = nval
             else:
@@ -141,8 +148,8 @@ class bounds:
 
             if (abs((best_point[ip] - self.ub[key]) / crange[key]) - 1) <= extreme:
                 nval = self.ub[key] + crange[key] * contraction * extension * 2
-                if nval > (1.25*self.initial_ub[key]):
-                    nval = (1.25*self.initial_ub[key])
+                if nval > ((2-contraction)*self.initial_ub[key]):
+                    nval = ((2-contraction)*self.initial_ub[key])
                 nub = nval
             else:
                 if nub > self.ub[key]:

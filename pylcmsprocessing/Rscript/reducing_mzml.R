@@ -16,7 +16,7 @@ if(length(args)>1){
 }
 
 MAX_ISO <- 4
-MAX_SEL <- 20
+MAX_SEL <- 25
 
 all_files <- list.files(INPUT_DIR,full.names=TRUE,pattern="mzX?ML")
 

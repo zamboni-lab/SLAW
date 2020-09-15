@@ -142,6 +142,9 @@ if __name__=="__main__":
         if not ph.is_optimized():
             vui.generate_yaml_files()
             vui.initialize_yaml_polarity(PATH_YAML, pol)
+            PATH_INITIAL = os.path.join(OUTPUT_DIR, pcr.OUT["INITIAL_PARAMETERS"])
+            dummy = shutil.copyfile(PATH_YAML,PATH_INITIAL)
+
             with open(vui.path_yaml, 'r') as stream:
                 raw_yaml = yaml.safe_load(stream)
 

@@ -474,6 +474,9 @@ class ParametersOptimizer:
                     final_dic[ik] = convert_val(gvoptim[ik])
             except Exception as e:
                 pass
+        ###We remove the two temp directory
+        shutil.rmtree(self.params_archive)
+        shutil.rmtree(self.dir_db)
         # The best paramters is stroed
         self.best_par = final_dic
 
@@ -547,27 +550,31 @@ class ParametersOptimizer:
                     batches.append(current_batch)
                     current_batch = []
 
+
             ### We check if an incomplete batch exist
             if len(current_batch)>=1:
                 batches.append(current_batch)
+
+            current_parameters_values = all_parameters.copy()
             ### In this case we improve optimize the batches separatly.
+            num_batch = 1
             for batch in batches:
                 ###Extract the coorect to potimize
                 to_optimize_peakpicking_batch  = {k:(to_optimize_peakpicking[k]) for k in batch}
-
+                summary_peakpicking_batch = self.path_summary + "_peakpicking"+str(num_batch)+".csv"
                 lb_peakpicking = [x[0] for x in to_optimize_peakpicking_batch.values()]
                 ub_peakpicking = [x[1] for x in to_optimize_peakpicking_batch.values()]
                 bounds_peakpicking = mos.bounds(lb_peakpicking, ub_peakpicking, list(to_optimize_peakpicking_batch.keys()))
 
                 # Paramters which are always fixed.
-                fixed_params_peakpicking = (self.path_exp, self.params_archive, self.dir_db, summary_peakpicking,\
+                fixed_params_peakpicking = (self.path_exp, self.params_archive, self.dir_db, summary_peakpicking_batch,\
                                self.num_workers, self.polarity, self.path_samples, self.temp_yaml, psampler.is_parallel(), pscorer, pdb, False)
 
                 dic_fixed_peakpicking = {"fixed_params":fixed_params_peakpicking}
                 ###We fix the paramters which will not be optimized
-                for ll in all_parameters:
+                for ll in current_parameters_values:
                     if ll not in to_optimize_peakpicking_batch:
-                        dic_fixed_peakpicking[ll] = all_parameters[ll]
+                        dic_fixed_peakpicking[ll] = current_parameters_values[ll]
                 try:
                     psoptim = mos.samplingOptimizer(psampler, poptimizer, bounds_peakpicking, fixed_arguments=dic_fixed_peakpicking)
                     pvoptim = psoptim.optimize(peak_picking_alignment_scoring,max_its=max_its,num_points=num_points, num_cores=self.num_workers)
@@ -575,9 +582,12 @@ class ParametersOptimizer:
                     logging.warning("Exception occured:",e)
                     logging.warning(traceback.format_exc())
                     pass
-                logging.info("Peakpicking optimization finished.")
-            else:
-                logging.info("No peakpicking optimization required.")
+                for ik in pvoptim:
+                    current_parameters_values[ik] = convert_val(pvoptim[ik])
+                num_batch += 1
+            logging.info("Peakpicking optimization finished in "+len(batches)+" batches.")
+        else:
+            logging.info("No peakpicking optimization required.")
 
 
 
@@ -667,7 +677,10 @@ class ParametersOptimizer:
         self.reduce_samples()
         logging.info("Finished initial parameters estimation")
         logging.info("Optimizing remaining parameters")
-        self.do_optimize_parameters(optim_string=optimizer,max_its=max_its,num_points=num_points)
+        if "BATCHOPTIM" in os.environ:
+            self.do_optimize_parameters_by_batch(optim_string=optimizer,max_its=max_its,num_points=num_points)
+        else:
+            self.do_optimize_parameters(optim_string=optimizer,max_its=max_its,num_points=num_points)
         logging.info("Finished  optimization")
         logging.info("Exporting in "+output_par)
         self.export_best_parameters(output_par)

@@ -43,6 +43,7 @@ OUT={"DB":"processing.sqlite",
         "FIGURE":"figure_evaluation.pdf"
      },
      "EIC":"hdf5/eics.hdf5",
+     "INITIAL_PARAMETERS":"initial_parameters.txt",
      "PARAMETERS":"parameters.yaml",
      "PYTHON_SCRIPT":"processing.py",
      "INCORRECT_FILES":"invalidMZML.txt"
