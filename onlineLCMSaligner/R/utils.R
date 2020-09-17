@@ -172,7 +172,7 @@ write_dgCMatrix_csv <- function(mat,
   
   chunk_df <- as.data.frame(chunk_mat)
 
-  data.table::fwrite(chunk_df, file = filename, append = append)
+  data.table::fwrite(chunk_df, file = filename, append = append, sep="\t")
   if(chunk_end < (chunk_size * chunk)){
     return(NULL)
   }
@@ -187,7 +187,7 @@ write_dgCMatrix_csv <- function(mat,
         chunk_mat[chunk_mat==replace_old] <- replace_new
       }
       chunk_df <- as.data.frame(chunk_mat)
-      data.table::fwrite(chunk_df, file = filename, append = T)
+      data.table::fwrite(chunk_df, file = filename, append = T, sep="\t")
     }
   }
   

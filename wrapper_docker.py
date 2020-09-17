@@ -13,14 +13,15 @@ sys.path.append('/pylcmsprocessing')
 from pylcmsprocessing.model.helper.UI import UI
 from pylcmsprocessing.model.experiment import Experiment,check_peakpicking
 from pylcmsprocessing.model.steps.optimize_parameters import ParametersOptimizer
-from pylcmsprocessing.model.helper.parameters_handler import ParametersFileHandler
+from pylcmsprocessing.model.helper.parameters_handler import ParametersFileHandler,ParametersChecker
 from pylcmsprocessing.common.time_evaluation import Timer
 import pylcmsprocessing.common.references as pcr
 
 if __name__=="__main__":
 ##Two thing to check the number of CPUs and the ocnsumed meory eventually.
     ###We determine the amount of memory allocated to each process
-    logging.basicConfig(format = "%(asctime)s|%(levelname)s: %(message)s",datefmt='%Y-%m-%d|%H:%M:%S',level=logging.INFO)
+    logging.basicConfig(format = "%(asctime)s|%(levelname)s: %(message)s",datefmt='%Y-%m-%d|%H:%M:%S',level=logging.DEBUG)
+    logging.StreamHandler(sys.stdout)
     timer = Timer()
     timer.store_point("wstart")
     avail_memory = (psutil.virtual_memory()[1] >> 20)
@@ -121,7 +122,14 @@ if __name__=="__main__":
     timer.print_point("initialisation")
     vui = UI(OUTPUT_DIR, INPUT, polarity=os.environ["POLARITY"], mass_spec="Exactive", num_workers=num_cpus,
          path_yaml=PATH_YAML)
+    PATH_INITIAL = os.path.join(OUTPUT_DIR, pcr.OUT["INITIAL_PARAMETERS"])
+    dummy = shutil.copyfile(PATH_YAML, PATH_INITIAL)
 
+    ###We check the parameter
+    pcheck = ParametersChecker(vui.path_yaml)
+    ph = pcheck.check_parameters()
+    ph.write_parameters(PATH_YAML)
+    ph = ParametersFileHandler(vui.path_yaml)
     ###In all case the first table is generated.
     if not os.path.exists(vui.path_yaml):
         ###We just create a an empty yaml file
@@ -130,28 +138,23 @@ if __name__=="__main__":
         # self.determine_initial_parameters()
         logging.info("Empty directory detected, performing initial guess of SLAW parameters.")
         temp_opt = ParametersOptimizer(exp, "FAKE", DB_STORAGE, num_workers=num_cpus, input_par=PATH_YAML)
-        temp_opt.determine_initial_parameters(output_par=PATH_YAML)
+        # temp_opt.determine_initial_parameters(output_par=PATH_YAML)
         logging.info("Parameters file generated please check the parameters values and/or parameters range before optimization.")
         exit(0)
     else:
-        ph = ParametersFileHandler(vui.path_yaml)
+        ###We first check the parameters
         ##We check what is the given peakpicker.
         peakpicking = ph.get_peakpicking()
         peakpicking = check_peakpicking(peakpicking)
-
         if not ph.is_optimized():
             vui.generate_yaml_files()
             vui.initialize_yaml_polarity(PATH_YAML, pol)
-            PATH_INITIAL = os.path.join(OUTPUT_DIR, pcr.OUT["INITIAL_PARAMETERS"])
-            dummy = shutil.copyfile(PATH_YAML,PATH_INITIAL)
-
             with open(vui.path_yaml, 'r') as stream:
                 raw_yaml = yaml.safe_load(stream)
-
-            num_points = int(raw_yaml["optimization"]["number_of_points"]["value"])
-            max_its = int(raw_yaml["optimization"]["num_iterations"]["value"])
-            optim_files = int(raw_yaml["optimization"]["files_used"]["value"])
-            initial_estimation = bool(raw_yaml["optimization"]["initial_estimation"]["value"])
+            num_points = int(ph["optimization__number_of_points"]["value"])
+            max_its = int(ph["optimization__num_iterations"]["value"])
+            optim_files = int(ph["optimization__files_used"]["value"])
+            initial_estimation = bool(ph["optimization__initial_estimation"]["value"])
 
             PATH_OPTIM = os.path.join(OUTPUT_DIR, "temp_optim")
             if not os.path.isdir(DB_STORAGE):
@@ -170,15 +173,22 @@ if __name__=="__main__":
             ###If there was optimiz\ation we have ot reset the otpoimization proces
             exp.reset_processing()
 
+
+    ###Extracting hte peakpicking parameters.
+    min_peakwidth = float(ph["peakpicking__peaks_deconvolution__peak_width"]["value"][0])*60
+    max_peakwidth = float(ph["peakpicking__peaks_deconvolution__peak_width"]["value"][1])*60
+    sn = float(ph["peakpicking__peaks_deconvolution__SN"]["value"])
+    min_int = float(ph["peakpicking__noise_level_ms1"]["value"])
+    min_scan = math.floor(float(ph["peakpicking__traces_construction__min_scan"]["value"]))
+    quant = str(ph["grouping__extracted_quantity"]["value"])
+    ppm = float(ph["peakpicking__traces_construction__ppm"]["value"])
+    ms2_noise = float(ph["peakpicking__noise_level_ms2"]["value"])
     if not os.path.isfile(PATH_XML):
         if peakpicking=="ADAP":
             vui.generate_MZmine_XML(path_xml=PATH_XML)
             logging.info("An ADAP batch file has been generated in the "+OUTPUT_DIR+" directory, you ca use it to refine peakpicking parameters using MZmine.")
     exp.initialise_database(num_cpus,OUTPUT_DIR,vui.polarity,INPUT,["ADAP"], 1)
     # exp.building_inputs_single_processing(PATH_XML)
-    ###We always read the yaml paramters file.
-    with open(vui.path_yaml, 'r') as stream:
-        raw_yaml = yaml.safe_load(stream)
 
     if peakpicking=="ADAP":
         exp.run_mzmine("/MZmine-2.52-Linux",PATH_XML,int(num_cpus*3),log = LOG)
@@ -186,34 +196,17 @@ if __name__=="__main__":
         exp.post_processing_peakpicking_mzmine()
         ###If there is an MS2 folder we process it
         if "MS2" in os.environ:
-            exp.extract_ms2(noise_level=float(raw_yaml["peakpicking"]["noise_level_ms2"]["value"]), output=pcr.OUT["ADAP"]["MSMS"])
+            exp.extract_ms2(noise_level=ms2_noise, output=pcr.OUT["ADAP"]["MSMS"])
 
     if peakpicking=="OPENMS":
-        ###In this case arugment are read directly
-        min_fwhm = float(raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width"]["value"][0])*60
-        max_fwhm = float(raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width"]["value"][1])*60
-        sn = float(raw_yaml["peakpicking"]["peaks_deconvolution"]["SN"]["value"])
-        min_int = float(raw_yaml["peakpicking"]["noise_level_ms1"]["value"])
-        min_scan = math.floor(float(raw_yaml["peakpicking"]["traces_construction"]["min_scan"]["value"]))
-        max_outlier = math.floor(float(raw_yaml["peakpicking"]["traces_construction"]["num_outliers"]["value"]))
-        quant = raw_yaml["grouping"]["extracted_quantity"]["value"]
-        fwhm_fac = 1.2
-        if "peak_width_fac" in raw_yaml["peakpicking"]["peaks_deconvolution"]:
-            fwhm_fac = float(raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width_fac"]["value"])
-        ppm = float(raw_yaml["peakpicking"]["traces_construction"]["ppm"]["value"])
-        exp.run_openms(min_fwhm, max_fwhm, fwhm_fac, sn, ppm, min_int, max_outlier, min_scan, quant,log = LOG)
-        exp.extract_ms2(noise_level=float(raw_yaml["peakpicking"]["noise_level_ms2"]["value"]),output=pcr.OUT["OPENMS"]["MSMS"],all=True)
-        exp.post_processing_peakpicking_openms()
+            ###In this case arugment are read directly
+            max_outlier = math.floor(float(ph["peakpicking__traces_construction__num_outliers"]["value"]))
+            peak_width_fac = float(ph["peakpicking__peaks_deconvolution__peak_width_fac"]["value"])
+            exp.run_openms(min_peakwidth, max_peakwidth, peak_width_fac, sn, ppm, min_int, max_outlier, min_scan, quant,log = LOG)
+            exp.extract_ms2(noise_level=ms2_noise,output=pcr.OUT["OPENMS"]["MSMS"],all=True)
+            exp.post_processing_peakpicking_openms()
 
     if peakpicking=="CENTWAVE":
-        min_peakwidth = float(raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width"]["value"][0]) * 60
-        max_peakwidth = float(raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width"]["value"][1]) * 60
-        sn = float(raw_yaml["peakpicking"]["peaks_deconvolution"]["SN"]["value"])
-        min_int = float(raw_yaml["peakpicking"]["noise_level_ms1"]["value"])
-        min_scan = math.floor(float(raw_yaml["peakpicking"]["traces_construction"]["min_scan"]["value"]))
-        if "peak_width_fac" in raw_yaml["peakpicking"]["peaks_deconvolution"]:
-            fwhm_fac = float(raw_yaml["peakpicking"]["peaks_deconvolution"]["peak_width_fac"]["value"])
-        ppm = float(raw_yaml["peakpicking"]["traces_construction"]["ppm"]["value"])
         exp.run_xcms(min_peakwidth, max_peakwidth, sn, ppm, min_int, min_scan, log=LOG)
         exp.extract_ms2(noise_level=float(raw_yaml["peakpicking"]["noise_level_ms2"]["value"]),
                         output=pcr.OUT["CENTWAVE"]["MSMS"], all=True)
@@ -223,35 +216,51 @@ if __name__=="__main__":
     timer.store_point("peakpicking")
     timer.print_point("peakpicking")
 
-    intensity = str(raw_yaml["grouping"]["extracted_quantity"]["value"])
-    exp.group_online(intensity=intensity,
-        ppm = float(raw_yaml["grouping"]["ppm"]["value"]),
-        mztol=float(raw_yaml["grouping"]["dmz"]["value"]),
-        rttol=float(raw_yaml["grouping"]["drt"]["value"]),
-        n_ref = int(raw_yaml["grouping"]["num_references"]["value"]),
-        alpha=float(raw_yaml["grouping"]["alpha"]["value"]),
-        ms2_mz_tol = float(raw_yaml["peakpicking"]['peaks_deconvolution']["ms2_mz_tol"]["value"]),
-        ms2_rt_tol = float(raw_yaml["peakpicking"]['peaks_deconvolution']["ms2_rt_tol"]["value"]),
-        filter_qc= float(raw_yaml["filtering"]['frac_qc']["value"]),
-        fold_blank= float(raw_yaml["filtering"]['fold_blank']["value"]),
+    ###alignment parameters
+    ppm_group = float(ph["grouping__ppm"]["value"])
+    mztol = float(ph["grouping__dmz"]["value"])
+    rttol = float(ph["grouping__drt"]["value"])
+    n_ref = int(ph["grouping__num_references"]["value"])
+    alpha = float(ph["grouping__alpha"]["value"])
+    ms2_mz_tol = float(ph["peakpicking__peaks_deconvolution"]["ms2_mz_tol"]["value"])
+    ms2_rt_tol = float(ph["peakpicking__peaks_deconvolution"]["ms2_rt_tol"]["value"])
+    filter_qc = float(ph["filtering__frac_qc"]["value"])
+    fold_blank = float(ph["filtering__fold_blank"]["value"])
+
+    exp.group_online(intensity=quant,
+        ppm = ppm_group,
+        mztol=mztol,
+        rttol=rttol,
+        n_ref = n_ref,
+        alpha=alpha,
+        ms2_mz_tol = ms2_mz_tol,
+        ms2_rt_tol = ms2_rt_tol,
+        filter_qc= filter_qc,
+        fold_blank= fold_blank,
         log=LOG)
     timer.store_point("alignment")
     timer.print_point("alignment")
 
-    ###Gap filling and isotopic pattern extraction
-    exp.add_missing_informations(max_iso=int(raw_yaml["ion_annotation"]['max_isotopes']["value"]),
-                                 max_charge=int(raw_yaml["ion_annotation"]['max_charge']["value"]),
-                                 quant=intensity,
-                                 ppm=float(raw_yaml["ion_annotation"]["ppm"]["value"]),
-                                 dmz=float(raw_yaml["ion_annotation"]["dmz"]["value"]))
+    main_adducts_str = ph["ion_annotation__main_adducts_" + exp.polarity]["value"]
+    adducts_str = ph["ion_annotation__adducts_" + exp.polarity]["value"]
+    ion_num = int(ph["ion_annotation__num_files"]["value"])
+    ion_ppm = float(ph["ion_annotation__ppm"]["value"])
+    ion_dmz = float(ph["ion_annotation__dmz"]["value"])
+    ion_filter = float(ph["ion_annotation__min_filter"]["value"])
+    max_iso = int(ph["ion_annotation__max_isotopes"]["value"])
+    max_charge = int(ph["ion_annotation__max_charge"]["value"])
+
+###Gap filling and isotopic pattern extraction
+    exp.add_missing_informations(max_iso=max_iso,
+                                 max_charge=max_charge,
+                                 quant=quant,
+                                 ppm=ion_ppm,
+                                 dmz=ion_dmz)
 
     timer.store_point("gap-filling")
     timer.print_point("gap-filling")
 
-    main_adducts_str=raw_yaml["ion_annotation"]["main_adducts_"+exp.polarity]["value"]
-    adducts_str = raw_yaml["ion_annotation"]["adducts_"+exp.polarity]["value"]
-    successfully_processed = exp.annotate_ions(int(raw_yaml["ion_annotation"]["num_files"]["value"]),float(raw_yaml["ion_annotation"]["ppm"]["value"]),
-        float(raw_yaml["ion_annotation"]["dmz"]["value"]),min_filter=raw_yaml["ion_annotation"]["min_filter"]["value"],
+    successfully_processed = exp.annotate_ions(ion_num,ion_ppm,ion_dmz,min_filter=ion_filter,
                 adducts=adducts_str,main_adducts=main_adducts_str, max_workers=num_cpus)
     timer.store_point("annotation")
     timer.print_point("annotation")

@@ -477,10 +477,9 @@ class ParametersOptimizer:
         ###We remove the two temp directory
         shutil.rmtree(self.params_archive)
         shutil.rmtree(self.dir_db)
+        shutil.rmtree(self.path_exp)
         # The best paramters is stroed
         self.best_par = final_dic
-
-
 
     ###Thoe optimization is always two steps
     def do_optimize_parameters_by_batch(self,optim_string="bbd_rsm",max_its=10,num_points=50,**kwargs):
@@ -490,7 +489,7 @@ class ParametersOptimizer:
 
         ### We get the optimization algorithm.
         psampler,poptimizer,pscorer,gsampler,goptimizer,gscorer = parse_optim_option(optim_string)
-        psampler = psampler()
+        tsampler = psampler()
         poptimizer = poptimizer()
         gsampler = gsampler()
         goptimizer = goptimizer()
@@ -498,7 +497,7 @@ class ParametersOptimizer:
         ###We collect the wiegth for the score optimizer
         pscorer = ms.get_scorer(pscorer)
         pweight = pscorer(None).get_weight()
-        psampler.set_weight(pweight)
+        tsampler.set_weight(pweight)
 
         gscorer = ms.get_scorer(gscorer)
         gweight = gscorer(None).get_weight()
@@ -532,13 +531,17 @@ class ParametersOptimizer:
                 if rr in to_optimize_peakpicking:
                     del to_optimize_peakpicking[rr]
         if peakpicking!="OPENMS":
-            to_remove =["peakpicking__traces_construction__num_outliers"]
+            to_remove =["peakpicking__traces_construction__num_outliers",
+                        "peakpicking__traces_construction__peak_width_fac"]
             for rr in to_remove:
                 if rr in to_optimize_peakpicking:
                     del to_optimize_peakpicking[rr]
         ## We get the bounds of the optimizable parameters.
         summary_peakpicking = self.path_summary + "_peakpicking.csv"
 
+        last_peakpicking = summary_peakpicking
+
+        by_batch = 3
         if len(to_optimize_peakpicking) > 0 and pscorer!="none":
             ### In this case we optimize the parameter by batches of 3
             batches = []
@@ -546,29 +549,43 @@ class ParametersOptimizer:
             for vname in cr.ORDER_VARIABLES_PEAKPICKING:
                 if vname in to_optimize_peakpicking:
                     current_batch.append(vname)
-                if len(current_batch)==3:
+                if len(current_batch)==by_batch:
                     batches.append(current_batch)
                     current_batch = []
 
 
             ### We check if an incomplete batch exist
-            if len(current_batch)>=1:
+            if len(current_batch)>1:
                 batches.append(current_batch)
+
+            if len(current_batch)==1:
+                dvar = batches[-1][-1]
+                batches[-1] = batches[-1][:-1]
+                current_batch.append(dvar)
+                batches.append(current_batch)
+
+            ###If the last batch is of size one, we transfer one of the previous variable to the last batch
 
             current_parameters_values = all_parameters.copy()
             ### In this case we improve optimize the batches separatly.
             num_batch = 1
             for batch in batches:
+                tsampler = psampler()
+                ###We collect the wiegth for the score optimizer
+                tsampler.set_weight(pweight)
+
+
                 ###Extract the coorect to potimize
                 to_optimize_peakpicking_batch  = {k:(to_optimize_peakpicking[k]) for k in batch}
                 summary_peakpicking_batch = self.path_summary + "_peakpicking"+str(num_batch)+".csv"
+                last_peakpicking = summary_peakpicking_batch
                 lb_peakpicking = [x[0] for x in to_optimize_peakpicking_batch.values()]
                 ub_peakpicking = [x[1] for x in to_optimize_peakpicking_batch.values()]
                 bounds_peakpicking = mos.bounds(lb_peakpicking, ub_peakpicking, list(to_optimize_peakpicking_batch.keys()))
 
                 # Paramters which are always fixed.
                 fixed_params_peakpicking = (self.path_exp, self.params_archive, self.dir_db, summary_peakpicking_batch,\
-                               self.num_workers, self.polarity, self.path_samples, self.temp_yaml, psampler.is_parallel(), pscorer, pdb, False)
+                               self.num_workers, self.polarity, self.path_samples, self.temp_yaml, tsampler.is_parallel(), pscorer, pdb, False)
 
                 dic_fixed_peakpicking = {"fixed_params":fixed_params_peakpicking}
                 ###We fix the paramters which will not be optimized
@@ -576,16 +593,18 @@ class ParametersOptimizer:
                     if ll not in to_optimize_peakpicking_batch:
                         dic_fixed_peakpicking[ll] = current_parameters_values[ll]
                 try:
-                    psoptim = mos.samplingOptimizer(psampler, poptimizer, bounds_peakpicking, fixed_arguments=dic_fixed_peakpicking)
+                    psoptim = mos.samplingOptimizer(tsampler, poptimizer, bounds_peakpicking, fixed_arguments=dic_fixed_peakpicking)
                     pvoptim = psoptim.optimize(peak_picking_alignment_scoring,max_its=max_its,num_points=num_points, num_cores=self.num_workers)
+                    for ik in pvoptim:
+                        current_parameters_values[ik] = convert_val(pvoptim[ik])
+                    logging.info("Optimization of batch "+str(num_batch)+" of parameters finished.")
                 except Exception as e:
                     logging.warning("Exception occured:",e)
                     logging.warning(traceback.format_exc())
                     pass
-                for ik in pvoptim:
-                    current_parameters_values[ik] = convert_val(pvoptim[ik])
+
                 num_batch += 1
-            logging.info("Peakpicking optimization finished in "+len(batches)+" batches.")
+            logging.info("Peakpicking optimization finished in "+str(len(batches))+" batches.")
         else:
             logging.info("No peakpicking optimization required.")
 
@@ -597,9 +616,9 @@ class ParametersOptimizer:
             fixed_pp_single = (self.path_exp, self.params_archive, self.dir_db, summary_peakpicking,\
                            self.num_workers, self.polarity, self.path_samples, self.temp_yaml, False, pscorer, pdb, True)
 
-            if ("pvoptim" in locals()):
-                for ik in pvoptim:
-                    dic_pp[ik] = convert_val(pvoptim[ik])
+            if ("current_parameters_values" in locals()):
+                for ik in current_parameters_values:
+                    dic_pp[ik] = convert_val(current_parameters_values[ik])
             ####We add the correct fixed parameters
             dic_pp["fixed_params"] = fixed_pp_single
             dic_pp["reset"]=True
@@ -630,15 +649,15 @@ class ParametersOptimizer:
                                          self.num_workers, self.polarity, self.path_samples, self.temp_yaml,gsampler.is_parallel(), gscorer,pdb, False)
                 dic_fixed_grouping = {"fixed_params":fixed_params_grouping}
             ###We fix the paramter which are not yet fixed
-            for ll in all_parameters:
-                if ll not in to_optimize_grouping:
-                    dic_fixed_grouping[ll] = all_parameters[ll]
 
             # THe best peakpicking parameters are inject into the grouping parameters.
             if ("pvoptim" in locals()):
                 for ik in pvoptim:
                     dic_fixed_grouping[ik] = convert_val(pvoptim[ik])
 
+            if ("current_parameters_values" in locals()):
+                for ik in current_parameters_values:
+                    dic_pp[ik] = convert_val(current_parameters_values[ik])
             gsoptim = mos.samplingOptimizer(gsampler, goptimizer, bounds_grouping, fixed_arguments=dic_fixed_grouping)
             mfloor = math.floor(self.num_workers/2)
             if mfloor<1:
@@ -651,6 +670,9 @@ class ParametersOptimizer:
                     final_dic[ik] = convert_val(gvoptim[ik])
             except Exception as e:
                 pass
+        shutil.rmtree(self.params_archive)
+        shutil.rmtree(self.dir_db)
+        shutil.rmtree(self.path_exp)
         # The best paramters is stroed
         self.best_par = final_dic
 

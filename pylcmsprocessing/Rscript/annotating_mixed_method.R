@@ -887,7 +887,7 @@ buildDataMatrixFull <- function(dm, annot, path_output,
     write.table(
       vannot,
       f,
-      sep = ";",
+      sep = "\t",
       col.names = write_col,
       na="",
       row.names = FALSE
@@ -964,7 +964,7 @@ buildDataMatrixSimplified <-
       write.table(
         vannot,
         f,
-        sep = ",",
+        sep = "\t",
         col.names = write_col,
         na="",
         row.names = FALSE
@@ -1155,14 +1155,14 @@ ldetect <- list()
 
 BY_LINE <- 50000
 
-sdata <- fread(PATH_DATAMATRIX, header = TRUE, sep = ",",skip=0,nrows = BY_LINE)
+sdata <- fread(PATH_DATAMATRIX, header = TRUE, sep = "\t",skip=0,nrows = BY_LINE)
 cnames <- colnames(sdata)
 posIntensities <- getIntensityPos(sdata)
 
 val_int <- rep(0,length(posIntensities))
 counter <- 1
 while(TRUE){
-  sdata <- tryCatch(fread(PATH_DATAMATRIX, header = FALSE, sep = ",",skip=BY_LINE*(counter-1)+1,nrows = BY_LINE),
+  sdata <- tryCatch(fread(PATH_DATAMATRIX, header = FALSE, sep = "\t",skip=BY_LINE*(counter-1)+1,nrows = BY_LINE),
                    error=function(e) return(NA))
   if(length(sdata)==1) break
   colnames(sdata) <- cnames
@@ -1229,7 +1229,7 @@ match_files <- posIntensities
 # match_files <- sapply(base_sample,function(x,vref){which(endsWith(vref,suffix=x))},vref=colnames(dm),simplify=TRUE)
 
 kcnames <- c("mz", "rt","min_mz","max_mz","min_rt","max_rt","mean_peakwidth",cnames[posIntensities[sel_files]])
-dm <- fread(PATH_DATAMATRIX, header = TRUE, sep = ",", select = kcnames)
+dm <- fread(PATH_DATAMATRIX, header = TRUE, sep = "\t", select = kcnames)
 dm <- dm[vdetect, , drop = FALSE]
 val_int_var <- val_int_var[vdetect]
 ###If the software is crashing we divied the number of feature by 2 eventually
@@ -1255,7 +1255,7 @@ annot <-
 
 ###Reread the full data frame 
 rm(dm)
-dm <- fread(PATH_DATAMATRIX, header = TRUE, sep = ",")
+dm <- fread(PATH_DATAMATRIX, header = TRUE, sep = "\t")
 
 ###If the file already exists at this step we erase it
 if(file.exists(PATH_OUTPUT_SIMPLE)) file.remove(PATH_OUTPUT_SIMPLE)

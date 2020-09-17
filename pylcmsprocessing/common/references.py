@@ -4,6 +4,13 @@ ALGORITHMS_TABLE = {
     "centWave": ["centWave",None,None,None]
 }
 
+TEMPLATE_TYPE = "/pylcmsprocessing/data/template_types.yaml"
+TEMPLATES = {
+    "adap":"/pylcmsprocessing/data/template_adap.yaml",
+    "openms":"/pylcmsprocessing/data/template_openms.yaml",
+    "centwave":"/pylcmsprocessing/data/template_centwave.yaml"
+}
+
 SUMMARY_DIR = "summary_parameters"
 SUMMARY_COMBINATIONS = "summary_combinations"
 

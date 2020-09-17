@@ -93,13 +93,13 @@ filter_mzml <- function(praw,poutput,mzlims){
       }
       
       if (!length(sel)) {
-        msg <- paste0("No data points between ", mzmin, 
-                      " and ", mzmax, " for spectrum with acquisition number ", 
-                      acquisitionNum(x), ". Returning empty spectrum.")
-        warning(paste(strwrap(msg), collapse = "\n"))
-        x@mz <- x@intensity <- numeric()
-        x@tic <- integer()
-        x@peaksCount <- 0L
+        # msg <- paste0("No data points between ", mzmin, 
+        #               " and ", mzmax, " for spectrum with acquisition number ", 
+        #               acquisitionNum(x), ". Returning empty spectrum.")
+        # warning(paste(strwrap(msg), collapse = "\n"))
+        x@mz <- x@intensity <- max(rnorm(1,50,10),1)
+        x@tic <- integer(floor(x@intensity))
+        x@peaksCount <- 1L
         return(x)
       }
       x@mz <- x@mz[sel]

@@ -211,7 +211,7 @@ class AlignmentScorerIPO(AlignmentScorer):
         if not os.path.exists(dm_path):
             return -1.0,-1.0
 
-        tdata = pd.read_csv(dm_path, header=0)
+        tdata = pd.read_csv(dm_path,sep="\t",header=0)
         cnames = [cc for cc in tdata.columns if cc.startswith(hdat)]
         num_sample = len(cnames)
 
@@ -259,7 +259,7 @@ class exponentialScorer(AlignmentScorer):
         subprocess.call(cli, shell=True, timeout=900)
         if not os.path.exists(dm_path):
             return -1.0, -1.0
-        tdata = pd.read_csv(dm_path, header=0,sep=",")
+        tdata = pd.read_csv(dm_path, header=0,sep="\t")
         cnames = [cc for cc in tdata.columns if cc.startswith(hdat)]
         num_sample = len(cnames)
         rt_tab = tdata[cnames]
@@ -278,7 +278,7 @@ class reproducibleCVscorer(AlignmentScorer):
         # path_dm = path_dm.replace("/output", output, 1)
         if not os.path.exists(path_dm):
             return -1.0
-        data = pd.read_csv(path_dm, header=0)
+        data = pd.read_csv(path_dm,sep="\t",header=0)
 
         cnames = [cc for cc in data.columns if cc.startswith("int")]
         num_sample = len(cnames)

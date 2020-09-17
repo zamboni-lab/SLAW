@@ -97,7 +97,7 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
     
     if(VAL_INTENSITY %in% c("area","intensity","height")){
       ###In all case we reorder the datamatrix to avoid the first 
-      dm <- fread(PATH_OUT_DATAMATRIX,sep=",")
+      dm <- fread(PATH_OUT_DATAMATRIX,sep="\t")
       ocnames <- colnames(dm)
       quant_prefix <- paste(str_split(ocnames[length(ocnames)],fixed("_"))[[1]][1],"_",sep="")
       quant_cols <- which(startsWith(ocnames,quant_prefix))
@@ -108,7 +108,7 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
       ocnames[new_idx] <- ocnames[quant_cols]
       dm[,new_idx] <- dm[,..quant_cols]
       colnames(dm) <- ocnames
-      fwrite(dm,file = PATH_OUT_DATAMATRIX)
+      fwrite(dm,file = PATH_OUT_DATAMATRIX,sep="\t")
     }
     
     # cat("Alignment done\n",file=stdout())

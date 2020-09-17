@@ -2,6 +2,7 @@ import sqlite3
 import subprocess
 import os
 import logging
+import time
 import common.references as cr
 import common.tools as ct
 import model.helper.output_handler as oh
@@ -410,12 +411,13 @@ class Experiment:
         return softwares
 
     def run_mzmine(self, pmzmine, xml_file, batch_size=2000, silent=True, log = None, input_only=False):
-
+        logging.info("Building input")
         self.building_inputs_single_processing(xml_file)
         if input_only:
             return None
         num_workers = self.get_workers()
         runner = pr.ParallelRunner(num_workers)
+        logging.info("Building softwares")
         softwares = self.find_software_from_peakpicking()
 
         ####we generate the command line for all the inputs
@@ -429,6 +431,7 @@ class Experiment:
         while True:
             rows = c.fetchmany(batch_size)
             if not rows: break
+            logging.info("Building peakpicking")
             peakpickings = [mp.PeakPickingMZmine(row, pmzmine) for row in rows]
             need_processing = [x.need_computing() for x in peakpickings]
             processing = 0
@@ -436,6 +439,7 @@ class Experiment:
                 ####Peak picking
                 clis = [x.command_line_processing() for x in peakpickings if x.need_computing()]
                 ####We run the jobs actually
+                logging.info("Runing")
                 if len(clis) > 0:
                     runner.run(clis, silent=silent, log = log, timeout = cr.CONSTANT["PEAKPICKING_TIMOUT"])
                 names_output = [x.get_output() + "\n" for x in peakpickings]
@@ -462,7 +466,7 @@ class Experiment:
                         pid = row[0]
                         update_query = self.update_query_construction("processing","id",str(pid),"valid","0")
                         c.execute(update_query)
-        logging.info("Peak picking finished"+num_incorrect_files+"files not processed on a total of"+tot_files)
+        logging.info("Peak picking finished "+str(num_incorrect_files)+" files not processed on a total of "+str(tot_files))
         self.close_db()
 
     def run_openms(self,min_fwhm,max_fwhm,fwhm_fac,snt,ppm,min_int,max_outlier,min_points,quant,silent=True, log = None,batch_size=10000):
@@ -500,13 +504,27 @@ class Experiment:
                 names_converted = [x.split(".")[0] + ".csv" for x in names_output]
                 clis_conversion = ["Rscript " + pjoin + " " +old+ " " +new for old,new in zip(names_output,names_converted)]
                 runner.run(clis_conversion, silent=silent, log = log, timeout = cr.CONSTANT["PEAKPICKING_TIMOUT"])
-                for pid,nn in zip(ids_to_convert,names_converted):
+                to_retry = []
+                for pid,nn,o in zip(ids_to_convert,names_converted,names_output):
                     if os.path.isfile(nn):
                         update_query = self.update_query_construction("processing", "id", str(pid), "output_ms", nn)
                         c.execute(update_query)
                     else:
-                        update_query = self.update_query_construction("processing", "id", str(pid), "valid", "0")
-                        c.execute(update_query)
+                        to_retry.append((pid,nn,o))
+                ###If they are not converted  we wait 5s and do it.
+                if len(to_retry)>0:
+                    ###5 second waiting time to unlock file if needed.
+                    time.sleep(5)
+                    clis_conversion_retry = ["Rscript " + pjoin + " " + old + " " + new for id,new,old in
+                                       to_retry]
+                    runner.run(clis_conversion_retry, silent=silent, log=log, timeout=cr.CONSTANT["PEAKPICKING_TIMOUT"])
+                    for pid,nn,o in to_retry:
+                        if os.path.isfile(nn):
+                            update_query = self.update_query_construction("processing", "id", str(pid), "output_ms", nn)
+                            c.execute(update_query)
+                        else:
+                            update_query = self.update_query_construction("processing", "id", str(pid), "valid", "0")
+                            c.execute(update_query)
         self.close_db()
 
     def run_xcms(self,min_peakwidth,max_peakwidth,snt,ppm,min_int,min_points,silent=True, log = None,batch_size=10000):

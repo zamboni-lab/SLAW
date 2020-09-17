@@ -198,7 +198,7 @@ PATH_MSMS <- PATH_MSMS[file.exists(PATH_MSMS)]
 if(length(PATH_MSMS)==0) stop("No MS2 spectra to Merge.")
 
 ###We read the data matrix.
-dmm <- fread(PATH_DATAMATRIX,sep=",",header=TRUE)
+dmm <- fread(PATH_DATAMATRIX,sep="\t",header=TRUE)
 dmm <- dmm[,c("mz","rt","num_detection"),drop=FALSE]
 dmm <- as.data.frame(dmm)
 
@@ -301,7 +301,7 @@ close.connection(tcon)
 ###We nwo rewrite the data matrix batch by batch
 
 ###Reading the column name first.
-ocnames <- as.character(fread(PATH_DATAMATRIX,sep = ",",nrows=1,header=FALSE)[1,])
+ocnames <- as.character(fread(PATH_DATAMATRIX,sep = "\t",nrows=1,header=FALSE)[1,])
 
 ###We detect the position of the first qaunt_columns
 quant_prefix <- paste(str_split(ocnames[length(ocnames)],fixed("_"))[[1]][1],"_",sep="")
@@ -339,7 +339,7 @@ for(i in 1:(length(seq_cut)-1)){
     last_spec <- last_spec-1
 
 
-    sub_dm <- fread(PATH_DATAMATRIX,sep = ",",skip=firstLine-1,nrows=lastLine-firstLine+1,header=TRUE)
+    sub_dm <- fread(PATH_DATAMATRIX,sep = "\t",skip=firstLine-1,nrows=lastLine-firstLine+1,header=TRUE)
     colnames(sub_dm) <- ocnames
 
     ###We write the elemnts in the new column
@@ -360,9 +360,9 @@ for(i in 1:(length(seq_cut)-1)){
     sub_dm[,to_cut:ncol(sub_dm),drop=FALSE])
     colnames(sub_dm) <- cnames
     if(i==1){
-        fwrite(sub_dm,file=TEMP_LOCATION,sep = ",",row.names = FALSE,col.names = TRUE)
+        fwrite(sub_dm,file=TEMP_LOCATION,sep = "\t",row.names = FALSE,col.names = TRUE)
     }else{
-        fwrite(sub_dm,file=TEMP_LOCATION,sep = ",",append=TRUE,row.names = FALSE,col.names = FALSE)
+        fwrite(sub_dm,file=TEMP_LOCATION,sep = "\t",append=TRUE,row.names = FALSE,col.names = FALSE)
     }
 }
 

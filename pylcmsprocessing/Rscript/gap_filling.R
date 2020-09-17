@@ -90,11 +90,11 @@ isotopes_table <- fread(PATH_ISOTOPES, sep = " ")
 
 
 cnames <- fread(PATH_DM,
-                sep = ",",
+                sep = "\t",
                 header = TRUE,
                 nrows = 1)
 cnames <- colnames(cnames)
-dm <- fread(PATH_DM, sep = ",", select = c("mz", "rt"))
+dm <- fread(PATH_DM, sep = "\t", select = c("mz", "rt"))
 max_feat <- nrow(dm)
 BY_BATCH <- 1000
 
@@ -111,7 +111,7 @@ for (idx in 1:(length(batches) - 1)) {
   dm <-
     fread(input = PATH_DM,
           nrows = batches[idx + 1] - batches[idx] - 1,
-          skip = batches[idx])
+          skip = batches[idx],sep="\t")
   colnames(dm) <- cnames
   # dm <- fread(PATH_DM,sep=",")
   sel_columns <-
@@ -585,7 +585,7 @@ for (idx in 1:(length(batches) - 1)) {
   dm <-
     cbind(dm[, ..infos_idx], name_col, dist_col, dm[, ..quant_idx])
   colnames(dm) <- new_names
-  ww <- fwrite(dm, TEMP_NAME, append = TRUE)
+  ww <- fwrite(dm, TEMP_NAME,sep="\t",append = TRUE)
 }
 message("Gap filling finished")
 ww <- file.rename(PATH_DM, PATH_FILLED)

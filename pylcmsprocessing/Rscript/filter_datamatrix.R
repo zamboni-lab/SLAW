@@ -40,7 +40,7 @@ all_samples <- dbGetQuery(dbb, "SELECT path FROM samples INNER JOIN processing o
 dbDisconnect(dbb)
 
 ###We get the size of the data matrix.
-dm <- fread(PATH_DM,nrows = 2)
+dm <- fread(PATH_DM,nrows = 2,sep="\t")
 ccol <- ncol(dm)
 
 cnames <- colnames(dm)
@@ -76,7 +76,7 @@ num_total <- 0
 num_kept <- 0
 
 while(is.data.table(dm)){
-  dm <- tryCatch(fread(PATH_DM,skip = first_line,nrows = batch_size),error=function(x){return(NA)})
+  dm <- tryCatch(fread(PATH_DM,skip = first_line,nrows = batch_size),error=function(x){return(NA)},sep="\t")
   num_total <- num_total+nrow(dm)
   if(!is.data.table(dm)) break
 
@@ -102,7 +102,7 @@ while(is.data.table(dm)){
   
   num_kept <- num_kept+nrow(dm)
   ###We write the outpu table
-  vv <- fwrite(x = dm,file = TEMP_DM,append=TRUE)
+  vv <- fwrite(x = dm,file = TEMP_DM,append=TRUE,sep="\t")
   first_line <- first_line+batch_size
 }
 ff <- file.rename(TEMP_DM, PATH_DM)

@@ -1,4 +1,6 @@
 import yaml
+from pydoc import locate
+import common.references as cr
 
 def recur_node(x,path=None,all_args=None):
     if all_args is None:
@@ -32,12 +34,52 @@ def set_val(raw,path,value,field="value"):
     set_val(raw[k],path[1:],value)
 
 
-###Rabge parameters are handled internally by adding min and max in internal parameters.
 
+
+def parse_type(type):
+    return locate(type)
+
+def make_val_list(val):
+    if isinstance(val,list):
+        to_check = val
+    else:
+        to_check = [val]
+    return to_check
+
+def check_type(val,type):
+    to_check = make_val_list(val)
+    for val in to_check:
+        val = type(val)
+
+def check_range(val,range):
+    to_check = make_val_list(val)
+    nval = []
+    for val in to_check:
+        if val>range[1]:
+            nval.append(range[1])
+            continue
+        if val<range[0]:
+            nval.append(range[0])
+            continue
+        nval.append(val)
+    if len(nval)==1: return nval[0]
+    return nval
+
+
+
+def check_set(val,set):
+    to_check = make_val_list(val)
+    for val in to_check:
+        if val not in set:
+            raise ValueError
+
+
+###Range parameters are handled internally by adding min and max in internal parameters.
 class ParametersFileHandler:
     SEP = "__"
     SUFFIX_CONST = "const"
     SUFFIX_ADD = "add"
+    ADDED_SUFFIX = [SUFFIX_ADD,SUFFIX_CONST]
 
     def __init__(self,path=None):
         self.path=path
@@ -60,6 +102,12 @@ class ParametersFileHandler:
 
         ###We check if is a range with two values.
         set_val(self.dic,key,value)
+
+    def set_range(self,key,value):
+        if isinstance(key,str):
+            key = key.split(ParametersFileHandler.SEP)
+        ###We check if is a range with two values.
+        set_val(self.dic,key,value,"range")
 
     def is_optimized(self):
         ##Cherck if the file has been optomized eventually
@@ -194,9 +242,77 @@ class ParametersFileHandler:
         with open(path, 'w') as outfile:
             yaml.dump(self.dic, outfile, default_flow_style=False)
 
+
+class ParametersChecker:
+    @staticmethod
+    def get_template(self,algorithm):
+        algorithm = algorithm.lower()
+        try:
+            template = cr.TEMPLATES[algorithm]
+        except KeyError:
+            raise KeyError("Unknown algorithm: "+algorithm+"authorized algorithms are: "+
+                        ",".join(list(cr.TEMPLATES.keys())))
+        return template
+
+    def __init__(self,path):
+        self.params = ParametersFileHandler(path)
+        self.type = ParametersFileHandler(ParameterChecker.get_template(self.params["peakpicking__algorithm"]["value"]))
+        self.range = ParametersFileHandler(ParameterChecker.get_template(self.params["peakpicking__algorithm"]["value"]))
+
+    def check_parameters(self):
+        parameter_list = self.type.get_parameters()
+        fsuffix = ParametersFileHandler.ADDED_SUFFIX
+        fsep = ParametersFileHandler.SEP
+        need_optimization = self.params["optimization__need_optimization"]["value"]
+        for param in parameter_list:
+            cval = self.params[param]
+            crange = self.range[param]
+            ###If param is a created name, we change it.
+            if any([param.endswith(x) for x in fsuffix]):
+                param = fsep.join(param.split(fsep)[:-1])
+            required_type = parse_type(self.type[param]["type"])
+            try:
+                check_type(cval["value"],required_type)
+            except ValueError:
+                raise ValueError("Parameter "+param+" set to "+str(cval["value"])+" should be of type "+str(self.type[param]["type"]))
+            ###We check the range of the value and the parameter.
+            if "range" in crange:
+                ##We check the range if needed
+                if need_optimization:
+                    ###Two cases, dictionnary or list
+                    if isinstance(cval["range"],dict):
+                        dummy = check_range(cval["range"]["min"], crange["range"])
+                        dummy = check_range(cval["range"]["max"], crange["range"])
+                    else:
+                        try:
+                            new_range = check_range(cval["range"],crange["range"])
+                            self.params.set_range(param,new_range)
+                        except ValueError:
+                            raise ValueError("Parameter range of " + param + "  set to " + str(cval["range"]) + " should be in" +
+                                             str(crange["range"]))
+
+                try:
+                    nrange = check_range(cval["value"],crange["range"])
+                    self.params[param]=nrange
+                except ValueError:
+                    raise ValueError("Parameter " + param + "  set to " + str(cval["value"]) + " should in" +
+                                     str(crange["range"]))
+
+            if "set" in crange:
+                try:
+                    check_set(cval["value"], crange["set"])
+                except ValueError:
+                    raise ValueError("Parameter " + param + "  set to " + str(cval["value"]) + " should in" +
+                                     str(crange["set"]))
+        return self.params
+
+
+
+
+            ###We know check the range of the parameters
 if __name__=="__main__":
     PATH_PARAMS = "E:/parameters.txt"
-    PATH_PARAMS = "U:/users/Alexis/data/slaw_evaluation/MSV83010/output_cluster/parameters.txt"
+    PATH_PARAMS = "U:/users/Alexis/data/slaw_evaluation/MTBLS1129/output_cluster2/output_adap2/parameters.txt"
     pfh = ParametersFileHandler(PATH_PARAMS)
     pfh.get_parameters_values().keys()
 
