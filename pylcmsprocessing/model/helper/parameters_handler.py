@@ -81,13 +81,14 @@ class ParametersFileHandler:
     SUFFIX_ADD = "add"
     ADDED_SUFFIX = [SUFFIX_ADD,SUFFIX_CONST]
 
-    def __init__(self,path=None):
+    def __init__(self,path=None,ranges=True):
         self.path=path
         with open(self.path, 'r') as stream:
             self.dic = yaml.safe_load(stream)
         self.param_path = get_all_parameters(self.dic)
-        self.ranges=[]
-        self.find_ranges()
+        if ranges:
+            self.ranges=[]
+            self.find_ranges()
 
     def __getitem__(self, item):
         if isinstance(item,str):
@@ -201,10 +202,13 @@ class ParametersFileHandler:
         ###speicifically handle the range parameters
         return to_optimize
 
-    def get_parameters(self,string=True):
-        to_optim = self.get_optimizable_parameters(string=False)
-        lpar = [pp for pp in self.param_path if pp not in self.ranges and pp not in to_optim]
-        lpar = lpar + list(to_optim.keys())
+    def get_parameters(self,string=True,optimizable=True):
+        if not optimizable:
+            lpar = self.param_path
+        else:
+            to_optim = self.get_optimizable_parameters(string=False)
+            lpar = [pp for pp in self.param_path if pp not in self.ranges and pp not in to_optim]
+            lpar = lpar + list(to_optim.keys())
         if string:
             return [ParametersFileHandler.SEP.join(pp) for pp in lpar]
         return lpar
@@ -245,7 +249,7 @@ class ParametersFileHandler:
 
 class ParametersChecker:
     @staticmethod
-    def get_template(self,algorithm):
+    def get_template(algorithm):
         algorithm = algorithm.lower()
         try:
             template = cr.TEMPLATES[algorithm]
@@ -256,11 +260,11 @@ class ParametersChecker:
 
     def __init__(self,path):
         self.params = ParametersFileHandler(path)
-        self.type = ParametersFileHandler(ParameterChecker.get_template(self.params["peakpicking__algorithm"]["value"]))
-        self.range = ParametersFileHandler(ParameterChecker.get_template(self.params["peakpicking__algorithm"]["value"]))
+        self.type = ParametersFileHandler(ParametersChecker.get_template(self.params["peakpicking__algorithm"]["value"]))
+        self.range = ParametersFileHandler(ParametersChecker.get_template(self.params["peakpicking__algorithm"]["value"]))
 
     def check_parameters(self):
-        parameter_list = self.type.get_parameters()
+        parameter_list = self.type.get_parameters(optimizable=False)
         fsuffix = ParametersFileHandler.ADDED_SUFFIX
         fsep = ParametersFileHandler.SEP
         need_optimization = self.params["optimization__need_optimization"]["value"]

@@ -61,7 +61,7 @@ if __name__=="__main__":
     ###We set the JAVA option for the peak picking evnetually
     os.environ["JAVA_OPTS"] = "-Xms"+str(math.floor(memory_by_core/2))+"m -Xmx"+str(math.floor(memory_by_core)-200)+"m"
     ##We output System information
-    logging.info("Total memory available: "+str(avail_memory)+" and "+str( multiprocessing.cpu_count())+" cores. The workflow will use "+str(math.floor(memory_by_core))+ " Mb by cores on "+str(num_cpus)+" cores.")
+    logging.info("Total memory available: "+str(avail_memory)+" and "+str( multiprocessing.cpu_count())+" cores. The workflow will use "+str(math.floor(memory_by_core))+ " Mb by core on "+str(num_cpus)+" cores.")
 
     MANDATORY_ARGS = ["INPUT", "OUTPUT"]
     if os.environ['OUTPUT'].startswith('/sauer1') or os.environ['INPUT'].startswith('/sauer1'):
