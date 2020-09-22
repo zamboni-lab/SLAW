@@ -85,7 +85,6 @@ filter_mzml <- function(praw,poutput,mzlims){
           if(current_idx>nrow(mzlims)) break
           cmzmin <- mzlims[current_idx,1]
           cmzmax <- mzlims[current_idx,2]
-          next
         }
         if((cmz<=cmzmax)&(cmz>=cmzmin)){
           sel[idx] <- TRUE

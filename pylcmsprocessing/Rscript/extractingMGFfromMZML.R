@@ -91,9 +91,9 @@ ALL <- as.logical(args[5])
 bpp <- NULL
 
 if (get_os() == "win") {
-  bpp <- SnowParam(workers = NUM_CORES, progressbar = TRUE)
+  bpp <- SnowParam(workers = NUM_CORES, progressbar = FALSE)
 } else{
-  bpp <- MulticoreParam(workers = min(NUM_CORES, 4), progressbar = TRUE)
+  bpp <- MulticoreParam(workers = min(NUM_CORES, 4), progressbar = FALSE)
 }
 
 

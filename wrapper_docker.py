@@ -20,7 +20,7 @@ import pylcmsprocessing.common.references as pcr
 if __name__=="__main__":
 ##Two thing to check the number of CPUs and the ocnsumed meory eventually.
     ###We determine the amount of memory allocated to each process
-    logging.basicConfig(format = "%(asctime)s|%(levelname)s: %(message)s",datefmt='%Y-%m-%d|%H:%M:%S',level=logging.DEBUG)
+    logging.basicConfig(format = "%(asctime)s|%(levelname)s: %(message)s",datefmt='%Y-%m-%d|%H:%M:%S',level=logging.INFO)
     logging.StreamHandler(sys.stdout)
     timer = Timer()
     timer.store_point("wstart")
@@ -123,12 +123,14 @@ if __name__=="__main__":
     vui = UI(OUTPUT_DIR, INPUT, polarity=os.environ["POLARITY"], mass_spec="Exactive", num_workers=num_cpus,
          path_yaml=PATH_YAML)
     PATH_INITIAL = os.path.join(OUTPUT_DIR, pcr.OUT["INITIAL_PARAMETERS"])
-    dummy = shutil.copyfile(PATH_YAML, PATH_INITIAL)
 
     ###We check the parameter
     pcheck = ParametersChecker(vui.path_yaml)
     ph = pcheck.check_parameters()
     ph.write_parameters(PATH_YAML)
+    if os.path.isfile(PATH_YAML):
+        dummy = shutil.copyfile(PATH_YAML, PATH_INITIAL)
+
     ph = ParametersFileHandler(vui.path_yaml)
     ###In all case the first table is generated.
     if not os.path.exists(vui.path_yaml):
@@ -208,7 +210,7 @@ if __name__=="__main__":
 
     if peakpicking=="CENTWAVE":
         exp.run_xcms(min_peakwidth, max_peakwidth, sn, ppm, min_int, min_scan, log=LOG)
-        exp.extract_ms2(noise_level=float(raw_yaml["peakpicking"]["noise_level_ms2"]["value"]),
+        exp.extract_ms2(noise_level=ms2_noise,
                         output=pcr.OUT["CENTWAVE"]["MSMS"], all=True)
         exp.post_processing_peakpicking_xcms()
 
@@ -265,5 +267,7 @@ if __name__=="__main__":
     timer.store_point("annotation")
     timer.print_point("annotation")
     if successfully_processed:
-        # exp.post_processing(PATH_TARGET)
         exp.clean()
+        ###We generate the done file
+        PATH_DONE = os.path.join(OUTPUT_DIR, "done")
+        open(PATH_DONE, 'a').close()

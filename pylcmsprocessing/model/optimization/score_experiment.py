@@ -141,6 +141,8 @@ class PeakpickingScorerSLAW(PeakpickingScorer):
 
         # 5ppm = 0.02 peaks peakwidth =
         btab = pd.concat(all_peaktables)
+        if len(btab.rt)==0:
+            return -1.0
         norm_rt = max(btab.rt) / 20
         btab.mz = btab.mz / 0.005
         btab.rt = btab.rt / norm_rt

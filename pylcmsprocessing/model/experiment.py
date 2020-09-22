@@ -439,7 +439,6 @@ class Experiment:
                 ####Peak picking
                 clis = [x.command_line_processing() for x in peakpickings if x.need_computing()]
                 ####We run the jobs actually
-                logging.info("Runing")
                 if len(clis) > 0:
                     runner.run(clis, silent=silent, log = log, timeout = cr.CONSTANT["PEAKPICKING_TIMOUT"])
                 names_output = [x.get_output() + "\n" for x in peakpickings]

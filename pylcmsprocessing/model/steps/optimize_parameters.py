@@ -406,8 +406,8 @@ class ParametersOptimizer:
                 psoptim = mos.samplingOptimizer(psampler, poptimizer, bounds_peakpicking, fixed_arguments=dic_fixed_peakpicking)
                 pvoptim = psoptim.optimize(peak_picking_alignment_scoring,max_its=max_its,num_points=num_points, num_cores=self.num_workers)
             except Exception as e:
-                print("Exception occured:",e)
-                print(traceback.format_exc())
+                logging.error("Exception occured:",e)
+                logging.error(traceback.format_exc())
                 pass
             logging.info("Peakpicking optimization finished.")
         else:

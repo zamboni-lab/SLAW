@@ -31,7 +31,7 @@ def set_val(raw,path,value,field="value"):
         raw[field]=value
         return
     k = path[0]
-    set_val(raw[k],path[1:],value)
+    set_val(raw[k],path[1:],value,field=field)
 
 
 
@@ -108,7 +108,7 @@ class ParametersFileHandler:
         if isinstance(key,str):
             key = key.split(ParametersFileHandler.SEP)
         ###We check if is a range with two values.
-        set_val(self.dic,key,value,"range")
+        set_val(self.dic,key,value,field="range")
 
     def is_optimized(self):
         ##Cherck if the file has been optomized eventually
@@ -147,6 +147,7 @@ class ParametersFileHandler:
                 if path in self.ranges:
                     const_key = path+(ParametersFileHandler.SUFFIX_CONST,)
                     add_key = path+(ParametersFileHandler.SUFFIX_ADD,)
+                    # print("TEST:",path)
                     const_range = [val["range"]["min"][0],val["range"]["min"][1]]
                     min_fac = min(val["range"]["max"][0]-val["range"]["min"][0],
                                   val["range"]["max"][1]-val["range"]["min"][1])
@@ -270,7 +271,9 @@ class ParametersChecker:
         need_optimization = self.params["optimization__need_optimization"]["value"]
         for param in parameter_list:
             cval = self.params[param]
+            # print("CVAL:",cval)
             crange = self.range[param]
+            # print("CRANGE:",crange)
             ###If param is a created name, we change it.
             if any([param.endswith(x) for x in fsuffix]):
                 param = fsep.join(param.split(fsep)[:-1])
@@ -282,21 +285,26 @@ class ParametersChecker:
             ###We check the range of the value and the parameter.
             if "range" in crange:
                 ##We check the range if needed
-                if need_optimization:
+                if need_optimization and "range" in cval:
                     ###Two cases, dictionnary or list
                     if isinstance(cval["range"],dict):
                         dummy = check_range(cval["range"]["min"], crange["range"])
                         dummy = check_range(cval["range"]["max"], crange["range"])
                     else:
                         try:
+                            # print("CVAL_BEFORE_CHECK_RANGE:", cval)
                             new_range = check_range(cval["range"],crange["range"])
+                            # print("CHANGED_RANGE:", param, "from", cval["range"], " to ", nrange)
                             self.params.set_range(param,new_range)
+                            # print("CVAL_AFTER_SET_RANGE:", cval)
                         except ValueError:
                             raise ValueError("Parameter range of " + param + "  set to " + str(cval["range"]) + " should be in" +
                                              str(crange["range"]))
 
                 try:
+                    # print("CVAL_BEFORE_CHECK:", cval)
                     nrange = check_range(cval["value"],crange["range"])
+                    # print("CHANGED_VALUE:", param,"from" ,cval["value"]," to ", nrange)
                     self.params[param]=nrange
                 except ValueError:
                     raise ValueError("Parameter " + param + "  set to " + str(cval["value"]) + " should in" +

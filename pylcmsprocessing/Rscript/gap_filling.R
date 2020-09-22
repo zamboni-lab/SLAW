@@ -587,6 +587,5 @@ for (idx in 1:(length(batches) - 1)) {
   colnames(dm) <- new_names
   ww <- fwrite(dm, TEMP_NAME,sep="\t",append = TRUE)
 }
-message("Gap filling finished")
 ww <- file.rename(PATH_DM, PATH_FILLED)
 ww <- file.rename(TEMP_NAME, PATH_DM)
