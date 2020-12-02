@@ -1,12 +1,12 @@
 ---
 optimization:
-  description: Parameters of optimization method for peakpicking, grouping and annotation.
+  description: Parameters of optimization method for peakpicking, grouping.
   need_optimization:
     description: Boolean. If set to True parameters optimization will be performed. If set to false not optimization will be done.
     value: false
   files_used:
     priority: LOW
-    description: Integer. The number of QC files used for optimization. If no peakpicking is performed
+    description: Integer. The number of QC files used for optimization.
     value: 3
   noise_threshold:
     priority: LOW
@@ -14,24 +14,24 @@ optimization:
     value: 500
   number_of_points:
     priority: LOW
-    description: Integer. The number of points sampled at each surface estimation steps.
+    description: Integer. The number of points sampled at each surface estimation step.
     value: 30
   num_iterations:
     priority: LOW
     description: Integer. The maximum number of surface estimated. If no improvement happens at any iteration the optimization stops anyway.
     value: 5
 peakpicking:
-  description: This step includes all the necessary sub steps to pass from an individual .mzML file to a processed peaktable. The data are processed using one of the three algorithms provided by the algorithm fields..
+  description: This step includes all the necessary steps to pass from an individual .mzML file to a table including all peaks area. The data are processed using one of the three algorithms provided by the algorithm fields..
   algorithm:
     description: Character. The algorithm used for peakpikcing. Authorized value are ADAP, OPENMS and CENTWAVE.
     value: openMS
   noise_level_ms1:
     priority: ESSENTIAL
-    description: Integer. An absolute noise threshold to be used on MS1. Any points in a RAW file below this file will be discarded. This should not be too high, as low intensity part can still occurs at the border of a peak,
+    description: Integer. An absolute noise threshold to be used on MS1. Any points in a RAW file below this file will be discarded. This should not be too high, as low intensity part can still occurs at the border of a peak.
     value: 0
   noise_level_ms2:
     priority: ESSENTIAL
-    description: Integer. An absolute noise threshold to be used on MS2. Any points in a RAW file below this file will be discarded. This should not be too high, as low intensity part can still occurs at the border of a peak,
+    description: Integer. An absolute noise threshold to be used on MS2. Any points in a RAW file below this file will be discarded.
     value: 0
   traces_construction:
     description: Parameters used in the detection of consecutive mass points with similar masses in different acquisitions.
@@ -51,7 +51,7 @@ peakpicking:
         - 0.01
     min_scan:
       priority: ESSENTIAL
-      description: Integer. (All peakpicker) The minimum number of points detected in consecutive scans for a trace to be valid. Any trace containing less than min_scan point is discarded.
+      description: Integer. (All peakpicker) The minimum number of points detected in consecutive scans for a trace to be valid. Any trace containing less than min_scan point is discarded by the algorithms.
       value: 15
       range:
         - 2.5
@@ -64,21 +64,21 @@ peakpicking:
         - 1.5
         - 5.5
   peaks_deconvolution:
-    description: This step Deconvolute traces to extract peaks corresponding to individuals ions.
+    description: This step deconvolutes traces to extract peaks corresponding to individuals ions.
     SN:
       priority: HIGH
-      description: Float. (All peakpicker) The signal-over-noise threshold for a peak to be discarded.
+      description: Float. (All peakpicker) The signal-over-noise threshold.
       value: 3
       range:
         - -5
         - 15
     noise_level:
       priority: HIGH
-      description: Float. (All peakpicker) The min feature height for a deconvoluted peak to be kept.
+      description: Float. (All peakpicker) The mininimum feature height for a deconvoluted peak to be kept.
       value: 0
     peak_width:
       priority: ESSENTIAL
-      description: Floats. (All peakpicker) The minimum and maximum width of a peak in minutes. This parameter is highly dependent of you chromatography setup.
+      description: Floats. (All peakpicker) The minimum and maximum width of a peak in minutes. This parameter is highly dependent of you chromatography setup and should be the first target of optimization.
       value:
         - 0.02
         - 0.1
@@ -91,7 +91,7 @@ peakpicking:
           - 0.5
     peak_width_fac:
       priority: HIGH
-      description: Float. (OPENMS only) FLoat between 0 and 1 a factor fivinf the main peakwidth for feature finder metabo.
+      description: Float. (OPENMS only) FLoat between 0 and 1 a factor indicating the main peakwidth for feature finder metabo as peak_width[0]+peak_width_fac*(peak_width[1]-peak_width[0])
       value: 0.2
       range:
         - 0.0
@@ -111,14 +111,14 @@ peakpicking:
           - 0.02
     coefficient_area_threshold:
       priority: LOW
-      description: Float. (OPENMS only) Coefficient over area filtering.
+      description: Float. (ADAP only) Coefficient over area filtering used in ADAP.
       value: 50
       range:
         - 20
         - 200
     ms2_mz_tol:
       priority: LOW
-      description: Float. (All peakpickers) The tolerance in mz for MS-MS pairing.
+      description: Float. (All peakpickers) The tolerance in mass in Dalton for MS-MS pairing.
       value: 0.1
     ms2_rt_tol:
       priority: LOW
@@ -139,7 +139,7 @@ grouping:
       - 0.3
   extracted_quantity:
     priority: HIGH
-    description: String. The extracted type of information. Can be 'intensity' or 'height'
+    description: String. The extracted type of information. Can be 'intensity' or 'height'.
     value: intensity
   dmz:
     priority: LOW
@@ -163,7 +163,7 @@ filtering:
   description: Filters used to remove non relirable feature using blanks and qcs.
   frac_qc:
     priority: HIGH
-    description: Fraction of detection in qcs for a signal to be kept. If no qc sample is porvided this is a fraction of all samples.
+    description: Fraction of detection in qcs for a signal to be kept. If no qc sample is provided this is a fraction of all samples.
     value: 0.5
   fold_blank:
     priority: HIGH
@@ -209,7 +209,7 @@ ion_annotation:
       value: NONE
     min_filter:
       priority: HIGH
-      description: Integer. The minimum number of detection in the file to be detected for the data to be kept.
+      description: Integer. The minimum number of detection across all sampled files for a features to be kept. Should be 2 in the vast majority of the cases.
       value: 2
     num_files:
       priority: HIGH

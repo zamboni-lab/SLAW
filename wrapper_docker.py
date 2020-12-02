@@ -137,9 +137,12 @@ if __name__=="__main__":
         vui.initialize_yaml_polarity(PATH_YAML, pol)
         # self.determine_initial_parameters()
         logging.info("Empty directory detected, performing initial guess of SLAW parameters.")
-        temp_opt = ParametersOptimizer(exp, "FAKE", DB_STORAGE, num_workers=num_cpus, input_par=PATH_YAML)
+        # temp_opt = ParametersOptimizer(exp, "FAKE", DB_STORAGE, num_workers=num_cpus, input_par=PATH_YAML)
         # temp_opt.determine_initial_parameters(output_par=PATH_YAML)
-        logging.info("Parameters file generated please check the parameters values and/or parameters range before optimization.")
+        logging.info("Parameters file generated please check the parameters values/ranges and toggle optimization if needed.")
+        ##We always remove the database after processing
+        path_temp_db = os.path.join(OUTPUT_DIR, "temp_processing_db.sqlite")
+        os.remove(path_temp_db)
         exit(0)
     else:
         ###We check the parameter
@@ -279,6 +282,7 @@ if __name__=="__main__":
     timer.print_point("annotation")
     if successfully_processed:
         exp.clean()
+        logging.info("Processing finished.")
         ###We generate the done file
         PATH_DONE = os.path.join(OUTPUT_DIR, pcr.OUT["DONE"])
         open(PATH_DONE, 'a').close()
