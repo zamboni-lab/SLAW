@@ -9,21 +9,22 @@ suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
 ##We add the isotopic pattern
 ISO_DIST_COL <- "raw_isotopic_pattern"
 ISO_NAME_COL <- "isotopic_pattern_annot"
+MAX_FILES <- 10
 
 sink(file=stdout())
 
 ##Argument passed by Python
 args <- commandArgs(trailingOnly = TRUE)
 #
-# if(DEBUG){
-# args <- c(
-#   "U:/users/Alexis/data/slaw_evaluation/MTBLS1129/output_cluster/output_openms/processing_db.sqlite",
-#   "U:/users/Alexis/data/datamatrix_31eb4257c5cdc54aabd59692e18f690c.csv",
-#   "U:/users/Alexis/data/dm_output.csv",
-#   "U:/users/Alexis/data/slaw_evaluation/MTBLS1129/output_cluster/output_openms/temp/alignement.rds",
-#   "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/isotopes.tsv",
-#   "4","3","intensity","0.001","15","0.01","5"
-# )
+# if(FALSE){
+#   # args <- c(
+#   #   "U:/users/Alaa/Manuscripts/InPreparation/2min_Lipidomics/SLAW/QTOF_02min_30mm_alignment/processing_db.sqlite",
+#   #   "U:/users/Alaa/Manuscripts/InPreparation/2min_Lipidomics/SLAW/QTOF_02min_30mm_alignment/datamatrices/datamatrix_6fae0382dea45e42fbf9cd103b6107b2.csv",
+#   #   "E:/dm_output.csv",
+#   #   "U:/users/Alaa/Manuscripts/InPreparation/2min_Lipidomics/SLAW/QTOF_02min_30mm_alignment/temp/alignement.rds",
+#   #   "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/isotopes.tsv",
+#   #   "4","3","intensity","0.001","15","0.01","5"
+#   # )
 # }
 
 
@@ -70,25 +71,36 @@ if (get_os() == "win") {
 
 
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
-all_peaktables <-
+
+all_infos <-
   dbGetQuery(
     dbb,
-    "SELECT output_ms FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1"
-  )[, 1]
-all_samples <-
-  dbGetQuery(
-    dbb,
-    "SELECT path FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1"
-  )[, 1]
-# if(DEBUG){
-# all_peaktables <- paste("U:/users/Alexis/data/slaw_evaluation/MTBLS1129/output_cluster/output_openms/OPENMS/peaktables/",basename(all_peaktables),sep="")
-# all_samples <- paste("U:/users/Alexis/data/slaw_evaluation/MTBLS1129/mzML/",basename(all_samples),sep="")
-# }
+    "SELECT path,output_ms,types FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1"
+  )
+
+all_peaktables <- all_infos[,2]
+all_samples <- all_infos[,1]
+if(FALSE){
+  # all_peaktables <- file.path("U:/users/Alaa/Manuscripts/InPreparation/2min_Lipidomics/SLAW/QTOF_02min_30mm_alignment/OPENMS/peaktables",basename(all_peaktables))
+  # all_samples <- file.path("U:/users/Alaa/Manuscripts/InPreparation/2min_Lipidomics/RAW_DATA/Gradient_Comparison_Experiment/QTOF_02min_30mm_mzML",basename(all_samples))
+  # 
+}
+
+optim_idx <- seq_along(all_samples)
+
+if("QC" %in% all_infos[,3]){
+  optim_idx <- which(all_infos[,3]=="QC")
+}
+
+
+if(length(optim_idx)>MAX_FILES){
+  sel_idx <- sample(seq_along(optim_idx),size=MAX_FILES)
+  optim_idx <- optim_idx[sel_idx]
+}
+
 dbDisconnect(dbb)
 
 isotopes_table <- fread(PATH_ISOTOPES, sep = " ")
-
-
 cnames <- fread(PATH_DM,
                 sep = "\t",
                 header = TRUE,
@@ -96,7 +108,7 @@ cnames <- fread(PATH_DM,
 cnames <- colnames(cnames)
 dm <- fread(PATH_DM, sep = "\t", select = c("mz", "rt"))
 max_feat <- nrow(dm)
-BY_BATCH <- 1000
+BY_BATCH <- 2000
 
 rm(dm)
 batches <- seq(1, max_feat, by = BY_BATCH)
@@ -107,183 +119,153 @@ if (batches[length(batches)] != max_feat) {
   batches[length(batches)] <- max_feat + 2
 }
 
-for (idx in 1:(length(batches) - 1)) {
-  dm <-
-    fread(input = PATH_DM,
-          nrows = batches[idx + 1] - batches[idx] - 1,
-          skip = batches[idx],sep="\t")
-  colnames(dm) <- cnames
-  # dm <- fread(PATH_DM,sep=",")
-  sel_columns <-
-    c("min_mz", "max_mz", "mean_mz", "mean_rt", "mean_peakwidth")
-  if (max(dm[["mean_peakwidth"]]) > max(dm[["mean_rt"]])) {
-    dm[["mean_peakwidth"]] <- dm[["mean_peakwidth"]] / 60
-  }
-  dm_peaks <- dm[, ..sel_columns]
-  ocnames <- colnames(dm)
-  quant_prefix <-
-    paste(str_split(ocnames[length(ocnames)], fixed("_"))[[1]][1], "_", sep =
-            "")
-  quant_cols <- which(startsWith(ocnames, quant_prefix))
-  
-  ###We reorder the data
-  max_sample <- apply(dm[, ..quant_cols], 1, which.max)
-  if (is.list(max_sample)) {
-    max_sample <- sapply(max_sample, function(x) {
-      x[1]
-    })
-  }
-  by_sample <- split(seq_along(max_sample), max_sample)
-  vord <- as.numeric(names(by_sample))
-  isotopes_to_extract <-
-    vector(mode = "list", length = length(quant_cols))
-  for (ic in seq_along(isotopes_to_extract)) {
-    isotopes_to_extract[[ic]] <- numeric(0)
-  }
-  isotopes_to_extract[vord] <- by_sample
-  align <- readRDS(PATH_MODEL)
-  rmz <- range(dm[["mean_mz"]])
-  max_iso <- seq(rmz[1], rmz[2] + 200, by = 20)
-  maxC <- ceiling(max_iso / 14)
-  maxC <- maxC
-  dist_iso <- sapply(maxC, function(x, miso, c13) {
-    res <- rep(0, miso)
-    for (is in 1:miso) {
-      res[is] <- dbinom(is, x, c13)
-      
-    }
-    return(res)
-  }, miso = MAX_ISO, c13 = 0.01111)
-  
-  # message("Inferring",all_samples,"vs",,)
-  ###We also extract the data to infer
-  to_infer <-
-    apply(dm[, ..quant_cols], 2, function(x) {
-      which(is.na(x))
-    })
-  extractMissingInformations <-
-    function(praw,
-             peaks,
-             isotopes,
-             infer,
-             align,
-             table_iso,
-             dist_c13,
-             dm,
-             quant,
-             margin_mz = 0.001,
-             max_iso = 4,
-             max_charge = 2,
-             ppm = 8,
-             dmz = 0.002) {
-      ###We create default vector to return if needed
-      def_isotopes <- rep(NA, length(isotopes))
-      def_missing <- rep(0.0, length(to_infer))
-      
+
+###We define the gap filling and isotopes detection fucntion
+
+extractMissingInformations <-
+  function(praw,
+           peaks,
+           isotopes,
+           infer,
+           align,
+           table_iso,
+           dist_c13,
+           dm,
+           quant,
+           mean_int,
+           margin_dmz = 0.003,
+           margin_ppm = 10,
+           margin_mz = 0.001,
+           max_iso = 4,
+           max_charge = 2,
+           ppm = 8,
+           dmz = 0.002,
+           detect_isotopes = TRUE){
+    ###We create default vector to return if needed
+    def_isotopes <- rep(NA, length(isotopes))
+    def_missing <- rep(0.0, length(to_infer))
+    suppressWarnings(suppressMessages(library(pracma, warn.conflicts = FALSE)))
+    suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
+    
+    xraw <- praw
+    if(is.character(praw)){
       suppressWarnings(suppressMessages(library(xcms, warn.conflicts = FALSE)))
-      suppressWarnings(suppressMessages(library(pracma, warn.conflicts = FALSE)))
-      suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
       xraw <- suppressWarnings(suppressMessages(xcmsRaw(praw)))
-      peaks <- fread(peaks)
-      
-      noise_level <- quantile(peaks$intensity, probs = 0.03)
-      ort <- order(dm[infer, ][[4]])
-      ###smal cheat the correction is the closest
-      vmatch  <-
-        xcms:::findEqualGreaterM(align[, 1], values = dm[infer[ort], ][[4]])
-      align <- rbind(align, align[nrow(align), ])
-      ###integrate the missing peak
-      rt_corr <- dm[[4]][infer[ort]] + align[vmatch, 2]
-      
-      ###we first perform gap filling
-      extractIntensity <-
-        function(min_mz,
-                 max_mz,
-                 rt,
-                 peakwidth,
-                 idx,
-                 quant,
-                 xraw,
-                 margin_mz) {
-          rt_min <- rt - peakwidth / 2
-          rt_max <- rt + peakwidth / 2
+    }
+    peaks <- fread(peaks)
+    
+    noise_level <- quantile(peaks$intensity, probs = 0.03)
+    ort <- order(dm[infer, ][[4]])
+    ###small cheat the correction is the closest
+    vmatch  <-
+      xcms:::findEqualGreaterM(align[, 1], values = dm[infer[ort], ][[4]])
+    align <- rbind(align, align[nrow(align), ])
+    ###integrate the missing peak
+    rt_corr <- dm[[4]][infer[ort]] + align[vmatch, 2]
+    
+    ###we first perform gap filling
+    extractIntensity <-
+      function(min_mz,
+               max_mz,
+               rt,
+               peakwidth,
+               idx,
+               expected_intensity,
+               quant,
+               xraw,
+               margin_mz,
+               margin_ppm,
+               margin_dmz) {
+        
+        integ_fun <- function(x,y){
+          trapz(x,y)
+        }
+        if (quant != "intensity") {
+          integ_fun <- function(x,y){
+            max(y)
+          }
+        }
+        
+        rt_min <- rt - peakwidth / 2
+        rt_max <- rt + peakwidth / 2
+        mean_mz <- (min_mz+max_mz)/2
+        
+        ###Margin in ppm.
+        margin_mz <- max(margin_dmz,mean_mz*margin_ppm*1e-6)
+        
+        min_mz <- min_mz - margin_mz
+        max_mz <- max_mz + margin_mz
+        total_extension <- margin_mz
+        # cat("mzr:",paste(sprintf("%0.4f",c(min_mz,max_mz)),collapse = "-"))
+        
+        tval <-
+          tryCatch(
+            rawEIC(
+              xraw,
+              rtrange = c(rt_min * 60, rt_max * 60),
+              mzrange = c(min_mz, max_mz)
+            ),
+            error = function(e) {
+              print(e)
+              return(NA)
+            }
+          )
+        if (length(tval) == 1 && is.na(tval))
+          return(0)
+        val <- 0
+        ##We extend the limit one more time.
+        max_extension <- 0.07
+        current_extension <- 0
+        old_int <- -1
+        current_int <- integ_fun(x = xraw@scantime[tval[[1]]], tval[[2]])
+        # if(abs(min_mz-1397.37)<0.05 & abs(rt-1.41)<0.15) browser()
+        ###We keep expanding the trace mass.
+        while ((abs(expected_intensity-current_int)<=abs(expected_intensity-old_int))&
+               (old_int != current_int) & (current_int<expected_intensity)&
+               (total_extension < max_extension)) {
           min_mz <- min_mz - margin_mz
           max_mz <- max_mz + margin_mz
           tval <-
-            tryCatch(
-              rawEIC(
-                xraw,
-                rtrange = c(rt_min * 60, rt_max * 60),
-                mzrange = c(min_mz, max_mz)
-              ),
-              error = function(e) {
-                return(NA)
-              }
+            rawEIC(
+              xraw,
+              rtrange = c(rt_min * 60, rt_max * 60),
+              mzrange = c(min_mz, max_mz)
             )
-          if (length(tval) == 1 && is.na(tval))
-            return(0)
-          val <- 0
-          if (quant == "intensity") {
-            val <- trapz(x = xraw@scantime[tval[[1]]], tval[[2]])
-          } else{
-            val <- max(tval[[2]])
-          }
-          ##We extend the limit one more time.
-          max_extension <- 5
-          current_extension <- 0
-          while (all(tval[[2]] == 0) &
-                 current_extension < max_extension) {
-            min_mz <- min_mz - margin_mz
-            max_mz <- max_mz + margin_mz
-            tval <-
-              rawEIC(
-                xraw,
-                rtrange = c(rt_min * 60, rt_max * 60),
-                mzrange = c(min_mz, max_mz)
-              )
-            if (any(tval[[2]] > 0)) {
-              min_mz <- min_mz - 0.003
-              max_mz <- max_mz + 0.003
-              tval <-
-                rawEIC(
-                  xraw,
-                  rtrange = c(rt_min * 60, rt_max * 60),
-                  mzrange = c(min_mz, max_mz)
-                )
-            }
-            current_extension <- current_extension + 1
-          }
-          
-          if (quant == "intensity") {
-            val <- trapz(x = xraw@scantime[tval[[1]]], tval[[2]])
-          } else{
-            val <- max(tval[[2]])
-          }
-          return(val)
+          old_int <- current_int
+          current_int <- integ_fun(x = xraw@scantime[tval[[1]]], tval[[2]])
+          total_extension <- total_extension+margin_mz
         }
-      inferred_values <-
-        tryCatch(
-          mapply(
-            dm[["min_mz"]][infer[ort]],
-            dm[["max_mz"]][infer[ort]],
-            rt_corr,
-            dm[["mean_peakwidth"]][infer[ort]],
-            infer[ort],
-            FUN = extractIntensity,
-            MoreArgs = list(
-              quant = quant,
-              xraw = xraw,
-              margin_mz = margin_mz
-            )
-          ),
-          error = function(e) {
-            return(def_missing)
-          }
-        )
-      
-      
-      inferred_values <-
-        inferred_values[order(ort, decreasing = FALSE)]
+        val <- old_int
+        if(val==-1) val<- 0
+        return(val)
+      }
+    inferred_values <-
+      tryCatch(
+        mapply(
+          dm[["min_mz"]][infer[ort]],
+          dm[["max_mz"]][infer[ort]],
+          rt_corr,
+          dm[["mean_peakwidth"]][infer[ort]],
+          infer[ort],
+          mean_int[infer[ort]],
+          FUN = extractIntensity,
+          MoreArgs = list(
+            quant = quant,
+            xraw = xraw,
+            margin_mz = margin_mz,
+            margin_ppm = margin_ppm,
+            margin_dmz = margin_dmz
+          )
+        ),
+        error = function(e) {
+        }
+      )
+    
+    inferred_values <-
+      inferred_values[order(ort, decreasing = FALSE)]
+    
+    visotopes <- NULL
+    if(detect_isotopes){
       
       ##We map the feature to the peaktable
       dm2 <- dm[isotopes, , drop = FALSE]
@@ -315,26 +297,6 @@ for (idx in 1:(length(batches) - 1)) {
         }
         
         vmap <- mapFeatures(dm2, peaks)
-        
-        ##Depending of the max isotopes we calculate the isotopic reation
-        
-        # if(FALSE){
-        #   library(xcms)
-        #
-        #   dmm <- fread("U:/users/Alexis/data/slaw_evaluation/all_2mins/output/datamatrices/datamatrix_4a58048c5bb6c72f8a7dd470860d28cc.csv",sep=",")
-        #   which.min(abs(dmm$mz-765.526968053277))
-        #
-        #   peaks <- "U:/users/Alexis/data/slaw_evaluation/all_2mins/output/OPENMS/peaktables/MSplate8_WT_NA_A12_plateY_rep1_SALT_GEII_1-09_792.csv"
-        #   peaks <- fread(peaks,sep=",")
-        #   ppeak <- peaks[2330,]
-        #   peak <- as.numeric(ppeak)
-        #   names(peak) <- names(ppeak)
-        #   praw <- "U:/users/Alexis/data/slaw_evaluation/all_2mins/mzML/MSplate8_WT_NA_A12_plateY_rep1_SALT_GEII_1-09_792.mzML"
-        #   xraw <- xcmsRaw(praw)
-        #   iso_table <- read.table("C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/isotopes.tsv",sep=" ",header=TRUE,stringsAsFactors = FALSE)
-        #
-        # }
-        #
         extractIsotopes <- function(peak,
                                     xraw,
                                     iso_table,
@@ -482,24 +444,262 @@ for (idx in 1:(length(batches) - 1)) {
             }
           )
       }
-      return(list(inferred_values, visotopes))
     }
-  #
-  # vmap <- vector(mode="list",length=length(all_samples))
-  # if(DEBUG){
-  # for(aidx in seq_along(all_samples)){
-  #   print(aidx)
-  # vmap[[aidx]] <- extractMissingInformations(all_samples[[aidx]],
-  #                            all_peaktables[[aidx]],
-  #                            isotopes_to_extract[[aidx]],
-  #                            to_infer[[aidx]],
-  #                            align@rt_correction[[aidx]],
-  #                            dm=dm_peaks,quant=QUANT,table_iso=isotopes_table,
-  # dist_c13=dist_iso,margin_mz=MARGIN_MZ,max_iso = MAX_ISO,
-  # max_charge = MAX_CHARGE, ppm = PPM,dmz = DMZ)
-  # }
+    return(list(inferred_values, visotopes))
+  }
+
+
+
+
+# Before doing any batches we try to optimize filling the mz_filling windows as a function
+# of the parameters of everything
+dm <-
+  fread(input = PATH_DM,sep="\t")
+colnames(dm) <- cnames
+
+sel_columns <-
+  c("min_mz", "max_mz", "mean_mz", "mean_rt", "mean_peakwidth")
+if (max(dm[["mean_peakwidth"]]) > max(dm[["mean_rt"]])) {
+  dm[["mean_peakwidth"]] <- dm[["mean_peakwidth"]] / 60
+}
+dm_peaks <- dm[, ..sel_columns]
+
+quant_prefix <-
+  paste(str_split(cnames[length(cnames)], fixed("_"))[[1]][1], "_", sep =
+          "")
+
+quant_cols <- which(startsWith(cnames, quant_prefix))
+
+align <- readRDS(PATH_MODEL)
+quant_cols_optim <- quant_cols[optim_idx]
+
+isotopes_to_extract <-
+  vector(mode = "list", length = length(quant_cols))
+for (ic in seq_along(isotopes_to_extract)) {
+  isotopes_to_extract[[ic]] <- numeric(0)
+}
+dist_iso <- NULL
+# message("Inferring",all_samples,"vs",,)
+###We also extract the data to infer
+to_infer <-
+  apply(dm[, ..quant_cols_optim], 2, function(x) {
+    which(is.na(x))
+  })
+
+
+optim_intensity <- apply(dm[,..quant_cols_optim],1,mean,na.rm=TRUE)
+
+
+
+###We keep increasing the tolerance until the distribution stat to match.
+optimizeParameters <-function(praws,peaks,isotopes,infer,
+                             align,table_iso,dist_c13,
+                             dm,quant,optim_intensity,
+                             max_iso = 4,max_charge = 2,
+                             ppm = 8,dmz = 0.002, by_file = 300){
   
-  # if(!DEBUG){
+  ###We select at most 100 values by files.
+  infer <- lapply(infer,FUN = function(x,max_size){
+    if(length(x)>max_size){
+      return(sample(x,max_size))
+    }
+    return(x)
+  },max_size=by_file)
+  
+  
+  suppressWarnings(suppressMessages(library(xcms, warn.conflicts = FALSE)))
+  ###Reading the file only once
+  xraws <- suppressWarnings(suppressMessages(sapply(praws,xcmsRaw)))
+
+  ###One ce the best margin has been found we can recompute the distribution
+  score_gap_filling <- function(x,xraws,
+                                peaks,
+                                isotopes,
+                                infers,
+                                aligns,
+                                table_iso,
+                                dist_c13,
+                                dm,
+                                quant,
+                                optim_intensity,
+                                max_iso = 4,
+                                max_charge = 2,
+                                ppm = 8,
+                                dmz = 0.002){
+    
+    vcomps <- mapply(xraws,peaks,isotopes,
+                     infers,aligns, FUN = extractMissingInformations,
+                     MoreArgs=list(table_iso=table_iso,dist_c13=dist_c13,dm=dm,quant=quant,mean_int=optim_intensity,
+                                   margin_mz = x,
+                                   margin_ppm = x[2],
+                                   margin_dmz = x[1],
+                                   max_iso = max_iso,max_charge = max_charge,ppm = ppm,
+                                   dmz = dmz,detect_isotopes = FALSE),SIMPLIFY = FALSE)
+    
+    score <- 0
+    for(idx in seq_along(xraws)){
+      to_average <- abs(log10(vcomps[[idx]][[1]]+2)-log10(optim_intensity[infers[[idx]]]+2))
+      score <- score + mean(to_average[optim_intensity[infers[[idx]]]!=0],na.rm = TRUE)
+    }
+    score <- score/length(xraws)
+    return(score)
+  }
+  
+  dmz_seq <- exp(seq(log(0.0005),log(0.05),length=10))
+  ppm_seq <- exp(seq(log(2),log(30),length=10))
+  grid_seq <- expand.grid(dmz_seq,ppm_seq)
+  veval <- apply(grid_seq,1,FUN = score_gap_filling,xraws=xraws,
+        peaks=peaks,isotopes=isotopes,infer=infer,
+        align=align,table_iso=table_iso,dist_c13=dist_c13,
+        dm=dm,quant=quant,optim_intensity=optim_intensity,max_iso = max_iso,
+        max_charge = max_charge,ppm = ppm,
+        dmz = dmz)
+  
+  best_par <- unlist(grid_seq[which.min(veval),])
+  best_val <- min(veval)
+  
+  # cat("best_par: ",unlist(best_par))
+  # cat("best_val: ",best_val)
+  ###one we found a local minima, for the three minimal value we just od a gradient descent.
+  dmz_step <- 0.0001
+  ppm_step <- 0.2
+  new_val <- -1
+  new_par <- unlist(best_par)
+  MAX_ITS <- 10
+  current_it <- 1
+  # print(best_par)
+  # print(best_val)
+  while(new_val<best_val & current_it < MAX_ITS){
+    
+    if(new_val<best_val & new_val!=-1){
+      best_val <- new_val
+      best_par <- new_par
+    }
+    
+    val_dmz <- score_gap_filling(c(best_par[1]+dmz_step,best_par[2]),xraws=xraws,
+    peaks=peaks,isotopes=isotopes,infer=infer,
+    align=align,table_iso=table_iso,dist_c13=dist_c13,
+    dm=dm,quant=quant,optim_intensity=optim_intensity,max_iso = max_iso,
+    max_charge = max_charge,ppm = ppm,
+    dmz = dmz)
+    
+    # cat("val_dmz:",val_dmz)
+    # print("best_val:",best_val)
+    # print("dmz_step:",dmz_step)
+    
+    grad_dmz <- (val_dmz-best_val)/dmz_step
+    
+    val_ppm <- score_gap_filling(c(best_par[[1]],best_par[[2]]+ppm_step),xraws=xraws,
+                                 peaks=peaks,isotopes=isotopes,infer=infer,
+                                 align=align,table_iso=table_iso,dist_c13=dist_c13,
+                                 dm=dm,quant=quant,optim_intensity=optim_intensity,max_iso = max_iso,
+                                 max_charge = max_charge,ppm = ppm,
+                                 dmz = dmz)
+    grad_ppm <- (val_ppm-best_val)/ppm_step
+    if(grad_ppm==0){
+      new_ppm <- best_par[2]+runif(1,-1,1)*ppm_step
+    }else{
+      new_ppm <- best_par[2]-grad_ppm*ppm_step
+    }
+    
+    if(grad_dmz==0){
+      new_dmz <- best_par[2]+runif(1,-1,1)*dmz_step
+    }else{
+      new_dmz <- best_par[2]-grad_dmz*dmz_step
+    }
+    
+    new_par <- c(new_dmz,new_ppm)
+    new_val <- score_gap_filling(new_par,xraws=xraws,
+                      peaks=peaks,isotopes=isotopes,infer=infer,
+                      align=align,table_iso=table_iso,dist_c13=dist_c13,
+                      dm=dm,quant=quant,optim_intensity=optim_intensity,max_iso = max_iso,
+                      max_charge = max_charge,ppm = ppm,
+                      dmz = dmz)
+    
+    # cat(currenti_it,new_par,new_val)
+    current_it <- current_it+1
+  }
+  return(c(best_par,best_val))
+}
+
+# cat("Optimizing parameters")
+
+##We only keep the best parameters
+temp_par <- tryCatch(optimizeParameters(all_samples[optim_idx],all_peaktables[optim_idx],isotopes_to_extract,
+                               to_infer,align@rt_correction,
+                               table_iso= isotopes_table,dist_c13 = dist_iso,
+                               dm = dm_peaks,quant = QUANT,optim_intensity = optim_intensity,
+                               max_iso = 4,max_charge = 2,
+                               ppm = 8,dmz = 0.002),error=function(e){return(c(0.005,10))})
+
+# cat("Optimization finished.")
+margin_dmz <- temp_par[1]
+margin_ppm <- temp_par[2]
+rm(dm)
+
+
+
+###We now perfomr the actual processing
+for (idx in 1:(length(batches) - 1)) {
+  dm <-
+    fread(input = PATH_DM,
+          nrows = batches[idx + 1] - batches[idx] - 1,
+          skip = batches[idx],sep="\t")
+  colnames(dm) <- cnames
+  # dm <- fread(PATH_DM,sep=",")
+  sel_columns <-
+    c("min_mz", "max_mz", "mean_mz", "mean_rt", "mean_peakwidth")
+  if (max(dm[["mean_peakwidth"]]) > max(dm[["mean_rt"]])) {
+    dm[["mean_peakwidth"]] <- dm[["mean_peakwidth"]] / 60
+  }
+  dm_peaks <- dm[, ..sel_columns]
+  ocnames <- colnames(dm)
+  quant_prefix <-
+    paste(str_split(ocnames[length(ocnames)], fixed("_"))[[1]][1], "_", sep =
+            "")
+  quant_cols <- which(startsWith(ocnames, quant_prefix))
+  
+  ###We reorder the data
+  max_sample <- apply(dm[, ..quant_cols], 1, which.max)
+  if (is.list(max_sample)) {
+    max_sample <- sapply(max_sample, function(x) {
+      x[1]
+    })
+  }
+  by_sample <- split(seq_along(max_sample), max_sample)
+  vord <- as.numeric(names(by_sample))
+  isotopes_to_extract <-
+    vector(mode = "list", length = length(quant_cols))
+  for (ic in seq_along(isotopes_to_extract)) {
+    isotopes_to_extract[[ic]] <- numeric(0)
+  }
+  isotopes_to_extract[vord] <- by_sample
+  align <- readRDS(PATH_MODEL)
+  rmz <- range(dm[["mean_mz"]])
+  max_iso <- seq(rmz[1], rmz[2] + 200, by = 20)
+  maxC <- ceiling(max_iso / 14)
+  maxC <- maxC
+  dist_iso <- sapply(maxC, function(x, miso, c13) {
+    res <- rep(0, miso)
+    for (is in 1:miso) {
+      res[is] <- dbinom(is, x, c13)
+      
+    }
+    return(res)
+  }, miso = MAX_ISO, c13 = 0.01111)
+  
+  ###We also extract the data to infer
+  to_infer <-
+    apply(dm[, ..quant_cols], 2, function(x) {
+      which(is.na(x))
+    })
+  
+
+  expected_intensity <- apply(dm[,..quant_cols],1,mean,na.rm=TRUE)
+  
+  ###We first determine the gap-filling parameters on a set of QCs file.
+  # cat("margin_ppm",sprintf("%0.2f",margin_ppm),"\n")
+  # cat("margin_dmz",sprintf("%0.5f",margin_dmz),"\n")
   vmap <-
     bpmapply(
       all_samples,
@@ -514,9 +714,12 @@ for (idx in 1:(length(batches) - 1)) {
         table_iso = isotopes_table,
         dist_c13 =
           dist_iso,
-        margin_mz = MARGIN_MZ,
+        margin_mz = margin_dmz,
+        margin_ppm = margin_ppm,
+        margin_dmz=margin_dmz,
         max_iso = MAX_ISO,
         max_charge = MAX_CHARGE,
+        mean_int = expected_intensity,
         ppm = PPM,
         dmz = DMZ
       ),
@@ -526,8 +729,10 @@ for (idx in 1:(length(batches) - 1)) {
   # }
   ###We fill the column
   for (iquant in seq_along(quant_cols)) {
-    if (length(to_infer[[iquant]]) == 0)
+    if (length(to_infer[[iquant]]) == 0){
+      # cat("No imputed values.")
       next
+    }
     sel_col <- quant_cols[iquant]
     dm[[sel_col]][to_infer[[iquant]]] <- vmap[[iquant]][[1]]
   }
@@ -558,21 +763,7 @@ for (idx in 1:(length(batches) - 1)) {
         return(NA)
       paste(sprintf("%0.4f", x[, "int"] / max(x[, "int"])), collapse = "|")
     })
-    
-    ###DEBUG ONLY
-    ###
-    # is_buggued <- sapply(vmap[[is]][[2]],function(x){
-    #   if(!is.data.frame(x)) return(FALSE)
-    #   return(any(x[1:(nrow(x)-1),"int"]<x[2:nrow(x),"int"]))
-    # })
-    #
-    # if(any(is_buggued)){
-    #   for(pp in which(is_buggued)){
-    #   message("pos:",isotopes_to_extract[[is]][pp],"|infos:",dm[isotopes_to_extract[[is]][pp],1:2],
-    #           "|file:",all_samples[is],all_peaktables[is])
-    #   }
-    # }
-    
+
     name_col[isotopes_to_extract[[is]]] <- names
     dist_col[isotopes_to_extract[[is]]] <- dists
   }

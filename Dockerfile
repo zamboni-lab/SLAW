@@ -19,6 +19,8 @@ RUN strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so
 ##The copying is always a file.
 COPY onlineLCMSaligner /onlineLCMSaligner
 RUN R -e "setwd('/onlineLCMSaligner');library(devtools);remove.packages('onlineLCMSaligner');install(pkg='/onlineLCMSaligner')"
+COPY MZmineXMLManipulator /MZmineXMLManipulator
+RUN R -e "setwd('/MZmineXMLManipulator');library(devtools);remove.packages('MZmineXMLManipulator');install(pkg='/MZmineXMLManipulator')"
 
 COPY pylcmsprocessing /pylcmsprocessing
 #Workflow running script

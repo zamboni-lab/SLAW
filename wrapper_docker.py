@@ -20,7 +20,12 @@ import pylcmsprocessing.common.references as pcr
 if __name__=="__main__":
 ##Two thing to check the number of CPUs and the ocnsumed meory eventually.
     ###We determine the amount of memory allocated to each process
-    logging.basicConfig(format = "%(asctime)s|%(levelname)s: %(message)s",datefmt='%Y-%m-%d|%H:%M:%S',level=logging.INFO)
+    default_logging = "INFO"
+    if "LOGGING" in os.environ:
+        default_logging = "DEBUG"
+    numeric_level = getattr(logging, default_logging.upper(), None)
+    logging.basicConfig(format = "%(asctime)s|%(levelname)s: %(message)s",datefmt='%Y-%m-%d|%H:%M:%S',level=numeric_level)
+
     logging.StreamHandler(sys.stdout)
     timer = Timer()
     timer.store_point("wstart")
@@ -124,14 +129,7 @@ if __name__=="__main__":
          path_yaml=PATH_YAML)
     PATH_INITIAL = os.path.join(OUTPUT_DIR, pcr.OUT["INITIAL_PARAMETERS"])
 
-    ###We check the parameter
-    pcheck = ParametersChecker(vui.path_yaml)
-    ph = pcheck.check_parameters()
-    ph.write_parameters(PATH_YAML)
-    if os.path.isfile(PATH_YAML):
-        dummy = shutil.copyfile(PATH_YAML, PATH_INITIAL)
 
-    ph = ParametersFileHandler(vui.path_yaml)
     ###In all case the first table is generated.
     if not os.path.exists(vui.path_yaml):
         ###We just create a an empty yaml file
@@ -144,6 +142,15 @@ if __name__=="__main__":
         logging.info("Parameters file generated please check the parameters values and/or parameters range before optimization.")
         exit(0)
     else:
+        ###We check the parameter
+        pcheck = ParametersChecker(vui.path_yaml)
+        ph = pcheck.check_parameters()
+        ph.write_parameters(PATH_YAML)
+        if os.path.isfile(PATH_YAML):
+            dummy = shutil.copyfile(PATH_YAML, PATH_INITIAL)
+
+        ph = ParametersFileHandler(vui.path_yaml)
+
         ###We first check the parameters
         ##We check what is the given peakpicker.
         peakpicking = ph.get_peakpicking()
@@ -156,8 +163,7 @@ if __name__=="__main__":
             num_points = int(ph["optimization__number_of_points"]["value"])
             max_its = int(ph["optimization__num_iterations"]["value"])
             optim_files = int(ph["optimization__files_used"]["value"])
-            initial_estimation = bool(ph["optimization__initial_estimation"]["value"])
-
+            optim_noise = float(ph["optimization__noise_threshold"]["value"])
             PATH_OPTIM = os.path.join(OUTPUT_DIR, "temp_optim")
             if not os.path.isdir(DB_STORAGE):
                 os.makedirs(DB_STORAGE)
@@ -169,13 +175,14 @@ if __name__=="__main__":
                 optim_string = os.environ["SAMPLER"]+"_rsm_combined_"+os.environ["SAMPLER"]+"_rsm_expalign"
                 logging.info("The optimisation string is:"+optim_string)
             par_opt.optimize_parameters(output_par=vui.path_yaml, optimizer=optim_string, max_its=max_its,
-                                        num_points=num_points,num_files =optim_files,num_cores=num_cpus, initial_estimation=initial_estimation)
+                                        num_points=num_points,optim_noise = optim_noise,
+                                        num_files =optim_files,num_cores=num_cpus)
             timer.store_point("optimization")
             timer.print_point("optimization")
             ###If there was optimiz\ation we have ot reset the otpoimization proces
             exp.reset_processing()
 
-
+    ph = ParametersFileHandler(vui.path_yaml)
     ###Extracting hte peakpicking parameters.
     min_peakwidth = float(ph["peakpicking__peaks_deconvolution__peak_width"]["value"][0])*60
     max_peakwidth = float(ph["peakpicking__peaks_deconvolution__peak_width"]["value"][1])*60
@@ -186,19 +193,19 @@ if __name__=="__main__":
     ppm = float(ph["peakpicking__traces_construction__ppm"]["value"])
     ms2_noise = float(ph["peakpicking__noise_level_ms2"]["value"])
     if not os.path.isfile(PATH_XML):
-        if peakpicking=="ADAP":
-            vui.generate_MZmine_XML(path_xml=PATH_XML)
+        if peakpicking=="ADAP" or peakpicking=="BASELINE":
+            vui.generate_MZmine_XML(path_xml=PATH_XML,algorithm=peakpicking)
             logging.info("An ADAP batch file has been generated in the "+OUTPUT_DIR+" directory, you ca use it to refine peakpicking parameters using MZmine.")
     exp.initialise_database(num_cpus,OUTPUT_DIR,vui.polarity,INPUT,["ADAP"], 1)
     # exp.building_inputs_single_processing(PATH_XML)
 
-    if peakpicking=="ADAP":
-        exp.run_mzmine("/MZmine-2.52-Linux",PATH_XML,int(num_cpus*3),log = LOG)
+    if peakpicking=="ADAP" or peakpicking=="BASELINE":
+        exp.run_mzmine(pmzmine="/MZmine-2.52-Linux",xml_file=PATH_XML,batch_size=int(num_cpus*3),algorithm=peakpicking,log = LOG)
         exp.correct_conversion()
-        exp.post_processing_peakpicking_mzmine()
+        exp.post_processing_peakpicking_mzmine(algorithm=peakpicking)
         ###If there is an MS2 folder we process it
         if "MS2" in os.environ:
-            exp.extract_ms2(noise_level=ms2_noise, output=pcr.OUT["ADAP"]["MSMS"])
+            exp.extract_ms2(noise_level=ms2_noise, output=pcr.OUT[peakpicking]["MSMS"])
 
     if peakpicking=="OPENMS":
             ###In this case arugment are read directly
@@ -245,6 +252,10 @@ if __name__=="__main__":
 
     main_adducts_str = ph["ion_annotation__main_adducts_" + exp.polarity]["value"]
     adducts_str = ph["ion_annotation__adducts_" + exp.polarity]["value"]
+    # If the adducts is None
+    if main_adducts_str=="NONE" or adducts_str=="NONE":
+        main_adducts_str = None
+        adducts_str = None
     ion_num = int(ph["ion_annotation__num_files"]["value"])
     ion_ppm = float(ph["ion_annotation__ppm"]["value"])
     ion_dmz = float(ph["ion_annotation__dmz"]["value"])
@@ -269,5 +280,5 @@ if __name__=="__main__":
     if successfully_processed:
         exp.clean()
         ###We generate the done file
-        PATH_DONE = os.path.join(OUTPUT_DIR, "done")
+        PATH_DONE = os.path.join(OUTPUT_DIR, pcr.OUT["DONE"])
         open(PATH_DONE, 'a').close()

@@ -8,6 +8,10 @@ optimization:
     priority: LOW
     description: Integer. The number of QC files used for optimization. If no peakpicking is performed
     value: 3
+  noise_threshold:
+    priority: LOW
+    description: Float. A noise threshold used to filter spectra before optimization. This can be useful for noisy files, notably TOF.
+    value: 500
   number_of_points:
     priority: LOW
     description: Integer. The number of points sampled at each surface estimation steps.
@@ -16,10 +20,6 @@ optimization:
     priority: LOW
     description: Integer. The maximum number of surface estimated. If no improvement happens at any iteration the optimization stops anyway.
     value: 5
-  initial_estimation:
-    priority: LOW
-    description: Boolean. Shall initial parameters and ranges be estimated from raw files. This will override the provided values.
-    value: False
 peakpicking:
   description: This step includes all the necessary sub steps to pass from an individual .mzML file to a processed peaktable. The data are processed using one of the three algorithms provided by the algorithm fields..
   algorithm:
@@ -70,7 +70,7 @@ peakpicking:
       description: Float. (All peakpicker) The signal-over-noise threshold for a peak to be discarded.
       value: 3
       range:
-        - 0
+        - -5
         - 15
     noise_level:
       priority: HIGH

@@ -255,7 +255,7 @@ class ParametersChecker:
         try:
             template = cr.TEMPLATES[algorithm]
         except KeyError:
-            raise KeyError("Unknown algorithm: "+algorithm+"authorized algorithms are: "+
+            raise KeyError("Unknown algorithm: "+algorithm+" authorized algorithms are: "+
                         ",".join(list(cr.TEMPLATES.keys())))
         return template
 

@@ -34,9 +34,9 @@ then
 
 fi
 
-if [ "$(ls -A $OUTPUT)" ]; then
-     echo "Destination directory is not empty."
-fi
+#if [ "$(ls -A $OUTPUT)" ]; then
+#     echo "Destination directory is not empty."
+#fi
 
 python3 wrapper_docker.py
 if test -f "/log.txt"; then

@@ -32,8 +32,6 @@ db <- dbConnect(RSQLite:::SQLite(),dbpath)
 num_workers <- as.numeric(dbGetQuery(db, "SELECT max_jobs FROM common")[, 1])
 
 ####We get the path form all the sample
-samplist <-NULL
-
 samplist <- dbGetQuery(db, "SELECT path FROM samples WHERE level='MS1'")[, 1]
 samplist_ids <- dbGetQuery(db, "SELECT id FROM samples WHERE level='MS1'")[, 1]
 dbDisconnect(db)
@@ -122,6 +120,16 @@ allsampseq <-
     USE.NAMES = FALSE,
     BPPARAM=bpp
   )
+
+if(FALSE){
+  singleXMLgeneration(  samplist[1],
+                        samplist_ids[1],mxml = mxml,
+                       prefix = prefix_xml,
+                       out_peaktable = path_peaktables,
+                       out_msms = path_msms,
+                       tids= 1)
+  
+}
 
 btab <- do.call(rbind, allsampseq)
 ###We have all the hashes in btab$hash_input

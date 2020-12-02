@@ -243,12 +243,13 @@ class boundedSampler:
         sub_l = [y for x in tvalues for y in x]
         if not isinstance(sub_l[0],float) and not isinstance(sub_l[0],int):
             res = np.stack(sub_l)
-            max_val = np.amax(res,axis=0)
             norm_val = np.copy(res)
-            for idx in range(res.shape[1]):
-                norm_val[:,idx] = (0.0001+norm_val[:,idx]/max_val[idx])
             if filtered:
                 norm_val = norm_val[self.get_filter()]
+            max_val = np.amax(res,axis=0)
+            min_val = np.amin(res,axis=0)
+            for idx in range(res.shape[1]):
+                norm_val[:,idx] = (0.0001+(norm_val[:,idx]-min_val[idx])/(max_val[idx]-min_val[idx]))
             ###We remove any negative value
             norm_val = norm_val[:,norm_val.min(axis=0)>=0]
             return list(np.apply_along_axis(harm_mean,1,norm_val,pow=1.5))

@@ -87,6 +87,7 @@ DIR_OUTPUT <- args[2]
 NOISE_LEVEL <- as.numeric(args[3])
 NUM_CORES <- as.integer(args[4])
 ALL <- as.logical(args[5])
+if(is.na(ALL)) ALL <- TRUE
 
 bpp <- NULL
 
@@ -162,7 +163,7 @@ if (length(need_computing) != 0) {
 
 
 if(ALL){
-  message("Extracting all MS-MS spectra.")
+  cat("Extracting all MS-MS spectra.")
   dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
   all_msms <- dbGetQuery(dbb, "SELECT path,output_ms2 FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1'")
   dbDisconnect(dbb)

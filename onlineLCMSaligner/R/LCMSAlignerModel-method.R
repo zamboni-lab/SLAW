@@ -557,12 +557,13 @@ alignToModelByBatch.density <- function(lam, peaktable,bw = 10,binSize = 0.01, m
     if(nrow(vapp[[i]])==0) next
     temp <- vapp[[i]]
     psupp <- which(temp[,2]>=max_index)
+    ###Debuggued.
+    pmodel <- which(temp[,2]<max_index)
+    ##We add the size of the cluster to the new size.
+    for(idx in temp[pmodel,2]){
+      temp_size[idx] <- temp_size[idx]+1
+    }
     if(length(psupp)==0){
-      pmodel <- which(temp[,2]<max_index)
-      ##We add the size of the cluster to the new size.
-      for(idx in temp[pmodel,2]){
-        temp_size[idx] <- temp_size[idx]+1
-      }
       next
     }
     temp[psupp,2] <- temp[psupp,2]+shift

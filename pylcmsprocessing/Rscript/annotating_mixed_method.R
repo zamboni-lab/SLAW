@@ -8,7 +8,6 @@ suppressWarnings(suppressMessages(library(BiocParallel, warn.conflicts = FALSE))
 suppressWarnings(suppressMessages(library(jsonlite, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(cliqueMS, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(igraph, warn.conflicts = FALSE)))
-suppressWarnings(suppressMessages(library(igraph, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(Rcpp, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(InterpretMSSpectrum, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
@@ -1107,7 +1106,7 @@ groupFeatures <-
 ####Actual processing in the pipeline.
 args <- commandArgs(trailingOnly = TRUE)
 
-# 
+
 library(stringr)
 # args <- c(
 #   "U:/users/Alexis/data/slaw_evaluation/MSV83010/output_cluster/datamatrices/datamatrix_a4b68bd9e6c73664a86dac3d1fdf7d78.csv",
@@ -1259,7 +1258,6 @@ dm <- fread(PATH_DATAMATRIX, header = TRUE, sep = "\t")
 
 ###If the file already exists at this step we erase it
 if(file.exists(PATH_OUTPUT_SIMPLE)) file.remove(PATH_OUTPUT_SIMPLE)
-# PATH_OUTPUT_SIMPLE_DD <- "U:/users/Alexis/examples_lcms_workflow/output_optim/datamatrices/annotated_peaktable_bis_ec33b0ccad6d47ab6b44cec104305d4b.csv"
 dm_simplified <- buildDataMatrixSimplified(dm, annot, PATH_OUTPUT_SIMPLE)
 if(file.exists(PATH_OUTPUT_FULL)) file.remove(PATH_OUTPUT_FULL)
 dm_full <- buildDataMatrixFull(dm, annot, PATH_OUTPUT_FULL)

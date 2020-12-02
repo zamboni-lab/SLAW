@@ -147,15 +147,20 @@ addFields = NULL)
 
 args <- commandArgs(trailingOnly = TRUE)
 
-# args <- c("U:/users/Alexis/data/all_2mins/res_neg_2/processing_db.sqlite",
-#           "4","E:/fused_mgf.mgf","E:/out_csv.csv","E:/tmp_rename_csv.csv")
-# 
-# args <- c("/sauer1/users/Alexis/examples_lcms_workflow/output/processing_db.sqlite","0.05","0.1","5",
-# "/sauer1/users/Alexis/examples_lcms_workflow/output/fused_mgf/fused_mgf_3063282bcc8e77018d0b6912579a4115.mgf",
-# "/sauer1/users/Alexis/examples_lcms_workflow/output/temp/temp1",
-# "/sauer1/users/Alexis/examples_lcms_workflow/output/temp/temp2")
-# library(stringr)
-# args <-str_replace(args,"/sauer1/","U:/")
+if(FALSE){
+  PU <- "U:/users/Alexis/presentation/progress_report_17_11_2020/mtbls1129_ms2"
+  args <- c(file.path(PU,"processing_db.sqlite"),"0.05","0.1","5",
+      file.path(PU,"fused_mgf.mgf"),
+  file.path(PU,"temp/temp1"),
+   file.path(PU,"temp/temp2"))
+  library(stringr)
+  args <-str_replace(args,"/sauer1/","U:/")
+  
+  
+}
+
+
+
 
 
 PATH_DB <- args[1]
@@ -175,9 +180,9 @@ BY_BATCH <- 7000
 bpp <- NULL
 
 if (get_os() == "win") {
-    bpp <- SnowParam(workers = NUM_CORES,progressbar=TRUE)
+    bpp <- SnowParam(workers = NUM_CORES,progressbar=FALSE)
 } else{
-    bpp <- MulticoreParam(workers = min(NUM_CORES, 4),progressbar=TRUE)
+    bpp <- MulticoreParam(workers = min(NUM_CORES, 4),progressbar=FALSE)
 }
 
 ##We get the different constant.
@@ -190,6 +195,11 @@ dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
 PATH_MSMS <- dbGetQuery(dbb, "SELECT output_ms2 FROM processing")[, 1]
 dbDisconnect(dbb)
 
+
+if(FALSE){
+  PATH_MSMS <- file.path(PU,"CENTWAVE","msms",basename(PATH_MSMS))
+  PATH_DATAMATRIX <- file.path(PU,"datamatrices",basename(PATH_DATAMATRIX))
+}
 
 
 PATH_MSMS <- PATH_MSMS[file.exists(PATH_MSMS)]
@@ -275,6 +285,28 @@ listidx <- by(is_fragmented,INDICES = vfactor,FUN=function(x){x})
 
 ####We now process the data by batch to avoid any overhead
 fcc <- bplapply(listidx,FUN = mergeSpectra,specs=vmgf,tab_summary=tab_summary,BPPARAM=bpp)
+
+if(FALSE){
+  iidx <- order(sapply(listidx,length),decreasing = TRUE)[3]
+  # iidx <- 862
+  tsum <- tab_summary[listidx[[iidx]],]
+  
+  merged <- mergeSpectra(listidx[[iidx]],specs=vmgf,tab_summary=tab_summary)
+  merged$spec
+  
+  plot(merged$spec[,1],merged$spec[,2],type="h",lwd=2,xlim=c(0,1.05*max(merged$spec[,1])),
+       xlab="M/Z",ylab="Intensity",cex.lab=1.8,cex.axis=1.3)
+  vmgf[tsum]
+  for(ttp in 1:nrow(tsum)){
+
+  tspec <- vmgf[[tsum[["file"]][ttp]]][[tsum[["idx"]][ttp]]]
+  cat(paste(ttp,length(mz(tspec))),"\n")
+  plot(mz(tspec),intensity(tspec),type="h",lwd=2,xlim=c(0,1.05*max(merged$spec[,1])),
+       xlab="M/Z",ylab="Intensity",cex.lab=1.8,cex.axis=1.3)
+  }
+  
+  
+}
 
 ###We extract all the necessary spectra
 dm_idx <- str_split(names(listidx),fixed("_"),simplify = TRUE)

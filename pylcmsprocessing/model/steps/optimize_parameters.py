@@ -18,6 +18,7 @@ import common.slaw_exception as cse
 import model.optimization.score_experiment as ms
 import model.optimization.sampling as mos
 import model.helper.parameters_handler as ph
+import model.helper.parallel_runner as pr
 import model.helper.inputbuilder as ib
 
 import common.tools as ct
@@ -149,7 +150,7 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
     vui = UI(OUTPUT_DIR, path_samples, polarity=polarity, mass_spec="Exactive", num_workers=num_cpus,
              path_yaml=stored_param)
     ###The output database is generated.
-    vui.generate_MZmine_XML(path_xml=PATH_XML)
+    vui.generate_MZmine_XML(path_xml=PATH_XML,algorithm=peakpicking)
 
     ###If needed we tune the cups
     if num_cpus!=1:
@@ -157,7 +158,7 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
         if num_cpus>len(lf):
             num_cpus=len(lf)
 
-    exp.initialise_database(num_cpus, OUTPUT_DIR, polarity, path_samples, ["ADAP"], 1)
+    exp.initialise_database(num_cpus, OUTPUT_DIR, polarity, path_samples, ["ADAP"], 1, is_optim=True)
     to_join = list(args_refs.values())
     to_join = [str(pp) for pp in to_join]
     if os.path.isfile(pdb):
@@ -168,15 +169,17 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
         if peakpicking=="CENTWAVE":
             builder = ib.xcmsBuilder(exp.db, output=exp.output)
             builder.build_inputs_single_parameter_set(0.01, 0.1, 10, 10, 500, 3)
-        if peakpicking=="ADAP":
-            exp.run_mzmine("/MZmine-2.52-Linux", PATH_XML, int(num_cpus), log=LOG_PATH, input_only=True)
+        # if peakpicking=="ADAP" or peakpicking=="BASELINE":
+        #     exp.run_mzmine(pmzmine="/MZmine-2.52-Linux", xml_file=PATH_XML, batch_size=int(num_cpus),
+        #                    algorithm=peakpicking, log=LOG_PATH, input_only=True)
         exp.rebase_experiment(pdb)
     else:
         try:
-            if peakpicking=="ADAP":
-                exp.run_mzmine("/MZmine-2.52-Linux", PATH_XML, int(num_cpus), log=LOG_PATH)
+            if peakpicking=="ADAP" or peakpicking=="BASELINE":
+                exp.run_mzmine(pmzmine="/MZmine-2.52-Linux", xml_file=PATH_XML, batch_size=int(num_cpus),
+                               algorithm=peakpicking, log=LOG_PATH)
                 exp.correct_conversion()
-                exp.post_processing_peakpicking_mzmine()
+                exp.post_processing_peakpicking_mzmine(algorithm=peakpicking)
                 exp.save_db()
             if peakpicking=="CENTWAVE":
                 const = peakpicking__peaks_deconvolution__peak_width__const
@@ -201,7 +204,6 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
                 quant = "area"
                 ppm = float(peakpicking__traces_construction__ppm)
                 exp.run_openms(min_fwhm, max_fwhm, fwhm_fac, sn, ppm, min_int, max_outlier, min_scan, quant, log=LOG_PATH)
-
         except Exception as e:
             print(e)
             try:
@@ -308,12 +310,12 @@ class ParametersOptimizer:
             shutil.copy(ss[0],self.path_samples)
 
     ###Reduce the size of the optimization file for faster optimization
-    def reduce_samples(self):
+    def reduce_samples(self,optim_noise):
         pscript = os.path.join(ct.find_rscript(),"reducing_mzml.R")
         # we tun the optimization ins a signle thread.
-        cli = " ".join(["Rscript",pscript,self.path_samples])
+        cli = " ".join(["Rscript",pscript,'"'+self.path_samples+'"',str(optim_noise)])
         ###We read the polarity directly
-        subprocess.call(cli, shell=True, env=os.environ.copy())
+        pr.run_cl_solo(cli)
 
     def determine_initial_parameters(self,output_par=None):
         pscript = os.path.join(ct.find_rscript(),"initial_parameters.R")
@@ -324,10 +326,10 @@ class ParametersOptimizer:
             output_par = self.temp_yaml
         initial_par = self.input_par
         num_cores = self.num_workers
-        cli = " ".join(["Rscript",pscript,path_db,initial_par,output_par,str(num_cores)])
+        cli = " ".join(["Rscript",pscript,'"'+path_db+'"','"'+initial_par+'"','"'+output_par+'"',str(num_cores)])
         self.input_par=output_par
         ###We read the polarity directly
-        subprocess.call(cli, shell=True, env=os.environ.copy())
+        pr.run_cl_solo(cli)
 
 
     ###Thoe optimization is always two steps
@@ -527,15 +529,18 @@ class ParametersOptimizer:
             to_remove =["peakpicking__peaks_deconvolution__rt_wavelet__const",
             "peakpicking__peaks_deconvolution__rt_wavelet__add",
             "peakpicking__peaks_deconvolution__coefficient_area_threshold"]
-            for rr in to_remove:
-                if rr in to_optimize_peakpicking:
-                    del to_optimize_peakpicking[rr]
         if peakpicking!="OPENMS":
             to_remove =["peakpicking__traces_construction__num_outliers",
                         "peakpicking__traces_construction__peak_width_fac"]
-            for rr in to_remove:
-                if rr in to_optimize_peakpicking:
-                    del to_optimize_peakpicking[rr]
+        if peakpicking=="BASELINE":
+            to_remove =["peakpicking__peaks_deconvolution__rt_wavelet__const",
+            "peakpicking__peaks_deconvolution__rt_wavelet__add",
+            "peakpicking__peaks_deconvolution__coefficient_area_threshold",
+            "peakpicking__traces_construction__num_outliers",
+            "peakpicking__traces_construction__peak_width_fac"]
+        for rr in to_remove:
+            if rr in to_optimize_peakpicking:
+                del to_optimize_peakpicking[rr]
         ## We get the bounds of the optimizable parameters.
         summary_peakpicking = self.path_summary + "_peakpicking.csv"
 
@@ -685,7 +690,8 @@ class ParametersOptimizer:
         pfh.write_parameters(outpath)
 
 
-    def optimize_parameters(self,output_par,optimizer="lipo_rsm",max_its=10,num_files= 10,num_points=100,initial_estimation=True,**kwargs):
+    def optimize_parameters(self,output_par,optimizer="lipo_rsm",max_its=10,num_files= 10,num_points=100,
+                            optim_noise=None,**kwargs):
 
         ###The memory of JAVA is always more limited for optimization, 700 less Mbs.
         memory_by_core = int(os.environ["MEMORY"])*0.7
@@ -693,10 +699,10 @@ class ParametersOptimizer:
         ###We set the JAVA option for the peak picking evnetually
         os.environ["JAVA_OPTS"] = "-Xms" + str(math.floor(memory_by_core / 2)) + "m -Xmx" + str(
             math.floor(memory_by_core) - 200) + "m"
-        if initial_estimation:
-            self.determine_initial_parameters()
         self.select_samples(num_files = num_files)
-        self.reduce_samples()
+        if optim_noise is None:
+            optim_noise = 0
+        self.reduce_samples(optim_noise=optim_noise)
         logging.info("Finished initial parameters estimation")
         logging.info("Optimizing remaining parameters")
         if "BATCHOPTIM" in os.environ:

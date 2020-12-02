@@ -27,7 +27,7 @@ class boundedGrid:
             stored_data = pickle.load(f)
             try:
                 if not "RESAMPLE" in os.environ:
-                    logging.debug("Retrieved grid ndim:"+str(len(self.ub))+" npoints:"+str(npoints))
+                    # logging.debug("Retrieved grid ndim:"+str(len(self.ub))+" npoints:"+str(npoints))
                     saved_data = stored_data[(len(self.ub),npoints)][0]
                     for idx in range(len(self.ub)):
                         saved_data[idx, :] = saved_data[idx, :] * (self.ub[idx] - self.lb[idx]) + self.lb[idx]

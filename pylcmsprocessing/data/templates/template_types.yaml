@@ -26,11 +26,11 @@ optimization:
       - 2
       - 20
     type: int
-  initial_estimation:
+  noise_threshold:
     priority: LOW
-    description: Boolean. Shall initial parameters and ranges be estimated from raw files. This will override the provided values.
-    value: False
-    type: bool
+    description: Float. A noise threshold used to filter spectra before optimization. This can be useful for noisy files, notably TOF.
+    value: 500
+    type: float
 peakpicking:
   description: This step includes all the necessary sub steps to pass from an individual .mzML file to a processed peaktable. The data are processed using one of the three algorithms provided by the algorithm fields..
   algorithm:

@@ -3,12 +3,10 @@ import numpy as np
 import scipy.spatial as sp
 from math import log10,floor
 import common.references as cr
-import common.tools as ct
 import model.steps.grouping as mg
 import os
 import subprocess
-from shutil import copyfile
-
+import logging
 
 
 def get_scorer(name):
@@ -169,7 +167,7 @@ class PeakpickingScorerSLAW(PeakpickingScorer):
         cv_peakwidth = np.apply_along_axis(lambda x: np.std(x) / np.mean(x), 1, peakwidths)
         num_correct = np.sum(cv_peakwidth < threshold)
         if num_correct==0:
-            print("No feature with reproducible peakwidth found.")
+            # print("No feature with reproducible peakwidth found.")
             return -1
         return ((num_correct ** 2) / len(btab))
 
@@ -186,6 +184,7 @@ class CombinedPeakScorer(PeakpickingScorer):
         v2 = self.sc2.score()
         if v1==-1 or v2==-1:
             return (-1,-1)
+        logging.debug("PEAKPICKING SCORE, INTEGRATION:"+str(v1)+" ISOTOPES:"+str(v2))
         return (v1,v2)
 
 class AlignmentScorerIPO(AlignmentScorer):
@@ -193,13 +192,9 @@ class AlignmentScorerIPO(AlignmentScorer):
         ###We build a data matrix with all tthe retention time
         fake_pp = ("","","","temphash")
         dir_blocks = self.exp.output.getDir(cr.TEMP["GROUPING"]["BLOCKS"])
-        # dir_blocks = dir_blocks.replace("/output",output,1)
         dir_alignment = self.exp.output.getFile(cr.TEMP["GROUPING"]["ALIGNMENT"])
-        # dir_alignment = dir_alignment.replace("/output", output, 1)
         dir_datamatrix = self.exp.output.getDir(cr.OUT["DATAMATRIX"])
-        # dir_datamatrix = dir_datamatrix.replace("/output", output, 1)
         path_fig = self.exp.output.getFile(cr.OUT["FIGURES"]["RT_DEV"])
-        # path_fig = path_fig.replace("/output", output, 1)
         hdat = "rt_cor"
         ppg = mg.OnlineGrouper(fake_pp, self.exp.db, dir_blocks, dir_alignment,
                                dir_datamatrix, hdat, 0.01, 15, 0.01, 150, 0.01,
@@ -263,13 +258,15 @@ class exponentialScorer(AlignmentScorer):
             return -1.0, -1.0
         tdata = pd.read_csv(dm_path, header=0,sep="\t")
         cnames = [cc for cc in tdata.columns if cc.startswith(hdat)]
-        num_sample = len(cnames)
         rt_tab = tdata[cnames]
-        val = rt_tab.apply(lambda x: np.absolute(np.nanmean(x - np.nanmedian(x))), axis=1)
-        rt_tab.apply(lambda x: x, axis=1)
+        ###In vevery case we consider that a deviation superior to 0.3% of the maximum
+        val = rt_tab.apply(lambda x: np.nanmean(np.absolute(x - np.nanmedian(x))), axis=1)
+        # rt_tab.apply(lambda x: x, axis=1)
+        ###rt is equl to htis one
         ARTS = np.nanmean(val)
-        RCS = 1 / ARTS
+        RCS = np.log10(1 / ARTS)
         summed_probas = np.sum(modif_exp(tdata.num_detection / len(cnames),alpha=alpha))
+        logging.debug("ALIGNMENT SCORE, DRT:"+str(RCS)+" REPRODUCIBILITY:"+str(summed_probas))
         ###We just have to comnpare the column
         return RCS, summed_probas
 

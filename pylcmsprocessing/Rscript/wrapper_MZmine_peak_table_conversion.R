@@ -35,6 +35,7 @@ convPeakTableFromPath <-  function(pt){
 
   peaktable <- NULL
   peaktable <-  read.table(pt,header=TRUE,sep=",",stringsAsFactors = FALSE)
+    # peaktable <- convertPeakTable(peaktable)
   peaktable <- tryCatch(convertPeakTable(peaktable),error=function(e){return(NA)})
 
   if(length(peaktable)==1 && is.na(peaktable)) return(NULL)

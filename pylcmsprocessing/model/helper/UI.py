@@ -54,13 +54,16 @@ class UI:
             self.initialize_yaml_polarity(self.path_yaml,self.polarity)
 
 
-    def generate_MZmine_XML(self,path_xml=None):
+    def generate_MZmine_XML(self,path_xml=None,algorithm="ADAP"):
+        if algorithm not in cr.MZMINE_ALGORITHM:
+            algorithm="ADAP"
         if path_xml is None:
-            path_xml = self.output.getFile(cr.OUT["ADAP"]["XML_MODEL"])
+            path_xml = self.output.getFile(cr.OUT[algorithm]["XML_MODEL"])
         pfh = ph.ParametersFileHandler(self.path_yaml)
-        PATH_XML = os.path.join("data",cr.ALGORITHMS_TABLE["ADAP"][2])
+        PATH_XML = os.path.join("data",cr.ALGORITHMS_TABLE[algorithm][2])
         tree = ET.parse(PATH_XML)
         root = tree.getroot()
+
 
         ###Centroidization noise level MS1
         root[1][2][0][0].text=str(pfh[('peakpicking','noise_level_ms1')]['value'])
@@ -74,16 +77,23 @@ class UI:
         root[3][6][1].text=str(pfh[('peakpicking','traces_construction','ppm')]['value'])
         root[3][6][0].text=str(pfh[('peakpicking','traces_construction','dmz')]['value'])
 
+        ###This is different depending of the algorithm
         ###Peak deconvolution
-        root[4][2][5][0].text=str(pfh[('peakpicking','peaks_deconvolution','SN')]['value'])
-        root[4][2][5][2].text=str(pfh[('peakpicking','peaks_deconvolution','noise_level')]['value'])
-        root[4][2][5][3].text=str(pfh[('peakpicking','peaks_deconvolution','coefficient_area_threshold')]['value'])
-        root[4][2][5][4][0].text=str(pfh[('peakpicking','peaks_deconvolution','peak_width')]['value'][0])
-        root[4][2][5][4][1].text=str(pfh[('peakpicking','peaks_deconvolution','peak_width')]['value'][1])
-        root[4][2][5][5][0].text=str(pfh[('peakpicking','peaks_deconvolution','rt_wavelet')]['value'][0])
-        root[4][2][5][5][1].text=str(pfh[('peakpicking','peaks_deconvolution','rt_wavelet')]['value'][1])
-        root[4][4].text=str(pfh[('peakpicking','peaks_deconvolution','ms2_mz_tol')]['value'])
-        root[4][5].text=str(pfh[('peakpicking','peaks_deconvolution','ms2_rt_tol')]['value'])
+        if algorithm=="ADAP":
+            root[4][2][5][0].text=str(pfh[('peakpicking','peaks_deconvolution','SN')]['value'])
+            root[4][2][5][2].text=str(pfh[('peakpicking','peaks_deconvolution','noise_level')]['value'])
+            root[4][2][5][3].text=str(pfh[('peakpicking','peaks_deconvolution','coefficient_area_threshold')]['value'])
+            root[4][2][5][4][0].text=str(pfh[('peakpicking','peaks_deconvolution','peak_width')]['value'][0])
+            root[4][2][5][4][1].text=str(pfh[('peakpicking','peaks_deconvolution','peak_width')]['value'][1])
+            root[4][2][5][5][0].text=str(pfh[('peakpicking','peaks_deconvolution','rt_wavelet')]['value'][0])
+            root[4][2][5][5][1].text=str(pfh[('peakpicking','peaks_deconvolution','rt_wavelet')]['value'][1])
+            root[4][4].text=str(pfh[('peakpicking','peaks_deconvolution','ms2_mz_tol')]['value'])
+            root[4][5].text=str(pfh[('peakpicking','peaks_deconvolution','ms2_rt_tol')]['value'])
+        if algorithm=="BASELINE":
+            root[4][2][0][0].text=str(pfh[('peakpicking','peaks_deconvolution','noise_level')]['value'])
+            root[4][2][0][1][0].text=str(pfh[('peakpicking','peaks_deconvolution','peak_width')]['value'][0])
+            root[4][2][0][1][1].text=str(pfh[('peakpicking','peaks_deconvolution','peak_width')]['value'][1])
+            root[4][2][0][2].text=str(pfh[('peakpicking','noise_level_ms1')]['value'])
 
         ###We write the XML file somewhere
         tree.write(path_xml)

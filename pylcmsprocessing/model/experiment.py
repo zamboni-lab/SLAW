@@ -23,7 +23,7 @@ import shutil
 
 def check_peakpicking(pp):
     pp = pp.upper()
-    peakpicker = ["OPENMS","ADAP","CENTWAVE"]
+    peakpicker = ["OPENMS","ADAP","CENTWAVE","BASELINE"]
     if not pp in peakpicker:
         raise  Exception("Unknown peakpicking: "+pp+" known peakpickers are "+",".join(peakpicker))
     return pp
@@ -115,10 +115,11 @@ class Experiment:
             path_raw = all_path[0]
 
         logging.info("Guessing polarity from file:"+os.path.basename(path_raw))
-        args = ["Rscript",pscript,path_raw, output]
+        args = ["Rscript",pscript,'"'+path_raw+'"', '"'+output+'"']
         cli = " ".join(args)
         ##We call the script eventually.
-        subprocess.call(cli,shell=True)
+        par_run = pr.run_cl_solo(cli)
+        # subprocess.call(cli,shell=True)
         ##We now read the output file
         with open(output, "r") as f:
             polarity = f.readline().rstrip()
@@ -253,14 +254,17 @@ class Experiment:
         return self.get_query("SELECT peaktable FROM peakpicking")
 
 
-    def build_samples(self, path_samples, path_ms2=None):
+    def build_samples(self, path_samples, path_ms2=None, is_optim=False):
 
         ###We build the majority
         pscript = os.path.join(ct.find_rscript(), "createSQLiteexperiment.R")
-        cline = "Rscript " + pscript + " -d " + path_samples + " -b " + self.db
+        cline = "Rscript " + pscript + " -d '" + path_samples + "' -b '" + self.db + "'"
         if path_ms2 is not None:
             cline = cline + " -o '"+path_ms2+"'"
-        subprocess.call(cline, shell=True)
+        if "SLAWSUMMARY" in os.environ and not is_optim:
+            cline = cline + " -s "+ os.environ["SLAWSUMMARY"]
+        pr.run_cl_solo(cline,error=False,output=False)
+        # subprocess.call(cline, shell=True)
         ##We check if the database has been created
         self.open_db()
 
@@ -297,13 +301,6 @@ class Experiment:
 
         self.close_db()
 
-    ###We jsut initalize the peaktable
-        # peakpicking = tids,
-        # sample = rep(num_rawfile, nrow(vfiles)),
-        # input = vfiles[, 1],
-        # hash_input = vfiles$hash,
-        # output_peaktable = outfiles,
-        # output_msms = outmsms,
 
     def build_processing(self):
         self.open_db()
@@ -329,10 +326,10 @@ class Experiment:
           )''')
         self.close_db()
 
-    def initialise_database(self, max_jobs, outdir, polarity, path_samples, algorithms, num_parameters=50, path_ms2=None):
+    def initialise_database(self, max_jobs, outdir, polarity, path_samples, algorithms, num_parameters=50, path_ms2=None, is_optim=False):
         ###We construct the initia software in the method
         self.add_initial_infos(max_jobs, outdir, polarity)
-        self.build_samples(path_samples,path_ms2=path_ms2)
+        self.build_samples(path_samples,path_ms2=path_ms2,is_optim=is_optim)
         ###If the output directory is not existing we create it
         if not os.path.isdir(outdir):
             os.makedirs(outdir)
@@ -370,11 +367,11 @@ class Experiment:
 
     ###Creation of the input part for MZmine
 
-    def building_inputs_single_processing(self, xml_file):
+    def building_inputs_single_processing(self, xml_file, algorithm="ADAP"):
         algs = self.get_query("SELECT * FROM algorithms")
         for alg in algs:
             if alg[2] == "MZmine":
-                builder = ib.MZMineBuilder(alg, self.db, self.output, alg[0])
+                builder = ib.MZMineBuilder(alg, self.db, self.output, alg[0], algorithm=algorithm)
                 builder.build_inputs_single_parameter_set(xml_file)
 
     def reset_processing(self):
@@ -410,9 +407,9 @@ class Experiment:
         self.close_db()
         return softwares
 
-    def run_mzmine(self, pmzmine, xml_file, batch_size=2000, silent=True, log = None, input_only=False):
+    def run_mzmine(self, pmzmine, xml_file, algorithm = "ADAP", batch_size=2000, silent=True, log = None, input_only=False):
         logging.info("Building input")
-        self.building_inputs_single_processing(xml_file)
+        self.building_inputs_single_processing(xml_file,algorithm=algorithm)
         if input_only:
             return None
         num_workers = self.get_workers()
@@ -450,7 +447,8 @@ class Experiment:
                 pjoin = os.path.join(ct.find_rscript(), "wrapper_MZmine_peak_table_conversion.R ")
                 # ###Calling the script on all the processed path
                 cline = "Rscript " + pjoin + " " + path_temp + " " + str(self.get_workers(open=False))
-                subprocess.call(cline, shell=True)
+                pr.run_cl_solo(cline)
+                # subprocess.call(cline, shell=True)
                 need_processing = [not os.path.exists(row[5]) for row in rows]
                 processing += 1
                 if processing >= 2:
@@ -471,7 +469,7 @@ class Experiment:
     def run_openms(self,min_fwhm,max_fwhm,fwhm_fac,snt,ppm,min_int,max_outlier,min_points,quant,silent=True, log = None,batch_size=10000):
         ###We collect the output path
         builder = ib.openMSBuilder(self.db,output=self.output)
-        builder.build_inputs_single_parameter_set(min_fwhm,max_fwhm,snt,ppm,min_int,max_outlier,min_points,quant)
+        builder.build_inputs_single_parameter_set(min_fwhm,max_fwhm,fwhm_fac,snt,ppm,min_int,max_outlier,min_points,quant)
         num_workers = self.get_workers()
         runner = pr.ParallelRunner(num_workers)
         ####we generate the command line for all the inputs
@@ -501,7 +499,7 @@ class Experiment:
             # ###CWe create the command line to allow the peakpicking
             if len(names_output) > 0:
                 names_converted = [x.split(".")[0] + ".csv" for x in names_output]
-                clis_conversion = ["Rscript " + pjoin + " " +old+ " " +new for old,new in zip(names_output,names_converted)]
+                clis_conversion = ["Rscript " + pjoin + ' "'+old+ '" "' +new+ '"' for old,new in zip(names_output,names_converted)]
                 runner.run(clis_conversion, silent=silent, log = log, timeout = cr.CONSTANT["PEAKPICKING_TIMOUT"])
                 to_retry = []
                 for pid,nn,o in zip(ids_to_convert,names_converted,names_output):
@@ -513,8 +511,8 @@ class Experiment:
                 ###If they are not converted  we wait 5s and do it.
                 if len(to_retry)>0:
                     ###5 second waiting time to unlock file if needed.
-                    time.sleep(5)
-                    clis_conversion_retry = ["Rscript " + pjoin + " " + old + " " + new for id,new,old in
+                    time.sleep(2)
+                    clis_conversion_retry = ["Rscript " + pjoin +' "' + old +'" "'+ new+'"' for id,new,old in
                                        to_retry]
                     runner.run(clis_conversion_retry, silent=silent, log=log, timeout=cr.CONSTANT["PEAKPICKING_TIMOUT"])
                     for pid,nn,o in to_retry:
@@ -536,7 +534,6 @@ class Experiment:
         self.open_db()
         c = self.conn.cursor()
         c.execute("SELECT * FROM processing WHERE output_ms!='NOT PROCESSED'")
-
         while True:
             rows = c.fetchmany(batch_size)
             if not rows: break
@@ -569,18 +566,19 @@ class Experiment:
         p_conversion = os.path.join(ct.find_rscript(), "wrapper_MZmine_peak_table_conversion.R ")
         to_convert = [x[0] + "\n" for x in processings if not is_converted(x[0])]
         if len(to_convert) > 0:
-            logging.warning("correcting " + str(len(to_convert)) + " files:","|".join(to_convert))
+            # logging.warning("correcting " + str(len(to_convert)) + " files:","|".join(to_convert))
             with open(path_temp, "w+") as summary:
                 summary.writelines(to_convert)
             cline = "Rscript " + p_conversion + " " + path_temp + " " + str(self.get_workers(open=False))
-            subprocess.call(cline, shell=True)
+            pr.run_cl_solo(cline)
+            # subprocess.call(cline, shell=True)
         else:
             logging.info("No corrections to do")
         self.close_db()
         self.save_db()
 
     ###This step is always done before grouping
-    def post_processing_peakpicking_mzmine(self):
+    def post_processing_peakpicking_mzmine(self,algorithm="ADAP"):
         ###We rename the peaktable to get more meaningful names.
         self.open_db()
         c = self.conn.cursor()
@@ -591,8 +589,8 @@ class Experiment:
 
         c.execute("SELECT path FROM samples WHERE level='MS1'")
         all_samples = c.fetchall()
-        dirname = self.output.getDir(cr.OUT["ADAP"]["PEAKTABLES"])
-        dirname_msms = self.output.getDir(cr.OUT["ADAP"]["MSMS"])
+        dirname = self.output.getDir(cr.OUT[algorithm]["PEAKTABLES"])
+        dirname_msms = self.output.getDir(cr.OUT[algorithm]["MSMS"])
         ###Now we jsut rename all the files
         for ip in range(0,len(all_peaktable)):
             ##Correcting if needed convert he ms files
@@ -670,8 +668,9 @@ class Experiment:
         num_workers = self.get_workers()
         dir_out= self.output.getDir(output)
         pscript = os.path.join(ct.find_rscript(),"extractingMGFfromMZML.R")
-        cli = " ".join(["Rscript",pscript,self.db,dir_out,str(noise_level),str(num_workers),str(all)])
-        subprocess.call(cli,shell=True)
+        cli = " ".join(["Rscript",pscript,'"'+self.db+'"','"'+dir_out+'"',str(noise_level),str(num_workers),str(all)])
+        pr.run_cl_solo(cli)
+        # subprocess.call(cli,shell=True)
         logging.info("MS2 extraction finished")
 
     ###At the moment there is a single grouping method
@@ -732,6 +731,7 @@ class Experiment:
         groupers = [0] * len(all_peakpicking)
         countgroup = 0
         #Alignement output
+        dir_blocks = self.output.getDir(cr.TEMP["DIR"])
         dir_blocks = self.output.getDir(cr.TEMP["GROUPING"]["BLOCKS"])
         dir_alignment = self.output.getFile(cr.TEMP["GROUPING"]["ALIGNMENT"])
         dir_datamatrix = self.output.getDir(cr.OUT["DATAMATRIX"])
@@ -897,7 +897,7 @@ class Experiment:
         c = self.conn.cursor()
         c.execute("SELECT * FROM peakpicking")
         all_peakpicking = c.fetchall()
-        margin_mz = 0.001
+        margin_mz = 0.005
 
         expanders = [0] * len(all_peakpicking)
         count_expand = 0

@@ -75,13 +75,19 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
 
 
     ##mz and rt are always stored
-        lam <- suppressMessages(suppressWarnings(LCMSAlignerModelFromDirectoryByBatch(all_peaktables,
-                          path_model=PATH_ALIGNMENT,
-                           output=PATH_BLOCKS,save_interval=max_by_batch,
-                           num_file=20,num_peaks=NUM_REF,col_int=VAL_INTENSITY,reset = FALSE,
-                           ppm = MZPPM, dmz=MZTOL,rt = RTTOL,rt_dens=RTTOL/2,n_clusters=10,
-                           supp_data=supp_args,ransac_l1=ALPHA_RT,bpp=bpp,
-                          max_cor=RTTOL*3,by_batch=max_by_batch,clustering=TRUE)))
+      lam <- tryCatch(suppressMessages(suppressWarnings(LCMSAlignerModelFromDirectoryByBatch(all_peaktables,
+                        path_model=PATH_ALIGNMENT,
+                         output=PATH_BLOCKS,save_interval=max_by_batch,
+                         num_file=20,num_peaks=NUM_REF,col_int=VAL_INTENSITY,reset = FALSE,
+                         ppm = MZPPM, dmz=MZTOL,rt = RTTOL,rt_dens=RTTOL/2,n_clusters=10,
+                         supp_data=supp_args,ransac_l1=ALPHA_RT,bpp=bpp,
+                        max_cor=RTTOL*3,by_batch=max_by_batch,clustering=FALSE))),error=function(e){
+                          return(NULL)
+                        })
+      if(is.null(lam)){
+        stop("Empty datamatrix generated.")
+      }
+        
 
     ###We always remove single peaks.
     if(!file.exists(OUTFIGURE)){

@@ -85,8 +85,8 @@ option_list = list(
 opt_parser <-  OptionParser(option_list = option_list)
 opt <- parse_args(opt_parser)
 if(FALSE){
-  opt <- list(directory="U:/users/Alexis/data/BioMarCoAlaaPos",summary="U:/users/Alexis/data/BioMarCoAlaaPos/summary.csv",
-              summarypath="path",summarytype="type",mzml="U:/users/Alexis/data/BioMarCoAlaaPos")
+  opt <- list(directory="U:/users/Alaa/Projects/HT_LC_6546/BioMarCo19_mzML",summary="U:/users/Alaa/Projects/HT_LC_6546/BioMarCo19_mzML/summary.csv",
+              summarypath="path",summarytype="type",mzml="U:/users/Alaa/Projects/HT_LC_6546/BioMarCo19_mzML",summarysep=",")
   
 }
 
@@ -101,6 +101,7 @@ paths <-  NULL
 replicates <-  NULL
 types <- NULL
 MSlevels <- NULL
+
 
 if (file.exists(opt$summary)) {
   tsummary <-
@@ -145,7 +146,7 @@ if (file.exists(opt$summary)) {
 
     ###Three type of terminology are authorized, QC,blank,sample and QC and a number.
     msamp <- types=="sample"
-    mQC <- types=="QC"
+    mQC <- types=="QC"|types=="qc"
     mBlank <- types=="blank"
 
     ###We extrct the dilution QCs.
@@ -206,6 +207,8 @@ dd <- dbExecute(db,paste("CREATE TABLE IF NOT EXISTS ",DBSAMPLES," (
           types TEXT NOT NULL,
           replicate INTEGER NOT NULL
 )",sep=""))
+
+###We get the list of ids and rmeove the existing one, if they exists.
 
 
 ###We then isert the values

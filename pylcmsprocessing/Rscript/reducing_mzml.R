@@ -10,10 +10,13 @@ args <- commandArgs(trailingOnly = TRUE)
 
 
 INPUT_DIR <- args[1]
+INT_THRESHOLD <- as.numeric(args[2])
 
 if(length(args)>1){
-  PATH_OUTPUT <- args[2]
+  PATH_OUTPUT <- args[3]
 }
+
+
 
 MAX_ISO <- 4
 MAX_SEL <- 25
@@ -86,7 +89,7 @@ filter_mzml <- function(praw,poutput,mzlims){
           cmzmin <- mzlims[current_idx,1]
           cmzmax <- mzlims[current_idx,2]
         }
-        if((cmz<=cmzmax)&(cmz>=cmzmin)){
+        if((cmz<=cmzmax)&(cmz>=cmzmin)&(x@intensity[idx]>=INT_THRESHOLD)){
           sel[idx] <- TRUE
         }
       }

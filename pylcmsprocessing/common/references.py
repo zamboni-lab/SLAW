@@ -1,11 +1,18 @@
+import os.path
+
 ALGORITHMS_TABLE = {
     "ADAP": ["MZmine", "adap.json", "/pylcmsprocessing/data/batch_adap_2_52.xml"],
+    "BASELINE": ["MZmine", "baseline.json", "/pylcmsprocessing/data/batch_baseline_2_52.xml"],
     "FeatureFinderMetabo": ["openMS", "openms.json", None, None],
     "centWave": ["centWave",None,None,None]
 }
 
+MZMINE_ALGORITHM = ["BASELINE","ADAP"]
+
+
 TEMPLATE_TYPE = "/pylcmsprocessing/data/templates/template_types.yaml"
 TEMPLATES = {
+    "baseline": "/pylcmsprocessing/data/templates/template_adap.yaml",
     "adap":"/pylcmsprocessing/data/templates/template_adap.yaml",
     "openms":"/pylcmsprocessing/data/templates/template_openms.yaml",
     "centwave":"/pylcmsprocessing/data/templates/template_centwave.yaml"
@@ -17,7 +24,19 @@ SUMMARY_COMBINATIONS = "summary_combinations"
 OUT={"DB":"processing.sqlite",
     "LOG":"log.txt",
     "POLARITY":"polarity",
-    "ADAP":
+     "DONE":"done",
+        "BASELINE":
+    {
+        "SUMMARY":"BASELINE/BASELINE_parameters.csv",
+        "SUMMARY_TEMPLATES": "BASELINE/summary_templates.csv",
+        "JSON":"BASELINE/temp_json.json",
+        "XML": "BASELINE/xml",
+        "XML_TEMPLATES":"BASELINE/xml_templates",
+        "XML_MODEL": "xml_params_mzmine.xml",
+        "CANDIDATES": "BASELINE/candidates.csv",
+        "PEAKTABLES": "BASELINE/peaktables",
+        "MSMS": "BASELINE/msms"
+     },"ADAP":
     {
         "SUMMARY":"ADAP/ADAP_parameters.csv",
         "SUMMARY_TEMPLATES": "ADAP/summary_templates.csv",
@@ -55,6 +74,25 @@ OUT={"DB":"processing.sqlite",
      "PYTHON_SCRIPT":"processing.py",
      "INCORRECT_FILES":"invalidMZML.txt"
 }
+
+TEMP={"DIR":"temp","CONVERSION":
+      "temp/temp_names.csv",
+      "GROUPING":{
+      "TEMP":"temp/temp_grouping",
+      "BLOCKS":"temp/blocks",
+      "ALIGNMENT":"temp/alignement.rds"},
+      "FUSING":{"TEMP1":"temp/temp1",
+      "TEMP2":"temp/temp2" },
+      "REPLICATES":"temp/replicates",
+      "IONANNOTATION":{"FULL":"temp/adducts.csv",
+                       "MAIN":"temp/main_adducts.csv"},
+      "POSTPROCESSING":"temp/raw_files.txt",
+      "ISOTOPES":"temp/isotopes.txt"
+      }
+
+TO_CLEAN = ["ADAP","OPENMS","CENTWAVE",os.path.dirname(OUT["FUSED_MSMS"]),
+            os.path.dirname(OUT["FIGURES"]["PEAKS"]),OUT["DATAMATRIX"],
+            TEMP["DIR"],OUT["DONE"]]
 
 
 ##This is the order of the optimization variables, they are optimized by batch.
@@ -105,20 +143,6 @@ def default_adducts_main_negative():
     return(lines)
 
 
-TEMP={"DIR":"temp","CONVERSION":
-      "temp/temp_names.csv",
-      "GROUPING":{
-      "TEMP":"temp/temp_grouping",
-      "BLOCKS":"temp/blocks",
-      "ALIGNMENT":"temp/alignement.rds"},
-      "FUSING":{"TEMP1":"temp/temp1",
-      "TEMP2":"temp/temp2" },
-      "REPLICATES":"temp/replicates",
-      "IONANNOTATION":{"FULL":"temp/adducts.csv",
-                       "MAIN":"temp/main_adducts.csv"},
-      "POSTPROCESSING":"temp/raw_files.txt",
-      "ISOTOPES":"temp/isotopes.txt"
-      }
 
 
 MASS_SPEC={"Exactive":"parameters_set_exactive",

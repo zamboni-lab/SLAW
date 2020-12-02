@@ -6,9 +6,9 @@ class SlawStepException(Exception):
 class ParametersException(Exception):
     def __init__ (self,arg,type,value):
         message = "Parameters: "+arg+" value:"+value+"should be of type"+type
-        super(ParametersException).__init__(message)
+        self.message = message
 
 
 class OptimizationException(Exception):
     def __init__(self,message):
-        super(OptimizationException).__init__(message)
+        self.message = message

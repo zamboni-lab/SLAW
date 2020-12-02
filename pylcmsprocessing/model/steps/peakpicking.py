@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import os
 import model.helper.inputbuilder as hi
 import hashlib
-
+import logging
 from common.tools import get_platform,find_rscript
 
 
@@ -49,7 +49,7 @@ class PeakPickingMZmine(PeakPicking):
         else:
             script_launch="startMZmine-Linux"
         software_part =os.path.join(software_part,script_launch)
-        return software_part+" "+self.input
+        return software_part+" "+'"'+self.input+'"'
 
     def get_output(self):
         return self.output
@@ -87,8 +87,8 @@ class PeakPickingOpenMS(PeakPicking):
         if self.snt<=0:
             snt_str = "false"
             self.snt=0
-        cli =  " ".join(["FeatureFinderMetabo","-in",self.input,"-out",self.output,
-                         "-algorithm:common:chrom_peak_snr",str(self.snt),"-algorithm:common:noise_threshold_int",
+        cli =  " ".join(["FeatureFinderMetabo",'-in "'+self.input+'" -out "'+self.output+
+                         '" -algorithm:common:chrom_peak_snr',str(self.snt),"-algorithm:common:noise_threshold_int",
                          str(self.min_int),"-algorithm:epd:masstrace_snr_filtering",snt_str,"-algorithm:epd:max_fwhm",
                          str(self.max_fwhm)," -algorithm:epd:min_fwhm",str(self.min_fwhm),
                          "-algorithm:common:chrom_fwhm",str(self.fwhm),
@@ -96,12 +96,6 @@ class PeakPickingOpenMS(PeakPicking):
                          str(self.ppm),"-algorithm:mtd:quant_method",self.quant,"-algorithm:mtd:trace_termination_criterion outlier -algorithm:mtd:trace_termination_outliers",
                          str(self.max_outlier),"-algorithm:mtd:min_trace_length",str(self.min_fwhm)])
         return cli
-# FeatureFinderMetabo -in Z:/users/Alexis/data/ecoli_menbrane_philipp_clean/centroid/neg_batch_0_pooled_0_0_1_seqid1.mzML
-# -out ex_out_1.featureML -algorithm:common:chrom_fwhm 5 -algorithm:common:chrom_peak_snr 3
-# -algorithm:common:noise_threshold_int 10 -algorithm:epd:masstrace_snr_filtering false -algorithm:epd:max_fwhm 60
-# -algorithm:epd:min_fwhm 3 -algorithm:ffm:use_smoothed_intensities true -algorithm:mtd:mass_error_ppm 20
-# -algorithm:mtd:min_sample_rate 0.5 -algorithm:mtd:quant_method area -algorithm:mtd:trace_termination_criterion outlier
-# -algorithm:mtd:trace_termination_outliers 5 -algorithm:mtd:min_trace_length 5
 
 class PeakPickingXCMS(PeakPicking):
     def __init__(self,row,min_peakwidth,max_peakwidth,snt,ppm,min_int,min_points):
@@ -131,7 +125,7 @@ class PeakPickingXCMS(PeakPicking):
         # SNT < - as.numeric(args[6])
         # PREFILTER < - as.numeric(c(args[7], args[8]))
         # NOISE < - as.numeric(args[9])
-        cli_args = ["Rscript",pjoin,self.input,self.output,self.ppm,self.min_peakwidth,
+        cli_args = ["Rscript",pjoin,'"'+self.input+'"','"'+self.output+'"',self.ppm,self.min_peakwidth,
                     self.max_peakwidth,self.snt,
                     self.point_prefilter,self.int_prefilter,self.min_int]
         cli_args = [str(arg) for arg in cli_args]
