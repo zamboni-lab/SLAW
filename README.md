@@ -4,7 +4,9 @@ SLAW is a scalable containerized untargetted LC-MS processing workflow. The thre
  * Scalability: SLAW can process thousands of SAMPLES efficiently
  * Inclusion of 3 peakpicking algorithms (Centwave, FeatureFinderMetabo, ADAP)
  * Parameters optimization: SLAW allows the parameters optimization for all the peakpickers considered, in an efficient manner.
- The source code here should not be used directly and is just shown as a reference if needed. The recommended way to use SLAW is to download the associated *Docker* from the dockerHub like this :
+ The source code here should not be used directly and is just shown as a reference if needed. 
+ 
+The recommended way to use SLAW is to download the associated *Docker* from the dockerHub like this :
 ```
 docker pull adelabriere/slaw:latest
 ```
