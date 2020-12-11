@@ -31,7 +31,7 @@ MZPPM <- as.numeric(args[8])
 NUM_REF <- as.numeric(args[9])
 ALPHA_RT <- as.numeric(args[10])
 NUM_CORES <- as.numeric(args[11])
-OUTFIGURE <- args[12]
+# OUTFIGURE <- args[12]
 
 ###Creating the parallel porcessing objects.
 bpp <- NULL
@@ -46,10 +46,8 @@ if(NUM_CORES==1){
 
 
 if(!file.exists(PATH_OUT_DATAMATRIX)){
-    # cat("Beginning grouping using metric, ",VAL_INTENSITY,"\n",file=stdout())
     dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
     all_peaktables <- dbGetQuery(dbb, "SELECT output_ms FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")[, 1]
-    all_pt <- dbGetQuery(dbb, "SELECT * FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")
     dbDisconnect(dbb)
     
     ###We check the number of file by batch. No more than 300000 peaks
@@ -61,11 +59,6 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
     }))
     
     max_by_batch <- floor(MAX_PEAKS/peaks_by_sample)
-
-    if(FALSE){
-      library(stringr)
-      all_peaktables <- str_replace(all_peaktables,fixed("/sauer1"),"U:")
-    }
     ###We check the columns of the peaktable.
     pt <- read.table(all_peaktables[1],header=TRUE,sep=",")
     cnames <- colnames(pt)
@@ -89,18 +82,17 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
       }
         
 
-    ###We always remove single peaks.
-    if(!file.exists(OUTFIGURE)){
-      pdf(OUTFIGURE)
-      plotDevRt(lam,int_threshold=0.15)
-      dev.off()
-    }else{
-      # cat("Rt deviation figure already exists.","\n",file=stdout())
-    }
+    ###Figures updated later.
+    # if(!file.exists(OUTFIGURE)){
+    #   pdf(OUTFIGURE)
+    #   plotDevRt(lam,int_threshold=0.15)
+    #   dev.off()
+    # }else{
+    #   # cat("Rt deviation figure already exists.","\n",file=stdout())
+    # }
     ###We always filter out the peaks detected only once.
     vexp <- suppressMessages(suppressWarnings(exportDataMatrix(lam,path=PATH_OUT_DATAMATRIX,quant_var = VAL_INTENSITY,subvariable=which(lam@peaks$num>=2),summary_vars=c("mz","rt","rt_cor",supp_args))))
-    
-    
+
     if(VAL_INTENSITY %in% c("area","intensity","height")){
       ###In all case we reorder the datamatrix to avoid the first 
       dm <- fread(PATH_OUT_DATAMATRIX,sep="\t")

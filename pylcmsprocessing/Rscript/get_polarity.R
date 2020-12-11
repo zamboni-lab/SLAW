@@ -2,8 +2,6 @@
 
 args <- commandArgs(trailingOnly = TRUE)
 
-# args <- c("U:/users/Alexis/examples_lcms_workflow/input/BEH30_2min_LipidMix_3.mzML","U:/users/Alexis/examples_lcms_workflow/pol.txt")
-
 PATH_RAW <- args[1]
 OUTPUT <- args[2]
 suppressMessages(suppressWarnings(library(mzR,quietly = TRUE)))
@@ -14,8 +12,6 @@ if( pol==1 || pol=="1" || startsWith(tolower(pol),"pos")){
 }else{
   pol <- "negative"
 }
-
-###We check if there is a term
 
 f <- file(OUTPUT,"w")
 writeLines(pol,con=f)

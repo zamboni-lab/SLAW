@@ -730,12 +730,13 @@ class Experiment:
         self.close_db()
         groupers = [0] * len(all_peakpicking)
         countgroup = 0
+
         #Alignement output
-        dir_blocks = self.output.getDir(cr.TEMP["DIR"])
         dir_blocks = self.output.getDir(cr.TEMP["GROUPING"]["BLOCKS"])
         dir_alignment = self.output.getFile(cr.TEMP["GROUPING"]["ALIGNMENT"])
         dir_datamatrix = self.output.getDir(cr.OUT["DATAMATRIX"])
-        path_fig = self.output.getFile(cr.OUT["FIGURES"]["RT_DEV"])
+        # path_fig = self.output.getFile(cr.OUT["FIGURES"]["RT_DEV"])
+        path_fig = "/output/figure"
 
         ###Spectra fusin output
         path_temp_1 = self.output.getFile(cr.TEMP["FUSING"]["TEMP1"])
