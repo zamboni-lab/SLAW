@@ -258,8 +258,8 @@ tab_summary[,"retention.time"] <- tab_summary[,"retention.time"]/(60*RT_TOL)
 
 
 ####We find the nearest neighbour for eveyr spectrum.
-vclose <- rtree::knn(rtt,as.matrix(tab_summary[,c("retention.time","precursor.mz")]),as.integer(1))
-vbox <- rtree::withinBox(rtt,as.matrix(tab_summary[,c("retention.time","precursor.mz")]),dx=1,
+vclose <- rtree::knn.RTree(rtt,as.matrix(tab_summary[,c("retention.time","precursor.mz")]),as.integer(1))
+vbox <- rtree::withinBox.RTree(rtt,as.matrix(tab_summary[,c("retention.time","precursor.mz")]),dx=1,
 dy=1)
 
 ##We calculate the intersection which give the real matched feature every time.

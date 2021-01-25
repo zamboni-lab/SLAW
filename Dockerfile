@@ -1,4 +1,4 @@
-FROM adelabriere/basis_workflow
+FROM basis_workflow
 #Base image should always include all the dependencies
 
 ###INPUT FOLDER :
