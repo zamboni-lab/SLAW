@@ -60,7 +60,9 @@ readMS2mzML <- function(path, outfile, noise_level=0) {
   }
   if(file.exists(outfile)) return(NA)
   
-  of <- openMSfile(path)
+  of <- tryCatch(openMSfile(path),error=function(e){return(NA)})
+  if(!isS4(of)){return(0)}
+
   vhh <- header(of)
   rrh <- vhh[vhh$msLevel == 2, ]
   if(nrow(rrh)==0) return(NULL)
@@ -72,10 +74,11 @@ readMS2mzML <- function(path, outfile, noise_level=0) {
   all_txt <-
     do.call(c, mapply(tsplit, all_peaks, as.list(seq_along(tsplit)), FUN =
                         convertToMgfTxt,MoreArgs=list(noise_level=noise_level),SIMPLIFY = FALSE))
-  if(length(all_txt)==0) return(NULL)
+  if(length(all_txt)==0) return(1)
   ff <- file(outfile)
   writeLines(all_txt, con = ff)
   close(ff)
+  return(1)
 }
 
 
@@ -146,7 +149,7 @@ if (length(need_computing) != 0) {
       hash = as.character(all_hash),
       output_ms = rep("NOT PROCESSED", num_files),
       output_ms2 = all_path,
-      valid = as.integer(rep(1, num_files)),
+      valid = as.integer(vv),
       step = as.integer(rep(1, num_files))
     )
   

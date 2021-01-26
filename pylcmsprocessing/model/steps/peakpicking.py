@@ -88,8 +88,8 @@ class PeakPickingOpenMS(PeakPicking):
             snt_str = "false"
             self.snt=0
         cli =  " ".join(["FeatureFinderMetabo",'-in "'+self.input+'" -out "'+self.output+
-                         '" -algorithm:common:chrom_peak_snr',str(self.snt),"-algorithm:common:noise_threshold_int",
-                         str(self.min_int),"-algorithm:epd:masstrace_snr_filtering",snt_str,"-algorithm:epd:max_fwhm",
+                         '" -algorithm:common:chrom_peak_snr',str(self.snt),
+                         "-algorithm:epd:masstrace_snr_filtering",snt_str,"-algorithm:epd:max_fwhm",
                          str(self.max_fwhm)," -algorithm:epd:min_fwhm",str(self.min_fwhm),
                          "-algorithm:common:chrom_fwhm",str(self.fwhm),
                          "-algorithm:ffm:use_smoothed_intensities true -algorithm:epd:width_filtering fixed -algorithm:mtd:mass_error_ppm",
