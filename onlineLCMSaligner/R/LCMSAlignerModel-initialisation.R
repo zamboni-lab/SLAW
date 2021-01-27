@@ -456,6 +456,7 @@ LCMSAlignerModelFromDirectoryByBatch <-
       path_model_new <- paste(path_model_new,collapse=".")
       lam <- saveAligner(lam, path_model_new,supp_data=supp_data)
     }
+    message("Starting clustering ",Sys.time())
     if(nrow(lam@peaks)==length(lam@clustering)){
       if(clustering){
         clustering <- finalClustering(lam,bw=lam@references@parameters$rt_dens/2,binSize=lam@references@parameters$dmz,bpp)
@@ -468,5 +469,6 @@ LCMSAlignerModelFromDirectoryByBatch <-
       }
       lam <- saveAligner(lam, path_model,supp_data=supp_data)
     }
+    message("Ending clustering ",Sys.time())
     return(lam)
   }
