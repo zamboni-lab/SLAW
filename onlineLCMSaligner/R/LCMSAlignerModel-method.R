@@ -1162,7 +1162,7 @@ alignPeaktables <-
              ransac_span = ransac_span,lim = lim,
              supp_data=supp_data,graphical=graphical,correct_rt=correct_rt,BPPARAM = bpp)
     end_time <- Sys.time()
-    message("Retention time correction finshed in ", (end_time-start_time)%/%60," minutes.")
+    # message("Retention time correction finshed in ", end_time-start_time))
     ### We bind all the peaktable
     peaktables <- lapply(values,"[[",1)
     
@@ -1219,7 +1219,7 @@ alignPeaktables <-
                                    rtCost = lam@references@parameters$rt, bpp = bpp)
     
     end_time <- Sys.time()
-    message("Density computed in ", (end_time-start_time)%/%60," minutes.")
+    message("Density computed in ", (end_time-start_/time)%/%60," minutes.")
     ###We can then change the match vector to the non sorted order
     pfound <- which(!is.na(vmatch))
     pfound <- pfound[vmatch[pfound]<=nrow(lam@peaks)]
