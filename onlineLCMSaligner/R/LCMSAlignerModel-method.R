@@ -29,7 +29,7 @@ getPeaktableRtree <- function(peaktable, name_int = "int") {
 findCandidates <- function(lar, rtree, peak) {
   boxlims <- getBoxLimit(lar, peak)
   inbox <-
-    withinBox(rtree, matrix(peak[c(1, 2)],ncol=2), boxlims[1], boxlims[2])
+    withinBox.RTree(rtree, matrix(peak[c(1, 2)],ncol=2), boxlims[1], boxlims[2])
   return(inbox)
 }
 
@@ -1059,6 +1059,8 @@ alignPeaktables <-
            graphical=FALSE,
            correct_rt=TRUE,
            bpp=NULL) {
+    message("Starting batch.")
+    start_time <- Sys.time()
     paths <- paths[!is.na(paths)]
     if(length(paths)==0) return(lam)
     ##Case of first added file.
@@ -1147,10 +1149,11 @@ alignPeaktables <-
     ratio <- 1
     if(nrow(tpeaks)>10000){
       ratio <- 10000/nrow(tpeaks)
-      tpeaks <- tpeaks[order(tpeaks$num,decreasing=TRUE)[1:10000],]
+      tpeaks <- tpeaks[order(tpeaks$num,decreasing=TRUE)[1:5000],]
     }
     
     message("Starting retention correction.")
+    start_time <- Sys.time()
     values <- bplapply(paths,FUN = correctPeaktablePar,ref=lam@references,rt_scaling = rt_scaling,
              ransac_niter = ransac_niter,
              ransac_dist_threshold = ransac_dist_threshold,
@@ -1158,8 +1161,8 @@ alignPeaktables <-
              rt_extensions = rt_extensions, ratio=ratio,
              ransac_span = ransac_span,lim = lim,
              supp_data=supp_data,graphical=graphical,correct_rt=correct_rt,BPPARAM = bpp)
-    message("Retention time correction finshed.")
-    
+    end_time <- Sys.time()
+    message("Retention time correction finshed in ", (end_time-start_time)%/%60," minutes.")
     ### We bind all the peaktable
     peaktables <- lapply(values,"[[",1)
     
@@ -1208,13 +1211,15 @@ alignPeaktables <-
     
     #####The bwe is always 2 times the retention time ost
     message("Computing density")
+    start_time <- Sys.time()
     vmatch <- alignToModelByBatch.density(lam, cpeaktables,bw = lam@references@parameters$rt_dens,
                                    binSize = lam@references@parameters$dmz,
                                    maxFeatures = 50, sleep = 0,
                                    mzCost = lam@references@parameters$dmz,
                                    rtCost = lam@references@parameters$rt, bpp = bpp)
     
-
+    end_time <- Sys.time()
+    message("Density computed in ", (end_time-start_time)%/%60," minutes.")
     ###We can then change the match vector to the non sorted order
     pfound <- which(!is.na(vmatch))
     pfound <- pfound[vmatch[pfound]<=nrow(lam@peaks)]

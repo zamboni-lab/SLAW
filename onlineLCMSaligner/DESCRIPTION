@@ -10,7 +10,7 @@ Imports: Rcpp (>= 1.0.1),rtree,data.table, xcms
 LinkingTo: Rcpp
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.1
 Collate:
     'utils.R'
     'allGenerics.R'
