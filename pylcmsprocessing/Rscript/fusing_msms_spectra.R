@@ -149,6 +149,7 @@ args <- commandArgs(trailingOnly = TRUE)
 
 if(FALSE){
   PU <- "U:/users/Alexis/presentation/progress_report_17_11_2020/mtbls1129_ms2"
+  PU <- "U:/processing/out/slaw_SRM_DDA_test2"
   args <- c(file.path(PU,"processing_db.sqlite"),"0.05","0.1","5",
       file.path(PU,"fused_mgf.mgf"),
   file.path(PU,"temp/temp1"),
@@ -197,13 +198,12 @@ dbDisconnect(dbb)
 
 
 if(FALSE){
-  PATH_MSMS <- file.path(PU,"CENTWAVE","msms",basename(PATH_MSMS))
+  PATH_MSMS <- file.path(PU,"OPENMS","msms",basename(PATH_MSMS))
   PATH_DATAMATRIX <- file.path(PU,"datamatrices",basename(PATH_DATAMATRIX))
 }
 
 
 PATH_MSMS <- PATH_MSMS[file.exists(PATH_MSMS)]
-
 ### Checking if an actual file exist
 if(length(PATH_MSMS)==0) stop("No MS2 spectra to Merge.")
 
@@ -380,9 +380,13 @@ for(i in 1:(length(seq_cut)-1)){
 
     ###Adding the supplementary MS2 informations to the table.
     if(last_spec!=first_spec){
-        ###We aleays substract the starting line
-        seq_ms2_idx[pos_dm[o_dm_idx[first_spec:last_spec]]-firstLine+1] <- id_ener_summary[o_dm_idx[first_spec:last_spec]]
-        seq_num_ms2[pos_dm[o_dm_idx[first_spec:last_spec]]-firstLine+1] <- num_fused_all[o_dm_idx[first_spec:last_spec]]
+        ###We always verify that the msms spectra are non negative
+        sel_pos <- pos_dm[o_dm_idx[first_spec:last_spec]]
+        sel_ppos <- sel_pos>(firstLine-1)
+        if(sum(sel_ppos)>=1){
+          seq_ms2_idx[pos_dm[o_dm_idx[first_spec:last_spec]][sel_ppos]-firstLine+1] <- id_ener_summary[o_dm_idx[first_spec:last_spec][sel_ppos]]
+          seq_num_ms2[pos_dm[o_dm_idx[first_spec:last_spec]][sel_ppos]-firstLine+1] <- num_fused_all[o_dm_idx[first_spec:last_spec][sel_ppos]]
+        }
     }
 
     ###WE add it to the data table eventually

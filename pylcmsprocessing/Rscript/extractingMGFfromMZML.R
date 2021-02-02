@@ -65,7 +65,7 @@ readMS2mzML <- function(path, outfile, noise_level=0) {
 
   vhh <- header(of)
   rrh <- vhh[vhh$msLevel == 2, ]
-  if(nrow(rrh)==0) return(NULL)
+  if(nrow(rrh)==0) return(0)
   all_peaks <- peaks(of, rrh$seqNum)
   if(!is.list(all_peaks)){
     all_peaks <- list(all_peaks)
@@ -130,14 +130,14 @@ need_computing <- which(!file.exists(all_path))
 }
 
 if (length(need_computing) != 0) {
-  vv <- bpmapply(
+  vv <- unlist(bpmapply(
     raw_files[need_computing],
     all_path[need_computing],
     FUN = readMS2mzML,
     SIMPLIFY = FALSE,
     BPPARAM = bpp,
     MoreArgs=list(noise_level=NOISE_LEVEL)
-  )
+  ))
   
   ###We now add the output path to the processing table.
   supp_processing <-

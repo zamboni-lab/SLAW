@@ -690,7 +690,6 @@ alignToModelByBatch.density <- function(lam, peaktable,bw = 10,binSize = 0.01, m
 
     
   }
-  print(head(vapp[[1]]))
   message("End parallel processing ",Sys.time())
   
   

@@ -15,16 +15,16 @@ sink(file=stdout())
 
 ##Argument passed by Python
 args <- commandArgs(trailingOnly = TRUE)
-#
+
 # if(FALSE){
-#   # args <- c(
-#   #   "U:/users/Alaa/Manuscripts/InPreparation/2min_Lipidomics/SLAW/QTOF_02min_30mm_alignment/processing_db.sqlite",
-#   #   "U:/users/Alaa/Manuscripts/InPreparation/2min_Lipidomics/SLAW/QTOF_02min_30mm_alignment/datamatrices/datamatrix_6fae0382dea45e42fbf9cd103b6107b2.csv",
-#   #   "E:/dm_output.csv",
-#   #   "U:/users/Alaa/Manuscripts/InPreparation/2min_Lipidomics/SLAW/QTOF_02min_30mm_alignment/temp/alignement.rds",
-#   #   "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/isotopes.tsv",
-#   #   "4","3","intensity","0.001","15","0.01","5"
-#   # )
+#   args <- c(
+#     "U:/processing/out/sammy\ slaw\ 2/processing_db.sqlite",
+#     "U:/processing/out/sammy\ slaw\ 2/datamatrices/datamatrix_0028bf4ff085fe827d1c9de5b9935fa9.csv",
+#     "E:/dm_output.csv",
+#     "U:/processing/out/sammy\ slaw\ 2/temp/alignement.rds",
+#     "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/isotopes.tsv",
+#     "4","3","intensity","0.001","15","0.01","5"
+#   )
 # }
 
 
@@ -41,12 +41,12 @@ PPM <- as.numeric(args[10])
 DMZ <- as.numeric(args[11])
 NUM_WORKERS <- as.integer(args[12])
 
-TEMP_NAME <- paste(PATH_FILLED, 2, sep = "")
+TEMP_NAME <- file.path(dirname(PATH_FILLED),"temp_transfer")
 
 ###This is jsut for evaluation
 TEMP_FILLED <- paste(TEMP_NAME, "non_filled.csv", sep = "_")
 nullvar <- file.copy(PATH_DM, TEMP_FILLED)
-
+print(TEMP_NAME)
 get_os <- function() {
   if (.Platform$OS.type == "windows") {
     return("win")
@@ -80,11 +80,10 @@ all_infos <-
 
 all_peaktables <- all_infos[,2]
 all_samples <- all_infos[,1]
-if(FALSE){
-  # all_peaktables <- file.path("U:/users/Alaa/Manuscripts/InPreparation/2min_Lipidomics/SLAW/QTOF_02min_30mm_alignment/OPENMS/peaktables",basename(all_peaktables))
-  # all_samples <- file.path("U:/users/Alaa/Manuscripts/InPreparation/2min_Lipidomics/RAW_DATA/Gradient_Comparison_Experiment/QTOF_02min_30mm_mzML",basename(all_samples))
-  # 
-}
+# if(FALSE){
+#   all_peaktables <- file.path("U:/processing/out/sammy slaw 2/CENTWAVE/peaktables",basename(all_peaktables))
+#   all_samples <- file.path("U:/processing/out/sammy slaw 2/mzMLs-delete-when-done",basename(all_samples))
+# }
 
 optim_idx <- seq_along(all_samples)
 
@@ -157,11 +156,17 @@ extractMissingInformations <-
     noise_level <- quantile(peaks$intensity, probs = 0.03)
     ort <- order(dm[infer, ][[4]])
     ###small cheat the correction is the closest
-    vmatch  <-
-      xcms:::findEqualGreaterM(align[, 1], values = dm[infer[ort], ][[4]])
-    align <- rbind(align, align[nrow(align), ])
+    all_corrs <- rep(0,length(infer[ort]))
+    if(is.na(align[1, 1])){
+      dev_rt <- rep(0,length(infer[ort]))
+    }else{
+      vmatch  <-
+        xcms:::findEqualGreaterM(align[, 1], values = dm[infer[ort], ][[4]])
+      align <- rbind(align, align[nrow(align), ])
+      dev_rt <- align[vmatch, 2]
+    }
     ###integrate the missing peak
-    rt_corr <- dm[[4]][infer[ort]] + align[vmatch, 2]
+    rt_corr <- dm[[4]][infer[ort]] + dev_rt
     
     ###we first perform gap filling
     extractIntensity <-
@@ -188,11 +193,17 @@ extractMissingInformations <-
         
         rt_min <- rt - peakwidth / 2
         rt_max <- rt + peakwidth / 2
+        #We shift the peak if it is negativer
+        if(rt_min<0){
+          rt_max <- rt_max+abs(rt_min)
+          rt_min <- 0
+        }
+        
+        
         mean_mz <- (min_mz+max_mz)/2
         
         ###Margin in ppm.
         margin_mz <- max(margin_dmz,mean_mz*margin_ppm*1e-6)
-        
         min_mz <- min_mz - margin_mz
         max_mz <- max_mz + margin_mz
         total_extension <- margin_mz
@@ -206,7 +217,9 @@ extractMissingInformations <-
               mzrange = c(min_mz, max_mz)
             ),
             error = function(e) {
-              print(e)
+              # print(c(rt_min * 60, rt_max * 60))
+              # print(c(min_mz, max_mz))
+              # print(e)
               return(NA)
             }
           )
@@ -700,14 +713,40 @@ for (idx in 1:(length(batches) - 1)) {
   ###We first determine the gap-filling parameters on a set of QCs file.
   # cat("margin_ppm",sprintf("%0.2f",margin_ppm),"\n")
   # cat("margin_dmz",sprintf("%0.5f",margin_dmz),"\n")
+  # 
+  # for(idx in seq_along(all_samples)){
+  # 
+  #   exm <- extractMissingInformations(   all_samples[idx],
+  #                                 all_peaktables[idx],
+  #                                 isotopes_to_extract[[idx]],
+  #                                 to_infer[[idx]],
+  #                                 align@rt_correction[[idx]],
+  #                                 dm = dm_peaks,
+  #                                 quant = QUANT,
+  #                                 table_iso = isotopes_table,
+  #                                 dist_c13 =
+  #                                   dist_iso,
+  #                                 margin_mz = margin_dmz,
+  #                                 margin_ppm = margin_ppm,
+  #                                 margin_dmz=margin_dmz,
+  #                                 max_iso = MAX_ISO,
+  #                                 max_charge = MAX_CHARGE,
+  #                                 mean_int = expected_intensity,
+  #                                 ppm = PPM,
+  #                                 dmz = DMZ)
+  # 
+  # }
+
+
+  
   vmap <-
     bpmapply(
+      FUN = extractMissingInformations,
       all_samples,
       all_peaktables,
       isotopes_to_extract,
       to_infer,
       align@rt_correction,
-      FUN = extractMissingInformations,
       MoreArgs = list(
         dm = dm_peaks,
         quant = QUANT,
@@ -730,7 +769,7 @@ for (idx in 1:(length(batches) - 1)) {
   ###We fill the column
   for (iquant in seq_along(quant_cols)) {
     if (length(to_infer[[iquant]]) == 0){
-      # cat("No imputed values.")
+      cat("No imputed values.")
       next
     }
     sel_col <- quant_cols[iquant]

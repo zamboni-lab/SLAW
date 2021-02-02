@@ -27,11 +27,21 @@ sink(file=stdout())
 # ##Argument passed by Python
 args <- commandArgs(trailingOnly = TRUE)
 
+
 PATH_DB <- args[1]
 PATH_DM <- args[2]
 TEMP_DM <- args[3]
 FOLD_BLANK <- as.numeric(args[4])
 QC_FRACTION <- as.numeric(args[5])
+
+if(FALSE){
+  PATH_DB <-  "U:/processing/out/sammy slaw 2/processing_db.sqlite"
+  PATH_DM <- "E:/test.csv"
+  TEMP_DM <- "E:/temp_test.csv"
+}
+
+
+
 
 
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
