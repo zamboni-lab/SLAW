@@ -263,6 +263,7 @@ class Experiment:
             cline = cline + " -o '"+path_ms2+"'"
         if "SLAWSUMMARY" in os.environ and not is_optim:
             cline = cline + " -s "+ os.environ["SLAWSUMMARY"]
+        logging.info(cline)
         pr.run_cl_solo(cline,error=False,output=False)
         # subprocess.call(cline, shell=True)
         ##We check if the database has been created
@@ -273,7 +274,7 @@ class Experiment:
         cursor.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND name='samples' ''')
         # if the count is 1, then table exists
         if cursor.fetchone()[0] != 1:
-            raise cs.SlawStepException("Table ''samples' was not created correctly. Check your input files format and your summary.csv file.")
+            raise FileNotFoundError("Table ''samples' was not created correctly. Check your input files format and your summary.csv file.")
         cursor.close()
         self.close_db()
 

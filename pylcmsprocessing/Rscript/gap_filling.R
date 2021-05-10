@@ -41,7 +41,7 @@ PPM <- as.numeric(args[10])
 DMZ <- as.numeric(args[11])
 NUM_WORKERS <- as.integer(args[12])
 
-TEMP_NAME <- file.path(dirname(PATH_FILLED),"temp_transfer")
+TEMP_NAME <- file.path(dirname(PATH_FILLED),"temp_transfer.csv")
 
 ###This is jsut for evaluation
 TEMP_FILLED <- paste(TEMP_NAME, "non_filled.csv", sep = "_")
@@ -815,7 +815,13 @@ for (idx in 1:(length(batches) - 1)) {
   dm <-
     cbind(dm[, ..infos_idx], name_col, dist_col, dm[, ..quant_idx])
   colnames(dm) <- new_names
-  ww <- fwrite(dm, TEMP_NAME,sep="\t",append = TRUE)
+  if(!file.exists(TEMP_NAME)){
+    ww <- fwrite(dm, TEMP_NAME,sep="\t")
+  }else{
+    ww <- fwrite(dm, TEMP_NAME,sep="\t",append = TRUE)
+  }
 }
-ww <- file.rename(PATH_DM, PATH_FILLED)
+ww <- file.rename(PATH_DM, TEMP_FILLED)
 ww <- file.rename(TEMP_NAME, PATH_DM)
+
+# ww <- file.rename(TEMP_NAME, PATH_DM)

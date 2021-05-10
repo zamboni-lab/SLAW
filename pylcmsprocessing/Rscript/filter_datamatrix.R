@@ -38,6 +38,8 @@ if(FALSE){
   PATH_DB <-  "U:/processing/out/sammy slaw 2/processing_db.sqlite"
   PATH_DM <- "E:/test.csv"
   TEMP_DM <- "E:/temp_test.csv"
+  FOLD_BLANK <- 1
+  QC_FRACTION <- 0.1
 }
 
 
@@ -48,6 +50,8 @@ dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
 all_types <- dbGetQuery(dbb, "SELECT types FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")[, 1]
 all_samples <- dbGetQuery(dbb, "SELECT path FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")[, 1]
 dbDisconnect(dbb)
+
+
 
 ###We get the size of the data matrix.
 dm <- fread(PATH_DM,nrows = 2,sep="\t")
@@ -62,8 +66,6 @@ sel_int <- which(str_starts(cnames,int_prefix))
 sampled_match_name <- str_match(basename(all_samples),"(.+)\\.[a-zA-Z]+")[,2]
 col_match_names <- str_match(cnames[sel_int],paste(int_prefix,"_(.+)\\.csv",sep=""))[,2]
 vma <- match(sampled_match_name,col_match_names)
-
-
 
 
 first_line <- 0

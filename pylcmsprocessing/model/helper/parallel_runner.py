@@ -27,6 +27,7 @@ def run_cl_solo(cl,timeout=None,error=True,output=True):
 def run_cl(cl,timeout=None):
     ###We always include the environement
     my_env = os.environ.copy()
+    logging.info(cl[0])
     if timeout is None:
         process = subprocess.Popen(cl[0], shell=True, env=my_env, stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
