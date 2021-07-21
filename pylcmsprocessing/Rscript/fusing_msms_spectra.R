@@ -81,7 +81,7 @@ mergeSpectra <- function(x,specs,tab_summary,cos_thresh=0.7,round=10){
                             representative_spec[[siic]] <- representative_spec[[sic]]
                             representative_idx[siic] <- representative_idx[sic]
                         }
-                        ##We update the cluster in all case
+                        ##We update the cluster in all cases
                         clust_size[siic] <- clust_size[siic]+clust_size[sic]
                         sel_idx[sic] <- NA
                         to_consider[sic] <- FALSE
@@ -145,39 +145,20 @@ addFields = NULL)
     }
 }
 
+
+
 args <- commandArgs(trailingOnly = TRUE)
-
-if(FALSE){
-  PU <- "U:/users/Alexis/presentation/progress_report_17_11_2020/mtbls1129_ms2"
-  PU <- "U:/processing/out/slaw_SRM_DDA_test2"
-  args <- c(file.path(PU,"processing_db.sqlite"),"0.05","0.1","5",
-      file.path(PU,"fused_mgf.mgf"),
-  file.path(PU,"temp/temp1"),
-   file.path(PU,"temp/temp2"))
-  library(stringr)
-  args <-str_replace(args,"/sauer1/","U:/")
-  
-  
-}
-
-
-
-
-
 PATH_DB <- args[1]
 MZ_TOL <- as.numeric(args[2])
 RT_TOL <- as.numeric(args[3])
-###Let s test it with a small subset of data eventually.
 NUM_CORES <- as.numeric(args[4])
 PATH_MGF <- args[5]
 TEMP_LOCATION <- args[6]
 TEMP_FILE_SWITCHING <- args[7]
 
 
-##Can be changed evnetually.
-
+##Can be changed
 BY_BATCH <- 7000
-
 bpp <- NULL
 
 if (get_os() == "win") {
@@ -186,7 +167,7 @@ if (get_os() == "win") {
     bpp <- MulticoreParam(workers = min(NUM_CORES, 4),progressbar=FALSE)
 }
 
-##We get the different constant.
+##We get the datamatrxi path
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
 PATH_DATAMATRIX <- dbGetQuery(dbb, "SELECT peaktable FROM peakpicking")[, 1]
 dbDisconnect(dbb)
@@ -196,13 +177,7 @@ dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
 PATH_MSMS <- dbGetQuery(dbb, "SELECT output_ms2 FROM processing")[, 1]
 dbDisconnect(dbb)
 
-
-if(FALSE){
-  PATH_MSMS <- file.path(PU,"OPENMS","msms",basename(PATH_MSMS))
-  PATH_DATAMATRIX <- file.path(PU,"datamatrices",basename(PATH_DATAMATRIX))
-}
-
-
+# Some file can be missed if a file is corrupted, so we remove non existing file.
 PATH_MSMS <- PATH_MSMS[file.exists(PATH_MSMS)]
 ### Checking if an actual file exist
 if(length(PATH_MSMS)==0) stop("No MS2 spectra to Merge.")
@@ -211,7 +186,6 @@ if(length(PATH_MSMS)==0) stop("No MS2 spectra to Merge.")
 dmm <- fread(PATH_DATAMATRIX,sep="\t",header=TRUE)
 dmm <- dmm[,c("mz","rt","num_detection"),drop=FALSE]
 dmm <- as.data.frame(dmm)
-
 num_line <- nrow(dmm)
 
 ##Rttol is 0.5 % of your datasets.
@@ -238,7 +212,7 @@ collision <- NULL
 if("COLLISIONENERGY" %in% fvarLabels(vmgf[[1]])){
   collision <- sapply(vmgf,function(x){as.numeric(as.character(fData(x)[,"COLLISIONENERGY"]))},simplify = FALSE)
 }else{
-  ###In this case we don t know the collision energy, we put it to 0
+  ###In this case we don t know the collision energy, we set it to 0
   collision <- sapply(vmgf,function(x){rep(0,length(x))},simplify = FALSE)
 }
 
@@ -269,44 +243,15 @@ def_val <- mapply(vclose,vbox,FUN=function(x,y){
 
 ##We only keep the feature with a matching MS-MS spectra.
 is_fragmented <- which(sapply(def_val,function(x){length(x)>0}))
-
-if(length(is_fragmented)==0) stop("No MS-MS spectra found matching LC-MS features.")
-
+if(length(is_fragmented)==0) stop("No MS-MS spectra found with matching LC-MS feature.")
 message("Found ",length(is_fragmented)," features with associated MS-MS spectra")
 
-###We compute the intersection for each box eventually.
-
-
-###We aggregate the  data by nearest neighbour
-
+###We aggregate the  data by nearest neighbours and energy
 vfactor <- apply(cbind(unlist(def_val[is_fragmented]),collision[is_fragmented]),1,paste,collapse="_")
-
 listidx <- by(is_fragmented,INDICES = vfactor,FUN=function(x){x})
 
 ####We now process the data by batch to avoid any overhead
 fcc <- bplapply(listidx,FUN = mergeSpectra,specs=vmgf,tab_summary=tab_summary,BPPARAM=bpp)
-
-if(FALSE){
-  iidx <- order(sapply(listidx,length),decreasing = TRUE)[3]
-  # iidx <- 862
-  tsum <- tab_summary[listidx[[iidx]],]
-  
-  merged <- mergeSpectra(listidx[[iidx]],specs=vmgf,tab_summary=tab_summary)
-  merged$spec
-  
-  plot(merged$spec[,1],merged$spec[,2],type="h",lwd=2,xlim=c(0,1.05*max(merged$spec[,1])),
-       xlab="M/Z",ylab="Intensity",cex.lab=1.8,cex.axis=1.3)
-  vmgf[tsum]
-  for(ttp in 1:nrow(tsum)){
-
-  tspec <- vmgf[[tsum[["file"]][ttp]]][[tsum[["idx"]][ttp]]]
-  cat(paste(ttp,length(mz(tspec))),"\n")
-  plot(mz(tspec),intensity(tspec),type="h",lwd=2,xlim=c(0,1.05*max(merged$spec[,1])),
-       xlab="M/Z",ylab="Intensity",cex.lab=1.8,cex.axis=1.3)
-  }
-  
-  
-}
 
 ###We extract all the necessary spectra
 dm_idx <- str_split(names(listidx),fixed("_"),simplify = TRUE)
@@ -323,14 +268,14 @@ consensus_specs <- apply(tab_summary[spec_idx,,drop=FALSE],1,function(x,ref){ref
 supp_infos <- data.frame(FEATURE=dm_idx[,1],ENERGY=dm_idx[,2],NUM_CLUSTERED=sapply(fcc,function(x){x[[4]]}))
 
 ###We store the feature information into a file.
-##We always writethe spectra
+##We always write the spectra
 tcon <- file(description = PATH_MGF, open = "w")
 writeMgfDataFileToConnection(consensus_specs, con = tcon,
 addFields = supp_infos)
 close.connection(tcon)
 
 ##We now add two oclumns ot the data matrix add two columns to the data matrix to avoid later complication.
-###We nwo rewrite the data matrix batch by batch
+###We rewrite the data matrix by batch
 
 ###Reading the column name first.
 ocnames <- as.character(fread(PATH_DATAMATRIX,sep = "\t",nrows=1,header=FALSE)[1,])
@@ -339,17 +284,13 @@ ocnames <- as.character(fread(PATH_DATAMATRIX,sep = "\t",nrows=1,header=FALSE)[1
 quant_prefix <- paste(str_split(ocnames[length(ocnames)],fixed("_"))[[1]][1],"_",sep="")
 to_cut <- which(startsWith(ocnames,quant_prefix))[1]
 df_meta <- data.frame(feature=dm_idx[,1],energy=dm_idx[,2],index=1:nrow(dm_idx))
-
 id_ener_summary <- by(df_meta,INDICES =df_meta$feature,FUN=function(x){
   paste(x[["index"]],paste("(e",x[["energy"]],")",sep=""),sep="_",collapse = "|")
 })
-
 num_fused_all <- tapply(num_fused,INDEX = df_meta$feature,FUN = sum)
-
 pos_dm <- as.integer(names(id_ener_summary))
 o_dm_idx <- order(pos_dm,decreasing=FALSE)
 first_spec <- last_spec <- 0
-
 seq_cut <- seq(2,nrow(dmm),by=BY_BATCH)
 if(seq_cut[length(seq_cut)]!=nrow(dmm)){
     seq_cut[length(seq_cut)+1] <- nrow(dmm)

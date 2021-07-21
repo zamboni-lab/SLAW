@@ -27,7 +27,12 @@ class UI:
         if not mass_spec in cr.MASS_SPEC:
             raise Exception("Unknown mass spectrometer.")
 
-    def initialize_yaml_polarity(self, path_yaml, polarity):
+    def parameters_exist(self):
+        return os.path.isifile(self.path_yaml)
+
+    def initialize_yaml_polarity(self, polarity, path_yaml=None):
+        if path_yaml is None:
+            path_yaml = self.path_yaml
         with open(path_yaml, 'r') as stream:
             raw_yaml = yaml.safe_load(stream)
         if polarity == "positive":

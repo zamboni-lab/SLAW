@@ -22,13 +22,6 @@ import pandas as pd
 import math
 import shutil
 
-def check_peakpicking(pp):
-    pp = pp.upper()
-    peakpicker = ["OPENMS","ADAP","CENTWAVE","BASELINE"]
-    if not pp in peakpicker:
-        raise  Exception("Unknown peakpicking: "+pp+" known peakpickers are "+",".join(peakpicker))
-    return pp
-
 def is_converted(csvfile):
     try:
         tpd = pd.read_csv(csvfile, nrows=0, sep=",", header=0)

@@ -11,9 +11,9 @@ import logging
 ##We import the module of python processing.
 sys.path.append('/pylcmsprocessing')
 from pylcmsprocessing.model.helper.UI import UI
-from pylcmsprocessing.model.experiment import Experiment,check_peakpicking
+from pylcmsprocessing.model.experiment import Experiment
 from pylcmsprocessing.model.steps.optimize_parameters import ParametersOptimizer
-from pylcmsprocessing.model.helper.parameters_handler import ParametersFileHandler,ParametersChecker
+from pylcmsprocessing.model.helper.parameters_handler import ParametersFileHandler,ParametersChecker,check_peakpicking
 from pylcmsprocessing.common.time_evaluation import Timer
 import pylcmsprocessing.common.references as pcr
 
@@ -61,12 +61,12 @@ if __name__=="__main__":
     ##Command line arguments
     if "NCORES" in os.environ and int(os.environ["NCORES"])<num_cpus:
         num_cpus = int(os.environ["NCORES"])
-
     if "MEMORY" in os.environ:
         memory_by_core = int(os.environ["MEMORY"])
 
-    ###We set the JAVA option for the peak picking evnetually
+    ###We set the JAVA option as it is the only way tune memory for MZmine
     os.environ["JAVA_OPTS"] = "-Xms"+str(math.floor(memory_by_core/2))+"m -Xmx"+str(math.floor(memory_by_core)-200)+"m"
+
     ##We output System information
     logging.info("Total memory available: "+str(avail_memory)+" and "+str( multiprocessing.cpu_count())+" cores. The workflow will use "+str(math.floor(memory_by_core))+ " Mb by core on "+str(num_cpus)+" cores.")
 
@@ -84,10 +84,8 @@ if __name__=="__main__":
     if OUTPUT_DIR.startswith("/sauer1"):
         if not os.path.isdir(OUTPUT_DIR):
             logging.warning("Output directory "+OUTPUT_DIR+"does not exist, it will be created.")
-
     LOG = os.path.join(OUTPUT_DIR,"log.txt")
 
-    # subprocess.call("java "+os.environ["JAVA_OPTS"]+" -XshowSettings:vm -version  >> "+LOG+" 2>&1",shell=True)
     #The raw files are always mounted into raw_files
     INPUT = os.environ['INPUT']
     if INPUT.startswith("/sauer1"):
@@ -98,28 +96,21 @@ if __name__=="__main__":
     PATH_YAML = os.path.join(OUTPUT_DIR,"parameters.txt")
     PATH_XML = os.path.join(OUTPUT_DIR,"batch_xml_adap.xml")
     PATH_TEMP_XML = os.path.join(OUTPUT_DIR,"batch_xml_adap_temp.xml")
-
     PATH_TARGET = os.path.join(INPUT,"target.csv")
-    # if os.path.isfile(PATH_TARGET):
-    #     logging.warning("Detected target list")
 
-    setup_params = False
-    #If the yaml parameter file already exist we just read it, else. we don t read it
-    #We put a message if the output is not here.
-# THE sample database is always calculated before doing any processing
+    # THE sample database is always calculated before doing any processing
     PATH_DB = os.path.join(OUTPUT_DIR, "temp_processing_db.sqlite")
     DB_STORAGE = os.path.join(OUTPUT_DIR, "temp_optim", "db_storage")
-
     if os.path.isdir("/sauer1") or "CLUSTER" in os.environ:
         PATH_DB = "/temp_processing_db.sqlite"
         DB_STORAGE = "/db_storage"
 
-    # LOG = "/log.txt"
     #Procesinf of the pipeline eventually.
     path_save_db = os.path.join(OUTPUT_DIR,"processing_db.sqlite")
     if os.path.isfile(path_save_db):
         shutil.copyfile(path_save_db,PATH_DB)
     exp = Experiment(PATH_DB,save_db = path_save_db,reset=False,temp_outdir=OUTPUT_DIR)
+
     ###The polarity computed at this step does not need to mahke any sense.
     path_ms2 = None
     if "MS2" in os.environ:
@@ -136,14 +127,10 @@ if __name__=="__main__":
 
 
     ###In all case the first table is generated.
-    if not os.path.exists(vui.path_yaml):
+    if not vui.parameters_exist():
         ###We just create a an empty yaml file
         vui.generate_yaml_files()
-        vui.initialize_yaml_polarity(PATH_YAML, pol)
-        # self.determine_initial_parameters()
-        logging.info("Empty directory detected, performing initial guess of SLAW parameters.")
-        # temp_opt = ParametersOptimizer(exp, "FAKE", DB_STORAGE, num_workers=num_cpus, input_par=PATH_YAML)
-        # temp_opt.determine_initial_parameters(output_par=PATH_YAML)
+        vui.initialize_yaml_polarity(polarity = pol)
         logging.info("Parameters file generated please check the parameters values/ranges and toggle optimization if needed.")
         ##We always remove the database after processing
         path_temp_db = os.path.join(OUTPUT_DIR, "temp_processing_db.sqlite")
@@ -153,16 +140,17 @@ if __name__=="__main__":
         ###We check the parameter
         pcheck = ParametersChecker(vui.path_yaml)
         ph = pcheck.check_parameters()
+        #@todo
         ph.write_parameters(PATH_YAML)
         if os.path.isfile(PATH_YAML):
             dummy = shutil.copyfile(PATH_YAML, PATH_INITIAL)
-
         ph = ParametersFileHandler(vui.path_yaml)
 
-        ###We first check the parameters
-        ##We check what is the given peakpicker.
+        #We check what is the given peakpicker.
         peakpicking = ph.get_peakpicking()
         peakpicking = check_peakpicking(peakpicking)
+
+        #If necessary we optimize the parameters
         if not ph.is_optimized():
             vui.generate_yaml_files()
             vui.initialize_yaml_polarity(PATH_YAML, pol)
@@ -178,10 +166,11 @@ if __name__=="__main__":
             ###We optimize the parameters
             num_cpus = int(num_cpus)
             par_opt = ParametersOptimizer(exp, PATH_OPTIM,DB_STORAGE,num_workers=num_cpus, input_par=PATH_YAML)
+            #To do remove this.
             optim_string = "balanced_rsm_combined_balanced_rsm_expalign"
             if "SAMPLER" in os.environ:
                 optim_string = os.environ["SAMPLER"]+"_rsm_combined_"+os.environ["SAMPLER"]+"_rsm_expalign"
-                logging.info("The optimisation string is:"+optim_string)
+                logging.debug("The optimisation string is:"+optim_string)
             par_opt.optimize_parameters(output_par=vui.path_yaml, optimizer=optim_string, max_its=max_its,
                                         num_points=num_points,optim_noise = optim_noise,
                                         num_files =optim_files,num_cores=num_cpus)
@@ -205,8 +194,6 @@ if __name__=="__main__":
             vui.generate_MZmine_XML(path_xml=PATH_XML,algorithm=peakpicking)
             logging.info("An ADAP batch file has been generated in the "+OUTPUT_DIR+" directory, you ca use it to refine peakpicking parameters using MZmine.")
     exp.initialise_database(num_cpus,OUTPUT_DIR,vui.polarity,INPUT,["ADAP"], 1)
-    # exp.building_inputs_single_processing(PATH_XML)
-
     if peakpicking=="ADAP" or peakpicking=="BASELINE":
         exp.run_mzmine(pmzmine="/MZmine-2.52-Linux",xml_file=PATH_XML,batch_size=int(num_cpus*3),algorithm=peakpicking,log = LOG)
         exp.correct_conversion()

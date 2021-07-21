@@ -2,6 +2,14 @@ import yaml
 from pydoc import locate
 import common.references as cr
 
+
+def check_peakpicking(pp):
+    pp = pp.upper()
+    peakpicker = ["OPENMS","ADAP","CENTWAVE","BASELINE"]
+    if not pp in peakpicker:
+        raise  Exception("Unknown peakpicking: "+pp+" known peakpickers are "+",".join(peakpicker))
+    return pp
+
 def recur_node(x,path=None,all_args=None):
     if all_args is None:
         all_args = []
@@ -317,31 +325,3 @@ class ParametersChecker:
                     raise ValueError("Parameter " + param + "  set to " + str(cval["value"]) + " should in" +
                                      str(crange["set"]))
         return self.params
-
-
-
-
-            ###We know check the range of the parameters
-if __name__=="__main__":
-    PATH_PARAMS = "E:/parameters.txt"
-    PATH_PARAMS = "U:/users/Alexis/data/slaw_evaluation/MTBLS1129/output_cluster2/output_adap2/parameters.txt"
-    pfh = ParametersFileHandler(PATH_PARAMS)
-    pfh.get_parameters_values().keys()
-
-    loptim = pfh.get_optimizable_parameters()
-    lval = [(lb+ub)/2 for lb,ub in loptim.values()]
-    lnames = list(loptim.keys())
-    pfh.set_all_parameters(lnames,lval)
-    pfh[('peakpicking', 'peaks_deconvolution', 'peak_width')]["value"]
-
-    if pfh.is_optimized():
-        print("To optimize")
-    all_par = pfh.get_parameters(string=False)
-    all_par_str = pfh.get_parameters()
-
-    print("Old value  of ",all_par[2],"is",pfh[all_par[2]]["value"])
-    pfh[all_par[2]] = 10
-    print("New value  of ",all_par[2],"is",pfh[all_par[2]]["value"])
-    pfh[all_par_str[2]] = 30
-    print("New value with str  of ",all_par[2],"is",pfh[all_par[2]]["value"])
-

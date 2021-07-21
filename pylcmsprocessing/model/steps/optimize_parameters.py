@@ -26,10 +26,6 @@ from model.helper.UI import UI
 
 ###Function used to optimize the paramters
 def create_temp_directory(path_exp,params_archive,dir_db,*argv):
-    '''
-    :param argv: The arguments ot be hashed
-    :return: A triplet containing the hash of the paramters, the experiemnt directory and the paramters name
-    '''
     ###We create a hash based on the joined paramters
     hash_val = "_".join([str(pp) for pp in argv])
     hash_val = int(hashlib.sha1(hash_val.encode()).hexdigest(), 16) % (10 ** 8)
@@ -41,7 +37,6 @@ def create_temp_directory(path_exp,params_archive,dir_db,*argv):
     stored_xml = os.path.join(params_archive,"xml_"+str(hash_val)+".xml")
     return hash_val,temp_dir,temp_db,temp_save_db,stored_param,stored_xml
 
-
 def convert_val(x):
     if type(x) is np.ndarray:
         if isinstance(x[0], np.int):
@@ -52,8 +47,6 @@ def convert_val(x):
     elif type(x) is np.float64:
         return float(x.item())
     return x
-
-
 
 # def peak_picking_alignment_scoring(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14,fixed_params):
 def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noise_level_ms2,peakpicking__traces_construction__ppm,
