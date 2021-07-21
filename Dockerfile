@@ -11,7 +11,8 @@ FROM adelabriere/basis_workflow
 #RUN pip3 uninstall -y numpy
 #RUN pip3 install numpy==1.17
 #RUN pip3 install sklearn statsmodels
-RUN apt-get -y --no-install-recommends install openms
+RUN apt-get update
+RUN apt-get -y --no-install-recommends --fix-missing install openms
 
 # Fix for singularity on HPC
 RUN strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
