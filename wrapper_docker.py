@@ -30,6 +30,8 @@ if __name__=="__main__":
     timer = Timer()
     timer.store_point("wstart")
     avail_memory = (psutil.virtual_memory()[1] >> 20)
+
+
     ###We allocate the memory to each process
     num_cpus = int(multiprocessing.cpu_count()-1)
     ###Two limits to check, the number of CPUs and the memory consumption eventually.
@@ -67,6 +69,9 @@ if __name__=="__main__":
     os.environ["JAVA_OPTS"] = "-Xms"+str(math.floor(memory_by_core/2))+"m -Xmx"+str(math.floor(memory_by_core)-200)+"m"
     ##We output System information
     logging.info("Total memory available: "+str(avail_memory)+" and "+str( multiprocessing.cpu_count())+" cores. The workflow will use "+str(math.floor(memory_by_core))+ " Mb by core on "+str(num_cpus)+" cores.")
+
+    # We save the memory available bu
+    os.environ["TOTAL_SLAW_MEMORY"] = str(math.floor(memory_by_core*num_cpus))
 
     MANDATORY_ARGS = ["INPUT", "OUTPUT"]
     if os.environ['OUTPUT'].startswith('/sauer1') or os.environ['INPUT'].startswith('/sauer1'):
@@ -260,6 +265,7 @@ if __name__=="__main__":
         main_adducts_str = None
         adducts_str = None
     ion_num = int(ph["ion_annotation__num_files"]["value"])
+    # If the memory is too small we reduce that
     ion_ppm = float(ph["ion_annotation__ppm"]["value"])
     ion_dmz = float(ph["ion_annotation__dmz"]["value"])
     ion_filter = float(ph["ion_annotation__min_filter"]["value"])
@@ -275,6 +281,11 @@ if __name__=="__main__":
 
     timer.store_point("gap-filling")
     timer.print_point("gap-filling")
+
+    if "TOTAL_SLAW_MEMORY" in os.environ:
+        ion_num = max(math.floor(int(os.environ["TOTAL_SLAW_MEMORY"]) / 2000), 3)
+    if ion_num > 10:
+        ion_num = 10
 
     successfully_processed = exp.annotate_ions(ion_num,ion_ppm,ion_dmz,min_filter=ion_filter,
                 adducts=adducts_str,main_adducts=main_adducts_str, max_workers=num_cpus)

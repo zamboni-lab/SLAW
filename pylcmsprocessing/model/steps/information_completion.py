@@ -17,7 +17,7 @@ import common.tools as ct
 # DMZ <- as.numeric(args[11])
 
 class InformationExpander:
-    def __init__(self,db,dm,temp_dm,rt_model,isotopes,max_iso,max_charge,quant,margin_mz,ppm,dmz,num_workers):
+    def __init__(self,db,dm,temp_dm,rt_model,isotopes,max_iso,max_charge,quant,margin_mz,ppm,dmz,num_files,num_workers):
         self.max_charge = 2
         self.db = db
         self.dm = dm
@@ -30,6 +30,7 @@ class InformationExpander:
         self.margin_mz = margin_mz
         self.ppm = ppm
         self.dmz = dmz
+        self.num_files = num_files
         self.num_workers = num_workers
 
     def need_computing(self):
@@ -51,7 +52,7 @@ class InformationExpander:
         return " ".join(["Rscript",command_line,'"'+self.db+'"','"'+self.dm+'"',
                          '"'+self.temp_dm+'"','"'+self.model+'"','"'+self.isotopes+'"',
                          str(self.max_iso),str(self.max_charge),self.quant,str(self.margin_mz),
-                         str(self.ppm),str(self.dmz),str(self.num_workers)])
+                         str(self.ppm),str(self.dmz),str(self.num_files),str(self.num_workers)])
 
 
 

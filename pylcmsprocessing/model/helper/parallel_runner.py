@@ -7,6 +7,7 @@ import logging
 def run_cl_solo(cl,timeout=None,error=True,output=True):
     ###We always include the environement
     my_env = os.environ.copy()
+    logging.debug(cl)
     if timeout is None:
         process = subprocess.Popen(cl,shell=True, env=my_env, stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
@@ -18,16 +19,16 @@ def run_cl_solo(cl,timeout=None,error=True,output=True):
         str_out = stdout.decode('UTF-8').strip()
         str_err = stderr.decode('UTF-8').strip()
         if len(str_out)>1 and output:
-            logging.debug(str_out)
+            logging.debug("stdout:"+str_out)
         if len(str_err) > 1 and error:
-            logging.debug(str_err)
+            logging.debug("stderr:"+str_err)
     except UnicodeDecodeError:
         pass
 
 def run_cl(cl,timeout=None):
     ###We always include the environement
     my_env = os.environ.copy()
-    logging.info(cl[0])
+    logging.debug(cl[0])
     if timeout is None:
         process = subprocess.Popen(cl[0], shell=True, env=my_env, stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
@@ -38,9 +39,9 @@ def run_cl(cl,timeout=None):
     str_out = stdout.decode('UTF-8').strip()
     str_err = stderr.decode('UTF-8').strip()
     if len(str_out)>1:
-        logging.debug(str_out)
+        logging.debug("stdout:"+str_out)
     if len(str_err) > 1:
-        logging.debug(str_err)
+        logging.debug("stderr:"+str_err)
 
 class ParallelRunner:
     def __init__(self,max_jobs,chunksize=1,timeout=None):

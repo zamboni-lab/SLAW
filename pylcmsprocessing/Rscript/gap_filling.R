@@ -39,7 +39,10 @@ QUANT <- args[8]
 MARGIN_MZ <- as.numeric(args[9])
 PPM <- as.numeric(args[10])
 DMZ <- as.numeric(args[11])
-NUM_WORKERS <- as.integer(args[12])
+NUM_FILES <- as.integer(args[12])
+NUM_WORKERS <- as.integer(args[13])
+
+if(NUM_FILES>MAX_FILES) NUM_FILES <- MAX_FILES
 
 TEMP_NAME <- file.path(dirname(PATH_FILLED),"temp_transfer.csv")
 
@@ -92,8 +95,8 @@ if("QC" %in% all_infos[,3]){
 }
 
 
-if(length(optim_idx)>MAX_FILES){
-  sel_idx <- sample(seq_along(optim_idx),size=MAX_FILES)
+if(length(optim_idx)>NUM_FILES){
+  sel_idx <- sample(seq_along(optim_idx),size=NUM_FILES)
   optim_idx <- optim_idx[sel_idx]
 }
 
@@ -557,9 +560,11 @@ optimizeParameters <-function(praws,peaks,isotopes,infer,
     score <- score/length(xraws)
     return(score)
   }
-  
-  dmz_seq <- exp(seq(log(0.0005),log(0.05),length=10))
-  ppm_seq <- exp(seq(log(2),log(30),length=10))
+
+
+  #This is potentially very costly in memory so we reduce it
+  dmz_seq <- exp(seq(log(0.0005),log(0.05),length=5))
+  ppm_seq <- exp(seq(log(2),log(30),length=5))
   grid_seq <- expand.grid(dmz_seq,ppm_seq)
   veval <- apply(grid_seq,1,FUN = score_gap_filling,xraws=xraws,
         peaks=peaks,isotopes=isotopes,infer=infer,
@@ -570,9 +575,8 @@ optimizeParameters <-function(praws,peaks,isotopes,infer,
   
   best_par <- unlist(grid_seq[which.min(veval),])
   best_val <- min(veval)
-  
-  # cat("best_par: ",unlist(best_par))
-  # cat("best_val: ",best_val)
+
+
   ###one we found a local minima, for the three minimal value we just od a gradient descent.
   dmz_step <- 0.0001
   ppm_step <- 0.2

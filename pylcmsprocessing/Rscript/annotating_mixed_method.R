@@ -171,7 +171,6 @@ computeNetworkRawfile <-
         sel_idx <- which(!is.na(dm[, ..idx]))
       }
       # if needed add the maxPeks argument ot the function
-      #if(length(sel_idx)>maxPeaks&(!missing(idx))) sel_idx <- sort(sample(sel_idx,maxPeaks))
 
       getIntensityPos <- function(dm) {
         which(startsWith("int", colnames(dm)))

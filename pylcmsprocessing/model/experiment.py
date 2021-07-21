@@ -19,6 +19,7 @@ import model.steps.post_processing as pp
 import model.steps.information_completion as ic
 import common.slaw_exception as cs
 import pandas as pd
+import math
 import shutil
 
 def check_peakpicking(pp):
@@ -882,6 +883,7 @@ class Experiment:
             annotaters = annotaters[0:count_annot]
             clis = [ann.command_line(self.output) for ann in annotaters if ann.need_computing()]
             if len(clis) > 0:
+                logging.info(clis)
                 runner.run(clis, silent=True)
         self.close_db()
         self.save_db()
@@ -903,12 +905,19 @@ class Experiment:
 
         expanders = [0] * len(all_peakpicking)
         count_expand = 0
+
+        #The number of files is determined based on the available memory
+        num_files = 3
+        if "TOTAL_SLAW_MEMORY" in os.environ:
+            num_files = max(math.floor(int(os.environ["TOTAL_SLAW_MEMORY"])/2000),3)
+        if num_files > 10:
+            num_files = 10
         
         for pp in all_peakpicking:
             ###pp 4,10,11
             ie = ic.InformationExpander(self.db, pp[4], path_temp_1, path_rt_model, path_isotopes,
                                          max_iso, max_charge, quant,
-                                         margin_mz, ppm, dmz, num_workers)
+                                         margin_mz, ppm, dmz,num_files, num_workers)
             expanders[count_expand] = ie
             count_expand += 1
         if count_expand != 0:
