@@ -257,15 +257,14 @@ fcc <- bplapply(listidx,FUN = mergeSpectra,specs=vmgf,tab_summary=tab_summary,BP
 dm_idx <- str_split(names(listidx),fixed("_"),simplify = TRUE)
 dm_idx <- apply(dm_idx,2,as.numeric)
 num_fused <- sapply(fcc,function(x){x[[4]]})
-
-
 spec_idx <- sapply(fcc,"[[",i=2)
 
 ###We build a list for all the spectra.
 consensus_specs <- apply(tab_summary[spec_idx,,drop=FALSE],1,function(x,ref){ref[[x[4]]][[x[1]]]},ref=vmgf)
 
+
 ###WE make a table of fileds to add
-supp_infos <- data.frame(FEATURE=dm_idx[,1],ENERGY=dm_idx[,2],NUM_CLUSTERED=sapply(fcc,function(x){x[[4]]}))
+supp_infos <- data.frame(SCANS=1:nrow(dm_idx),FEATURE=dm_idx[,1],ENERGY=dm_idx[,2],NUM_CLUSTERED=sapply(fcc,function(x){x[[4]]}))
 
 ###We store the feature information into a file.
 ##We always write the spectra
@@ -306,7 +305,7 @@ for(i in 1:(length(seq_cut)-1)){
     last_spec <- first_spec
 
     while((pos_dm[o_dm_idx[last_spec]]<(lastLine-1))&
-    (last_spec<length(o_dm_idx))){
+    (last_spec<=length(o_dm_idx))){
         last_spec <- last_spec+1
     }
     last_spec <- last_spec-1

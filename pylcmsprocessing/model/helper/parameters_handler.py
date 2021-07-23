@@ -19,7 +19,7 @@ def recur_node(x,path=None,all_args=None,ignored_values = []):
         return all_args.append(tuple(path))
     elif isinstance(x,dict):
         for k in x:
-            if k is in ignored_values:
+            if k in ignored_values:
                 continue
             recur_node(x[k],path+[k],all_args)
     else:

@@ -28,7 +28,7 @@ class UI:
             raise Exception("Unknown mass spectrometer.")
 
     def parameters_exist(self):
-        return os.path.isifile(self.path_yaml)
+        return os.path.isfile(self.path_yaml)
 
     def initialize_yaml_polarity(self, polarity, path_yaml=None):
         if path_yaml is None:

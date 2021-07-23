@@ -1013,7 +1013,6 @@ groupFeatures <-
     if(length(cut_rts)==2){
       cut_rts <- c(cut_rts,number_features+1)
     }
-    sink(NULL)
 
     ###WE update the cliaues vector at every step
     cliques <- vector(mode = "list", length = 10000)

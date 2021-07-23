@@ -37,7 +37,6 @@ TEMP_NAME <- file.path(dirname(PATH_FILLED),"temp_transfer.csv")
 ###This is jsut for evaluation
 TEMP_FILLED <- paste(TEMP_NAME, "non_filled.csv", sep = "_")
 nullvar <- file.copy(PATH_DM, TEMP_FILLED)
-print(TEMP_NAME)
 get_os <- function() {
   if (.Platform$OS.type == "windows") {
     return("win")
@@ -198,7 +197,6 @@ extractMissingInformations <-
         min_mz <- min_mz - margin_mz
         max_mz <- max_mz + margin_mz
         total_extension <- margin_mz
-        # cat("mzr:",paste(sprintf("%0.4f",c(min_mz,max_mz)),collapse = "-"))
         
         tval <-
           tryCatch(
@@ -208,9 +206,6 @@ extractMissingInformations <-
               mzrange = c(min_mz, max_mz)
             ),
             error = function(e) {
-              # print(c(rt_min * 60, rt_max * 60))
-              # print(c(min_mz, max_mz))
-              # print(e)
               return(NA)
             }
           )
@@ -222,7 +217,6 @@ extractMissingInformations <-
         current_extension <- 0
         old_int <- -1
         current_int <- integ_fun(x = xraw@scantime[tval[[1]]], tval[[2]])
-        # if(abs(min_mz-1397.37)<0.05 & abs(rt-1.41)<0.15) browser()
         ###We keep expanding the trace mass.
         while ((abs(expected_intensity-current_int)<=abs(expected_intensity-old_int))&
                (old_int != current_int) & (current_int<expected_intensity)&
@@ -620,14 +614,11 @@ optimizeParameters <-function(praws,peaks,isotopes,infer,
                       dm=dm,quant=quant,optim_intensity=optim_intensity,max_iso = max_iso,
                       max_charge = max_charge,ppm = ppm,
                       dmz = dmz)
-    
-    # cat(currenti_it,new_par,new_val)
     current_it <- current_it+1
   }
   return(c(best_par,best_val))
 }
 
-# cat("Optimizing parameters")
 
 ##We only keep the best parameters
 temp_par <- tryCatch(optimizeParameters(all_samples[optim_idx],all_peaktables[optim_idx],isotopes_to_extract,
@@ -701,35 +692,6 @@ for (idx in 1:(length(batches) - 1)) {
   
 
   expected_intensity <- apply(dm[,..quant_cols],1,mean,na.rm=TRUE)
-  
-  ###We first determine the gap-filling parameters on a set of QCs file.
-  # cat("margin_ppm",sprintf("%0.2f",margin_ppm),"\n")
-  # cat("margin_dmz",sprintf("%0.5f",margin_dmz),"\n")
-  # 
-  # for(idx in seq_along(all_samples)){
-  # 
-  #   exm <- extractMissingInformations(   all_samples[idx],
-  #                                 all_peaktables[idx],
-  #                                 isotopes_to_extract[[idx]],
-  #                                 to_infer[[idx]],
-  #                                 align@rt_correction[[idx]],
-  #                                 dm = dm_peaks,
-  #                                 quant = QUANT,
-  #                                 table_iso = isotopes_table,
-  #                                 dist_c13 =
-  #                                   dist_iso,
-  #                                 margin_mz = margin_dmz,
-  #                                 margin_ppm = margin_ppm,
-  #                                 margin_dmz=margin_dmz,
-  #                                 max_iso = MAX_ISO,
-  #                                 max_charge = MAX_CHARGE,
-  #                                 mean_int = expected_intensity,
-  #                                 ppm = PPM,
-  #                                 dmz = DMZ)
-  # 
-  # }
-
-
   
   vmap <-
     bpmapply(

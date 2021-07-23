@@ -10,8 +10,184 @@ suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
 
 sink(file=stdout())
 
+#This should be read.
+PATH_DM <- "E:/align_testing/output/datamatrices/annotated_peaktable_24fd12e3ef649172b7da123d2207e04f_full.csv"
+PATH_FUSED_MS2 <- "E:/align_testing/output/fused_mgf/fused_mgf_24fd12e3ef649172b7da123d2207e04f.mgf"
+
+
+pdm <- fread(PATH_DM,sep="\t")
+
 ISO_DIST_COL <- "raw_isotopic_pattern"
 ISO_NAME_COL <- "isotopic_pattern_annot"
+MS2_ID_COL <- "ms2_id"
+MEAN_INT <- "mean_intensity"
+MZ_PRECURSOR <- "mz"
+RT_PRECURSOR <- "rt"
+
+MASS_DIFF_REGEXP <- "(?:M\\+([0123456789\\.]+))"
+ISO_DIST_REGEXP <- "([0123456789\\.]+)"
+MS2_DIST <- "([0-9]+)_\\(e([0123456789\\.]+)\\)"
+
+#We first extract the isotopic informations
+ms2_id <- pdm[[MS2_ID_COL]]
+fms2 <- which(ms2_id!="")
+
+info_ms2 <- str_match_all(ms2_id[fms2],MS2_DIST)
+info_iso_mass <- str_match_all(pdm[[ISO_NAME_COL]][fms2],MASS_DIFF_REGEXP)
+info_iso_int <- str_match_all(pdm[[ISO_DIST_COL]][fms2],ISO_DIST_REGEXP)
+
+to_edit <- which((sapply(info_iso_int,nrow)!=0)&(sapply(info_ms2,nrow)!=0))
+to_edit_raw_pos <- fms2[to_edit]
+
+mzm <- pdm[fms2,..MZ_PRECURSOR]
+rtm <- pdm[fms2,..RT_PRECURSOR]
+intm <- pdm[fms2,..MEAN_INT]
+
+##WE build the MS1 spectra for this dataset
+iso_spectra <- mapply(info_iso_mass,info_iso_int,as.list(mzm)[[1]],as.list(intm)[[1]],FUN = 
+                        function(mziso,intiso,mz,int){
+                          if(nrow(mziso)==0){
+                            return(matrix(c(mz,int),nrow=1))
+                          }
+                          intv <- as.numeric(intiso[,2])*int
+                          mzv <- c(mz,mz+as.numeric(mziso[,2]))
+                          return(matrix(c(mzv,intv),ncol=2,byrow=FALSE))
+             })#iso_spectra
+
+ms2 <- readMgfData(PATH_FUSED_MS2)
+
+###Modified Mgf Writing function
+writeMgfDataFileToConnection <- function (splist, con, TITLE = NULL,
+                                          addFields = NULL)
+{
+  if (length(addFields)) {
+    if (length(dim(addFields)) != 2)
+      stop("'addFields' has to be a matrix or data.frame.")
+    if (!is.matrix(addFields))
+      addFields <- do.call(cbind, lapply(addFields, as.character))
+    if (is.null(colnames(addFields)))
+      stop("Column names required on 'addFields'.")
+    if (nrow(addFields) != length(splist))
+      stop("nrow of 'addFields' has to match length of 'splist'")
+  }
+  for (i in seq(along = splist)) {
+    MSnbase:::writeMgfContent(splist[[i]], TITLE = TITLE, con = con,
+                              addFields = addFields[i, ])
+  }
+}
+
+
+energy_ms2 <- sapply(info_ms2,function(x){as.numeric(x[,3])},simplify = FALSE)
+mgf_index_ms2 <- sapply(info_ms2,function(x){as.numeric(x[,2])},simplify = FALSE)
+dm_idx <- rep(1:length(info_ms2),times=sapply(energy_ms2,length))
+ofms2 <- rep(fms2,times=sapply(energy_ms2,length))
+mgf_index_ms2 <- unlist(mgf_index_ms2)
+energy_ms2 <- unlist(energy_ms2)
+ofms2 <- unlist(ofms2)
+mgf_order <- order(mgf_index_ms2)
+dm_idx <- dm_idx[mgf_order]
+mgf_index_ms2 <- mgf_index_ms2[mgf_order]
+energy_ms2 <- energy_ms2[mgf_order]
+ofms2 <- ofms2[mgf_order]
+
+
+lspecs <- vector(mode="list",length=(2*length(ms2)))
+pos_original <- 1
+pos_edit <- 1
+pos_lspecs <- 1
+supp_feature_id <- numeric(length(lspecs))
+supp_mslevel <- numeric(length(lspecs))
+supp_collision_energy <- numeric(length(lspecs))
+
+
+
+setdiff(seq_along(ms2),mgf_index_ms2)
+
+ms2[["X589"]]
+
+while(pos_original<length(ms2)){
+  ##If the position is inferior to the length of the data.
+  ref_spec <- ms2[[paste("X",pos_original,sep="")]]
+  
+  
+  if(pos_edit<length(mgf_index_ms2)){
+    while(mgf_index_ms2[pos_edit]==pos_original){
+      sp2 <- copy(ref_spec)
+      #We copy t
+      sp2@msLevel <- 1
+      sp2@msLevel <- 1
+      ms1_spectrum <- iso_spectra[[dm_idx[pos_edit]]]
+      sp2@mz <- ms1_spectrum[,1]
+      sp2@intensity <- ms1_spectrum[,2]
+      sp2@scans <- -1
+      lspecs[[pos_lspecs]] <- sp2
+      pos_edit <- pos_edit+1
+      pos_lspecs <- pos_lspecs+1
+    }
+  }
+  
+  lspecs[[pos_lspecs]] <- ref_spec
+  pos_original <- pos_original+1
+  pos_lspecs <- pos_lspecs+1
+  
+}
+
+lspecs[[499]]@mz
+
+lspecs[[500]]
+
+
+
+###WE rebuild the MGF while incorporating an attribute in the data of this 
+tcon <- file(description = PATH_MGF, open = "w")
+writeMgfDataFileToConnection(consensus_specs, con = tcon,
+                             addFields = supp_infos)
+close.connection(tcon)
+
+
+ms2[]
+
+
+pdm[[ISO_DIST_COL]][fms2]
+
+
+
+
+S2_DIST <- "344_(e27.5)"
+
+
+pdm[[ISO_DIST_COL]]
+
+
+tvals <- c("M|M+1.0043_1C13|M+1.9976_Cl37@Br81","M|M+1.0039_1C13","")
+
+
+str_match_all(tvals,MASS_DIFF_REGEXP)
+
+str_match_all(tvals,"M|(?:M+([0123456789\\.]+)_\\|?)+")
+
+names <- sapply(vmap[[is]][[2]], function(x) {
+  if (!is.data.frame(x))
+    return(NA)
+  sel_idx <- 2:nrow(x)
+  n0 <- paste("M")
+  n_supp <-
+    paste("M+",
+          sprintf("%0.4f", x[sel_idx, "massdiff"]),
+          "_",
+          x[sel_idx, "name"],
+          sep = "",
+          collapse = "|")
+  return(paste(n0, n_supp, sep = "|"))
+})
+dists <- sapply(vmap[[is]][[2]], function(x) {
+  if (!is.data.frame(x))
+    return(NA)
+  paste(sprintf("%0.4f", x[, "int"] / max(x[, "int"])), collapse = "|")
+})
+
+
+
 
 
 ###Merging of spectra using the msClust algorithm
@@ -352,3 +528,12 @@ for(i in 1:(length(seq_cut)-1)){
 a <- file.rename(PATH_DATAMATRIX,TEMP_FILE_SWITCHING)
 a <- file.rename(TEMP_LOCATION,PATH_DATAMATRIX)
 a <- file.remove(TEMP_FILE_SWITCHING)
+
+rvals <- 1:length(ms2)
+for(idx in 1:length(ms2)){
+  kx <- paste("X",idx,sep="")
+  rvals[idx] <- ms2[[kx]]@precursorMz
+}
+
+rvals
+max(rvals)

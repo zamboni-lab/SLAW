@@ -12,8 +12,6 @@ import model.helper.inputbuilder as ib
 import model.helper.parallel_runner as pr
 import model.steps.peakpicking as mp
 import model.steps.grouping as mg
-import model.steps.evaluating as me
-import model.helper.comparing_evaluation as mce
 import model.steps.annotating_adducts_isotopes as mai
 import model.steps.post_processing as pp
 import model.steps.information_completion as ic
@@ -773,56 +771,7 @@ class Experiment:
         self.save_db()
         logging.info("Alignment finished")
 
-    def evaluate(self, max_workers=2, silent=False):
-        num_workers = self.get_workers()
-        runner = pr.ParallelRunner(min(num_workers, max_workers))
 
-        ####We create all the grouper eventually
-        self.open_db()
-        c = self.conn.cursor()
-        c.execute("SELECT id,hash,peaktable FROM peakpicking")
-        all_eval = c.fetchall()
-        to_evaluate = [0] * len(all_eval)
-        count_eval = 0
-        file_replicates = self.output.getFile(cr.TEMP["REPLICATES"])
-        ###Wrting replicates
-        c.execute("SELECT replicate FROM samples")
-        all_replicates = [str(a[0]) + "\n" for a in c.fetchall()]
-        with open(file_replicates, "w+") as summary:
-            summary.writelines(all_replicates)
-        dir_evaluation = self.output.getDir(cr.OUT["EVALUATION"])
-        for eval in all_eval:
-
-            output = os.path.join(dir_evaluation, "eval_" + eval[1] + ".csv")
-            oev = me.Evaluate(eval[2], output, file_replicates)
-
-            if oev.need_computing():
-                query = self.update_query_construction("peakpicking", "id", str(eval[0]), "evaluation",
-                                                       oev.get_output())
-                c.execute(query)
-                to_evaluate[count_eval] = oev
-                count_eval += 1
-
-        if count_eval != 0:
-            evals = to_evaluate[0:count_eval]
-            clis = [g.command_line() for g in evals]
-            if len(clis) > 0:
-                runner.run(clis, silent=silent)
-        self.close_db()
-
-        ####We check all the smaple to evaluate in a loop first
-
-    ####This part is not done in paralllel
-    def compare_evaluation(self):
-        cfigure = self.output.getFile(cr.OUT["RES_EVALUATION"]["FIGURE"])
-        cparam = self.output.getFile(cr.OUT["RES_EVALUATION"]["PARAM"])
-        cpeaktables = self.output.getDir(cr.OUT["RES_EVALUATION"]["PEAKTABLES"])
-        ###We perform the comparison
-        ce = mce.evaluationComparator(self.db, cparam, cfigure, cpeaktables)
-        cli = ce.command_line()
-        ###The comparison is always done on single ocore
-        subprocess.call(cli, shell=True)
-    #Annotations
     #Parallelism is handled by R always a single trhead in this case
     def annotate_ions(self, nfiles, ppm, dmz, adducts=None, main_adducts=None, max_workers=2, min_filter = 2):
         num_workers = self.get_workers()
