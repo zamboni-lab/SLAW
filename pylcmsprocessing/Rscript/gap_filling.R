@@ -16,18 +16,6 @@ sink(file=stdout())
 ##Argument passed by Python
 args <- commandArgs(trailingOnly = TRUE)
 
-# if(FALSE){
-#   args <- c(
-#     "U:/processing/out/sammy\ slaw\ 2/processing_db.sqlite",
-#     "U:/processing/out/sammy\ slaw\ 2/datamatrices/datamatrix_0028bf4ff085fe827d1c9de5b9935fa9.csv",
-#     "E:/dm_output.csv",
-#     "U:/processing/out/sammy\ slaw\ 2/temp/alignement.rds",
-#     "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/isotopes.tsv",
-#     "4","3","intensity","0.001","15","0.01","5"
-#   )
-# }
-
-
 PATH_DB <- args[1]
 PATH_DM <- args[2]
 PATH_FILLED <- args[3]

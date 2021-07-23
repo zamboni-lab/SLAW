@@ -730,10 +730,9 @@ class Experiment:
         dir_blocks = self.output.getDir(cr.TEMP["GROUPING"]["BLOCKS"])
         dir_alignment = self.output.getFile(cr.TEMP["GROUPING"]["ALIGNMENT"])
         dir_datamatrix = self.output.getDir(cr.OUT["DATAMATRIX"])
-        # path_fig = self.output.getFile(cr.OUT["FIGURES"]["RT_DEV"])
         path_fig = "/output/figure"
 
-        ###Spectra fusin output
+        ###Spectra fusing output
         path_temp_1 = self.output.getFile(cr.TEMP["FUSING"]["TEMP1"])
         path_temp_2 = self.output.getFile(cr.TEMP["FUSING"]["TEMP2"])
         path_fused_msms = self.output.getFile(cr.OUT["FUSED_MSMS"])
