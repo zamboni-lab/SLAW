@@ -10,7 +10,7 @@ def check_peakpicking(pp):
         raise  Exception("Unknown peakpicking: "+pp+" known peakpickers are "+",".join(peakpicker))
     return pp
 
-def recur_node(x,path=None,all_args=None):
+def recur_node(x,path=None,all_args=None,ignored_values = []):
     if all_args is None:
         all_args = []
     if path is None:
@@ -19,12 +19,16 @@ def recur_node(x,path=None,all_args=None):
         return all_args.append(tuple(path))
     elif isinstance(x,dict):
         for k in x:
+            if k is in ignored_values:
+                continue
             recur_node(x[k],path+[k],all_args)
     else:
         pass
 
-def get_all_parameters(ex):
+def get_all_parameters(ex,ignored_values=None):
     all_args=[]
+    if ignored_values is None:
+        ignored_values = []
     recur_node(ex,all_args=all_args)
     return all_args
 
@@ -41,9 +45,6 @@ def set_val(raw,path,value,field="value"):
     k = path[0]
     set_val(raw[k],path[1:],value,field=field)
 
-
-
-
 def parse_type(type):
     return locate(type)
 
@@ -54,6 +55,7 @@ def make_val_list(val):
         to_check = [val]
     return to_check
 
+# These function check a specific kind of argument
 def check_type(val,type):
     to_check = make_val_list(val)
     for val in to_check:
@@ -63,23 +65,28 @@ def check_range(val,range):
     to_check = make_val_list(val)
     nval = []
     for val in to_check:
-        if val>range[1]:
-            nval.append(range[1])
-            continue
         if val<range[0]:
             nval.append(range[0])
+            continue
+        if val>range[1]:
+            nval.append(range[1])
             continue
         nval.append(val)
     if len(nval)==1: return nval[0]
     return nval
-
-
 
 def check_set(val,set):
     to_check = make_val_list(val)
     for val in to_check:
         if val not in set:
             raise ValueError
+
+def check_multiset(val,multiset):
+    vals = val.split(",")
+    for val in vals:
+        if val not in multiset:
+            raise ValueError
+
 
 
 ###Range parameters are handled internally by adding min and max in internal parameters.
@@ -279,9 +286,7 @@ class ParametersChecker:
         need_optimization = self.params["optimization__need_optimization"]["value"]
         for param in parameter_list:
             cval = self.params[param]
-            # print("CVAL:",cval)
             crange = self.range[param]
-            # print("CRANGE:",crange)
             ###If param is a created name, we change it.
             if any([param.endswith(x) for x in fsuffix]):
                 param = fsep.join(param.split(fsep)[:-1])
@@ -300,28 +305,34 @@ class ParametersChecker:
                         dummy = check_range(cval["range"]["max"], crange["range"])
                     else:
                         try:
-                            # print("CVAL_BEFORE_CHECK_RANGE:", cval)
                             new_range = check_range(cval["range"],crange["range"])
-                            # print("CHANGED_RANGE:", param, "from", cval["range"], " to ", nrange)
                             self.params.set_range(param,new_range)
-                            # print("CVAL_AFTER_SET_RANGE:", cval)
                         except ValueError:
                             raise ValueError("Parameter range of " + param + "  set to " + str(cval["range"]) + " should be in" +
                                              str(crange["range"]))
 
                 try:
-                    # print("CVAL_BEFORE_CHECK:", cval)
                     nrange = check_range(cval["value"],crange["range"])
-                    # print("CHANGED_VALUE:", param,"from" ,cval["value"]," to ", nrange)
                     self.params[param]=nrange
                 except ValueError:
-                    raise ValueError("Parameter " + param + "  set to " + str(cval["value"]) + " should in" +
+                    raise ValueError("Parameter " + param + "  set to " + str(cval["value"]) + " should be in" +
                                      str(crange["range"]))
 
             if "set" in crange:
                 try:
                     check_set(cval["value"], crange["set"])
                 except ValueError:
-                    raise ValueError("Parameter " + param + "  set to " + str(cval["value"]) + " should in" +
+                    raise ValueError("Parameter " + param + "  set to " + str(cval["value"]) + " should be in" +
                                      str(crange["set"]))
+            if "multiset" in crange:
+                try:
+                    check_multiset(cval["value"], crange["multiset"])
+                except ValueError:
+                    raise ValueError("Parameter " + param + "  set to " + str(cval["value"]) + " values should be in" +
+                                     ",".join([str(xx) for xx in crange["multiset"]]))
         return self.params
+
+
+# Handle the output of SLAW, removing thbe useless one
+# class Formatter:
+#     def __init__(self,):
