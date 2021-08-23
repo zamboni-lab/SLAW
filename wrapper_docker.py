@@ -34,6 +34,8 @@ if __name__=="__main__":
 
     ###We allocate the memory to each process
     num_cpus = int(multiprocessing.cpu_count()-1)
+    if num_cpus<=2:
+        num_cpus = int(multiprocessing.cpu_count())
     ###Two limits to check, the number of CPUs and the memory consumption eventually.
     #1.5 Go
     memory_by_core = 1048*1.2
@@ -59,7 +61,7 @@ if __name__=="__main__":
         num_cpus = int(os.environ["LSB_MAX_NUM_PROCESSORS"])
 
     ##Command line arguments
-    if "NCORES" in os.environ and int(os.environ["NCORES"])<num_cpus:
+    if "NCORES" in os.environ:
         num_cpus = int(os.environ["NCORES"])
     if "MEMORY" in os.environ:
         memory_by_core = int(os.environ["MEMORY"])
