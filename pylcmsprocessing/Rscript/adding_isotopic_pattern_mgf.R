@@ -91,7 +91,7 @@ energy_ms2 <- energy_ms2[mgf_order]
 ofms2 <- ofms2[mgf_order]
 
 
-lspecs <- vector(mode="list",length=(2*length(ms2)))
+lspecs <- vector(mode="list",length=(2*length(ms2)
 pos_original <- 1
 pos_edit <- 1
 pos_lspecs <- 1
@@ -100,26 +100,18 @@ supp_mslevel <- numeric(length(lspecs))
 supp_collision_energy <- numeric(length(lspecs))
 
 
-
-setdiff(seq_along(ms2),mgf_index_ms2)
-
-ms2[["X589"]]
-
-while(pos_original<length(ms2)){
+while(pos_original<=length(ms2)){
   ##If the position is inferior to the length of the data.
   ref_spec <- ms2[[paste("X",pos_original,sep="")]]
-  
-  
-  if(pos_edit<length(mgf_index_ms2)){
+  if(pos_edit<=length(mgf_index_ms2)){
     while(mgf_index_ms2[pos_edit]==pos_original){
       sp2 <- copy(ref_spec)
       #We copy t
-      sp2@msLevel <- 1
-      sp2@msLevel <- 1
+      sp2@msLevel <- as.integer(1)
       ms1_spectrum <- iso_spectra[[dm_idx[pos_edit]]]
       sp2@mz <- ms1_spectrum[,1]
       sp2@intensity <- ms1_spectrum[,2]
-      sp2@scans <- -1
+      sp2@precScanNum <- as.integer(-1)
       lspecs[[pos_lspecs]] <- sp2
       pos_edit <- pos_edit+1
       pos_lspecs <- pos_lspecs+1
@@ -129,13 +121,10 @@ while(pos_original<length(ms2)){
   lspecs[[pos_lspecs]] <- ref_spec
   pos_original <- pos_original+1
   pos_lspecs <- pos_lspecs+1
-  
 }
 
-lspecs[[499]]@mz
 
-lspecs[[500]]
-
+lspecs[[length(lspecs)]]
 
 
 ###WE rebuild the MGF while incorporating an attribute in the data of this 
@@ -470,70 +459,4 @@ id_ener_summary <- by(df_meta,INDICES =df_meta$feature,FUN=function(x){
 })
 num_fused_all <- tapply(num_fused,INDEX = df_meta$feature,FUN = sum)
 pos_dm <- as.integer(names(id_ener_summary))
-o_dm_idx <- order(pos_dm,decreasing=FALSE)
-first_spec <- last_spec <- 0
-seq_cut <- seq(2,nrow(dmm),by=BY_BATCH)
-if(seq_cut[length(seq_cut)]!=nrow(dmm)){
-    seq_cut[length(seq_cut)+1] <- nrow(dmm)
-}
-
-###We then write the file to the data by batch
-for(i in 1:(length(seq_cut)-1)){
-    firstLine <- seq_cut[i]
-    lastLine <- seq_cut[i+1]-1
-
-    ###We recover the spec to write
-    first_spec <- last_spec+1
-    last_spec <- first_spec
-
-    while((pos_dm[o_dm_idx[last_spec]]<(lastLine-1))&
-    (last_spec<length(o_dm_idx))){
-        last_spec <- last_spec+1
-    }
-    last_spec <- last_spec-1
-
-
-    sub_dm <- fread(PATH_DATAMATRIX,sep = "\t",skip=firstLine-1,nrows=lastLine-firstLine+1,header=TRUE)
-    colnames(sub_dm) <- ocnames
-
-    ###We write the elemnts in the new column
-    seq_ms2_idx <- rep(NA,nrow(sub_dm))
-    seq_num_ms2 <- rep(NA,nrow(sub_dm))
-
-    ###Adding the supplementary MS2 informations to the table.
-    if(last_spec!=first_spec){
-        ###We always verify that the msms spectra are non negative
-        sel_pos <- pos_dm[o_dm_idx[first_spec:last_spec]]
-        sel_ppos <- sel_pos>(firstLine-1)
-        if(sum(sel_ppos)>=1){
-          seq_ms2_idx[pos_dm[o_dm_idx[first_spec:last_spec]][sel_ppos]-firstLine+1] <- id_ener_summary[o_dm_idx[first_spec:last_spec][sel_ppos]]
-          seq_num_ms2[pos_dm[o_dm_idx[first_spec:last_spec]][sel_ppos]-firstLine+1] <- num_fused_all[o_dm_idx[first_spec:last_spec][sel_ppos]]
-        }
-    }
-
-    ###WE add it to the data table eventually
-    cnames <- colnames(sub_dm)
-    cnames <- c(cnames[1:(to_cut-1)],"ms2_id","num_clustered_ms2",cnames[to_cut:ncol(sub_dm)])
-    sub_dm <- cbind(sub_dm[,1:(to_cut-1),drop=FALSE],seq_ms2_idx,seq_num_ms2,
-    sub_dm[,to_cut:ncol(sub_dm),drop=FALSE])
-    colnames(sub_dm) <- cnames
-    if(i==1){
-        fwrite(sub_dm,file=TEMP_LOCATION,sep = "\t",row.names = FALSE,col.names = TRUE)
-    }else{
-        fwrite(sub_dm,file=TEMP_LOCATION,sep = "\t",append=TRUE,row.names = FALSE,col.names = FALSE)
-    }
-}
-
-###We then rename and remove the file.
-a <- file.rename(PATH_DATAMATRIX,TEMP_FILE_SWITCHING)
-a <- file.rename(TEMP_LOCATION,PATH_DATAMATRIX)
-a <- file.remove(TEMP_FILE_SWITCHING)
-
-rvals <- 1:length(ms2)
-for(idx in 1:length(ms2)){
-  kx <- paste("X",idx,sep="")
-  rvals[idx] <- ms2[[kx]]@precursorMz
-}
-
-rvals
-max(rvals)
+o_dm_idx <- order(pos_dm,decreasing=FAL

@@ -34,8 +34,13 @@ if __name__=="__main__":
 
     ###We allocate the memory to each process
     num_cpus = int(multiprocessing.cpu_count()-1)
+    if num_cpus<=3:
+        num_cpus = int(multiprocessing.cpu_count())
+
+
     ###Two limits to check, the number of CPUs and the memory consumption eventually.
     #1.5 Go
+    # recommended_memory_by_core
     memory_by_core = 1048*1.2
 
     if "MEMORY" in os.environ:

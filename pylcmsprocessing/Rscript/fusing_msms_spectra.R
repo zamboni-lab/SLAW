@@ -319,7 +319,7 @@ for(i in 1:(length(seq_cut)-1)){
     seq_num_ms2 <- rep(NA,nrow(sub_dm))
 
     ###Adding the supplementary MS2 informations to the table.
-    if(last_spec!=first_spec){
+    if(last_spec>first_spec){
         ###We always verify that the msms spectra are non negative
         sel_pos <- pos_dm[o_dm_idx[first_spec:last_spec]]
         sel_ppos <- sel_pos>(firstLine-1)
