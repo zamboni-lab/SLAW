@@ -264,7 +264,8 @@ consensus_specs <- apply(tab_summary[spec_idx,,drop=FALSE],1,function(x,ref){ref
 
 
 ###WE make a table of fileds to add
-supp_infos <- data.frame(SCANS=1:nrow(dm_idx),FEATURE=dm_idx[,1],ENERGY=dm_idx[,2],NUM_CLUSTERED=sapply(fcc,function(x){x[[4]]}))
+supp_infos <- data.frame(SCANS=1:nrow(dm_idx),FEATURE=dm_idx[,1],ENERGY=dm_idx[,2],
+                         PRECURSOR_INTENSITY = ,NUM_CLUSTERED=sapply(fcc,function(x){x[[4]]}))
 
 ###We store the feature information into a file.
 ##We always write the spectra
@@ -295,7 +296,7 @@ if(seq_cut[length(seq_cut)]!=nrow(dmm)){
     seq_cut[length(seq_cut)+1] <- nrow(dmm)
 }
 
-###We then write the file to the data by batch
+###We then write the file to the data by batches to prevent any overloading of memory
 for(i in 1:(length(seq_cut)-1)){
     firstLine <- seq_cut[i]
     lastLine <- seq_cut[i+1]-1

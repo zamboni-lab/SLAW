@@ -379,7 +379,7 @@ createNetworkMultifiles <-
       ###We compute the network for the selected files.
 
       ledges <-
-          bpmapply(
+          bptry({bpmapply(
             seq_cut[i]:(seq_cut[i + 1] - 1),
             as.list(raw_files[seq_cut[i]:(seq_cut[i + 1] - 1)]),
             as.list(opened_raw_files[seq_cut[i]:(seq_cut[i + 1] - 1)]),
@@ -391,15 +391,19 @@ createNetworkMultifiles <-
             ),
             BPPARAM = bpp
           #bptry( )
-        )
+        )}, error=identity)
       # message("ledges",format(object.size(ledges),"Mb"))
 
 
-      found_errors <- sapply(ledges, function(x) {
+      found_errors <- which(sapply(ledges, function(x) {
         "remote_perror" %in% class(x)
-      })
+      }))
       ##Cahcing errors
-      if (sum(found_errors)>=1){
+      if (length(found_errors)>=1){
+        for(err_pos in found_errors){
+          print("traceback")
+          print(attr(found_errors[[err_pos]], "traceback"))
+        }
         ledges <- attr(ledges, "result")
         ledges <-
           ledges[!found_errors]
@@ -487,8 +491,31 @@ annotateCliques <- function(cliques,
     bpp <- bpparam()
 
   ###We add a clique identifier to simplify the lcustering steps.
-  vfeat <-
-    bpmapply(
+  # vfeat <-
+  #   bptry({bpmapply(
+  #     cliques,
+  #     as.list(seq_along(cliques)),
+  #     FUN = annotateCliqueInterpretMSspectrum,
+  #     MoreArgs=list(dm = peaklist,
+  #     adducts = adducts,
+  #     main_adducts = main_adducts,
+  #     ionization_mode = ionization_mode,
+  #     val_int = val_int),
+  #     BPPARAM = bpp,SIMPLIFY = FALSE
+  #   )})
+options(warn = 2, keep.source = TRUE, error = quote({
+  dump.frames()  # writes to last.dump
+  n <- length(last.dump)
+  if (n > 0) {
+    calls <- names(last.dump)
+    cat("Environment:\n", file = stderr())
+    cat(paste0("  ", seq_len(n), ": ", calls), sep = "\n", file = stderr())
+    cat("\n", file = stderr())
+  }
+
+    q()
+}))
+    vfeat <- mapply(
       cliques,
       as.list(seq_along(cliques)),
       FUN = annotateCliqueInterpretMSspectrum,
@@ -496,9 +523,18 @@ annotateCliques <- function(cliques,
       adducts = adducts,
       main_adducts = main_adducts,
       ionization_mode = ionization_mode,
-      val_int = val_int),
-      BPPARAM = bpp,SIMPLIFY = FALSE
+      val_int = val_int,SIMPLIFY = FALSE)
     )
+
+
+
+    for(elem in vfeat){
+      if("remote_perror" %in% class(elem)){
+        print("traceback")
+        print(attr(elem,"traceback"))
+      }
+    }
+
 
   totfeat <- 1
   for (i in seq_along(vfeat)) {
@@ -1026,7 +1062,7 @@ groupFeatures <-
     ##We update all the cliques.
     for (i in seq(1, length(cut_rts) - 2)) {
       message("Processing batch ",i)
-      message("Variables:",cut_rts[i],"-",cut_rts[i+2],"current cliques size is ",length(cliques))
+      message("Variables: ",cut_rts[i],"-",cut_rts[i+2]," current cliques size is ",length(cliques))
       sel_idx <- ort[cut_rts[i]:cut_rts[i + 2]]
       anclique <- createNetworkMultifiles(
         dm[sel_idx, , drop = FALSE],
@@ -1197,9 +1233,9 @@ raw_files <- raw_files[sel_files]
 ###Setting up the parallel processing
 bpp <- NULL
 if (get_os() == "win") {
-  bpp <- SnowParam(workers = NUM_CORES,progressbar=TRUE)
+  bpp <- SnowParam(workers = NUM_CORES,progressbar=TRUE,stop.on.error=FALSE)
 } else{
-  bpp <- MulticoreParam(workers = min(NUM_CORES, 10),progressbar=TRUE)
+  bpp <- MulticoreParam(workers = min(NUM_CORES, 10),progressbar=TRUE,stop.on.error=FALSE)
 }
 
 opened_raw_files <- sapply(raw_files,readMSData, mode = "onDisk")
