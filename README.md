@@ -1,4 +1,5 @@
 # SLAW
+### You can find the last SLAW version on adelabriere/slaw:dev. It notably includes a fix for low memory/ processor settings. The main docker will be updated once the reviewing process in over.
 
 ### You can find the last SLAW version on adelabriere/slaw:dev. It notably includes a fix for low memory/ processor settings. The main docker will be updated once the reviewing process in over.
 
