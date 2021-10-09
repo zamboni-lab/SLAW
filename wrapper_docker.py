@@ -118,6 +118,7 @@ if __name__=="__main__":
 
     ###The polarity computed at this step does not need to mahke any sense.
     path_ms2 = None
+    path_ms2 = None
     if "MS2" in os.environ:
         path_ms2 = os.environ["MS2"]
     ###We try to guess the polarity form the middle file.
@@ -158,7 +159,7 @@ if __name__=="__main__":
         #If necessary we optimize the parameters
         if not ph.is_optimized():
             vui.generate_yaml_files()
-            vui.initialize_yaml_polarity(PATH_YAML, pol)
+            vui.initialize_yaml_polarity(pol,PATH_YAML)
             with open(vui.path_yaml, 'r') as stream:
                 raw_yaml = yaml.safe_load(stream)
             num_points = int(ph["optimization__number_of_points"]["value"])
