@@ -120,7 +120,7 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
     ####We load the orginial yaml file
     parameters = ph.ParametersFileHandler(initial_yaml)
     peakpicking = parameters.get_peakpicking()
-    peakpicking = me.check_peakpicking(peakpicking)
+    peakpicking = ph.check_peakpicking(peakpicking)
     l_values = [convert_val(ll) for ll in args_refs.values()]
     parameters.set_all_parameters(list(args_refs.keys()),list(l_values))
 
@@ -366,7 +366,7 @@ class ParametersOptimizer:
         ###We filter out the parameters if they are not used by the algorithm
         parameters = ph.ParametersFileHandler(self.temp_yaml)
         peakpicking = parameters.get_peakpicking()
-        peakpicking = me.check_peakpicking(peakpicking)
+        peakpicking = ph.check_peakpicking(peakpicking)
         if peakpicking!="ADAP":
             to_remove =["peakpicking__peaks_deconvolution__rt_wavelet__const",
             "peakpicking__peaks_deconvolution__rt_wavelet__add",
@@ -517,7 +517,7 @@ class ParametersOptimizer:
         ###We filter out the parameters if they are not used by the algorithm
         parameters = ph.ParametersFileHandler(self.temp_yaml)
         peakpicking = parameters.get_peakpicking()
-        peakpicking = me.check_peakpicking(peakpicking)
+        peakpicking = ph.check_peakpicking(peakpicking)
         if peakpicking!="ADAP":
             to_remove =["peakpicking__peaks_deconvolution__rt_wavelet__const",
             "peakpicking__peaks_deconvolution__rt_wavelet__add",

@@ -9,6 +9,176 @@ suppressWarnings(suppressMessages(library(rtree, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
 
 sink(file=stdout())
+
+#This should be read.
+PATH_DM <- "E:/align_testing/output/datamatrices/annotated_peaktable_24fd12e3ef649172b7da123d2207e04f_full.csv"
+PATH_FUSED_MS2 <- "E:/align_testing/output/fused_mgf/fused_mgf_24fd12e3ef649172b7da123d2207e04f.mgf"
+
+
+pdm <- fread(PATH_DM,sep="\t")
+
+ISO_DIST_COL <- "raw_isotopic_pattern"
+ISO_NAME_COL <- "isotopic_pattern_annot"
+MS2_ID_COL <- "ms2_id"
+MEAN_INT <- "mean_intensity"
+MZ_PRECURSOR <- "mz"
+RT_PRECURSOR <- "rt"
+
+MASS_DIFF_REGEXP <- "(?:M\\+([0123456789\\.]+))"
+ISO_DIST_REGEXP <- "([0123456789\\.]+)"
+MS2_DIST <- "([0-9]+)_\\(e([0123456789\\.]+)\\)"
+
+#We first extract the isotopic informations
+ms2_id <- pdm[[MS2_ID_COL]]
+fms2 <- which(ms2_id!="")
+
+info_ms2 <- str_match_all(ms2_id[fms2],MS2_DIST)
+info_iso_mass <- str_match_all(pdm[[ISO_NAME_COL]][fms2],MASS_DIFF_REGEXP)
+info_iso_int <- str_match_all(pdm[[ISO_DIST_COL]][fms2],ISO_DIST_REGEXP)
+
+to_edit <- which((sapply(info_iso_int,nrow)!=0)&(sapply(info_ms2,nrow)!=0))
+to_edit_raw_pos <- fms2[to_edit]
+
+mzm <- pdm[fms2,..MZ_PRECURSOR]
+rtm <- pdm[fms2,..RT_PRECURSOR]
+intm <- pdm[fms2,..MEAN_INT]
+
+##WE build the MS1 spectra for this dataset
+iso_spectra <- mapply(info_iso_mass,info_iso_int,as.list(mzm)[[1]],as.list(intm)[[1]],FUN = 
+                        function(mziso,intiso,mz,int){
+                          if(nrow(mziso)==0){
+                            return(matrix(c(mz,int),nrow=1))
+                          }
+                          intv <- as.numeric(intiso[,2])*int
+                          mzv <- c(mz,mz+as.numeric(mziso[,2]))
+                          return(matrix(c(mzv,intv),ncol=2,byrow=FALSE))
+             })#iso_spectra
+
+ms2 <- readMgfData(PATH_FUSED_MS2)
+
+###Modified Mgf Writing function
+writeMgfDataFileToConnection <- function (splist, con, TITLE = NULL,
+                                          addFields = NULL)
+{
+  if (length(addFields)) {
+    if (length(dim(addFields)) != 2)
+      stop("'addFields' has to be a matrix or data.frame.")
+    if (!is.matrix(addFields))
+      addFields <- do.call(cbind, lapply(addFields, as.character))
+    if (is.null(colnames(addFields)))
+      stop("Column names required on 'addFields'.")
+    if (nrow(addFields) != length(splist))
+      stop("nrow of 'addFields' has to match length of 'splist'")
+  }
+  for (i in seq(along = splist)) {
+    MSnbase:::writeMgfContent(splist[[i]], TITLE = TITLE, con = con,
+                              addFields = addFields[i, ])
+  }
+}
+
+
+energy_ms2 <- sapply(info_ms2,function(x){as.numeric(x[,3])},simplify = FALSE)
+mgf_index_ms2 <- sapply(info_ms2,function(x){as.numeric(x[,2])},simplify = FALSE)
+dm_idx <- rep(1:length(info_ms2),times=sapply(energy_ms2,length))
+ofms2 <- rep(fms2,times=sapply(energy_ms2,length))
+mgf_index_ms2 <- unlist(mgf_index_ms2)
+energy_ms2 <- unlist(energy_ms2)
+ofms2 <- unlist(ofms2)
+mgf_order <- order(mgf_index_ms2)
+dm_idx <- dm_idx[mgf_order]
+mgf_index_ms2 <- mgf_index_ms2[mgf_order]
+energy_ms2 <- energy_ms2[mgf_order]
+ofms2 <- ofms2[mgf_order]
+
+
+lspecs <- vector(mode="list",length=(2*length(ms2)
+pos_original <- 1
+pos_edit <- 1
+pos_lspecs <- 1
+supp_feature_id <- numeric(length(lspecs))
+supp_mslevel <- numeric(length(lspecs))
+supp_collision_energy <- numeric(length(lspecs))
+
+
+while(pos_original<=length(ms2)){
+  ##If the position is inferior to the length of the data.
+  ref_spec <- ms2[[paste("X",pos_original,sep="")]]
+  if(pos_edit<=length(mgf_index_ms2)){
+    while(mgf_index_ms2[pos_edit]==pos_original){
+      sp2 <- copy(ref_spec)
+      #We copy t
+      sp2@msLevel <- as.integer(1)
+      ms1_spectrum <- iso_spectra[[dm_idx[pos_edit]]]
+      sp2@mz <- ms1_spectrum[,1]
+      sp2@intensity <- ms1_spectrum[,2]
+      sp2@precScanNum <- as.integer(-1)
+      lspecs[[pos_lspecs]] <- sp2
+      pos_edit <- pos_edit+1
+      pos_lspecs <- pos_lspecs+1
+    }
+  }
+  
+  lspecs[[pos_lspecs]] <- ref_spec
+  pos_original <- pos_original+1
+  pos_lspecs <- pos_lspecs+1
+}
+
+
+lspecs[[length(lspecs)]]
+
+
+###WE rebuild the MGF while incorporating an attribute in the data of this 
+tcon <- file(description = PATH_MGF, open = "w")
+writeMgfDataFileToConnection(consensus_specs, con = tcon,
+                             addFields = supp_infos)
+close.connection(tcon)
+
+
+ms2[]
+
+
+pdm[[ISO_DIST_COL]][fms2]
+
+
+
+
+S2_DIST <- "344_(e27.5)"
+
+
+pdm[[ISO_DIST_COL]]
+
+
+tvals <- c("M|M+1.0043_1C13|M+1.9976_Cl37@Br81","M|M+1.0039_1C13","")
+
+
+str_match_all(tvals,MASS_DIFF_REGEXP)
+
+str_match_all(tvals,"M|(?:M+([0123456789\\.]+)_\\|?)+")
+
+names <- sapply(vmap[[is]][[2]], function(x) {
+  if (!is.data.frame(x))
+    return(NA)
+  sel_idx <- 2:nrow(x)
+  n0 <- paste("M")
+  n_supp <-
+    paste("M+",
+          sprintf("%0.4f", x[sel_idx, "massdiff"]),
+          "_",
+          x[sel_idx, "name"],
+          sep = "",
+          collapse = "|")
+  return(paste(n0, n_supp, sep = "|"))
+})
+dists <- sapply(vmap[[is]][[2]], function(x) {
+  if (!is.data.frame(x))
+    return(NA)
+  paste(sprintf("%0.4f", x[, "int"] / max(x[, "int"])), collapse = "|")
+})
+
+
+
+
+
 ###Merging of spectra using the msClust algorithm
 mergeSpectra <- function(x,specs,tab_summary,cos_thresh=0.7,round=10){
 
@@ -257,107 +427,36 @@ fcc <- bplapply(listidx,FUN = mergeSpectra,specs=vmgf,tab_summary=tab_summary,BP
 dm_idx <- str_split(names(listidx),fixed("_"),simplify = TRUE)
 dm_idx <- apply(dm_idx,2,as.numeric)
 num_fused <- sapply(fcc,function(x){x[[4]]})
+
+
 spec_idx <- sapply(fcc,"[[",i=2)
 
 ###We build a list for all the spectra.
 consensus_specs <- apply(tab_summary[spec_idx,,drop=FALSE],1,function(x,ref){ref[[x[4]]][[x[1]]]},ref=vmgf)
 
+###WE make a table of fileds to add
+supp_infos <- data.frame(FEATURE=dm_idx[,1],ENERGY=dm_idx[,2],NUM_CLUSTERED=sapply(fcc,function(x){x[[4]]}))
 
-###We make a table of the supplementary informations
-supp_infos <- data.frame(SCANS=1:nrow(dm_idx),FEATURE=dm_idx[,1],ENERGY=dm_idx[,2],NUM_CLUSTERED=sapply(fcc,function(x){x[[4]]}))
+###We store the feature information into a file.
+##We always write the spectra
+tcon <- file(description = PATH_MGF, open = "w")
+writeMgfDataFileToConnection(consensus_specs, con = tcon,
+addFields = supp_infos)
+close.connection(tcon)
 
-###We find the columns with the quantitive informations
+##We now add two oclumns ot the data matrix add two columns to the data matrix to avoid later complication.
+###We rewrite the data matrix by batch
+
+###Reading the column name first.
 ocnames <- as.character(fread(PATH_DATAMATRIX,sep = "\t",nrows=1,header=FALSE)[1,])
 
 ###We detect the position of the first qaunt_columns
 quant_prefix <- paste(str_split(ocnames[length(ocnames)],fixed("_"))[[1]][1],"_",sep="")
 to_cut <- which(startsWith(ocnames,quant_prefix))[1]
-
-##We now add two oclumns ot the data matrix add two columns to the data matrix to avoid later complication.
-###We rewrite the data matrix by batch
-
 df_meta <- data.frame(feature=dm_idx[,1],energy=dm_idx[,2],index=1:nrow(dm_idx))
 id_ener_summary <- by(df_meta,INDICES =df_meta$feature,FUN=function(x){
   paste(x[["index"]],paste("(e",x[["energy"]],")",sep=""),sep="_",collapse = "|")
 })
-prec_intensities <- rep(0.0,length(id_ener_summary))
 num_fused_all <- tapply(num_fused,INDEX = df_meta$feature,FUN = sum)
 pos_dm <- as.integer(names(id_ener_summary))
-o_dm_idx <- order(pos_dm,decreasing=FALSE)
-first_spec <- last_spec <- 0
-seq_cut <- seq(2,nrow(dmm),by=BY_BATCH)
-if(seq_cut[length(seq_cut)]!=nrow(dmm)){
-    seq_cut[length(seq_cut)+1] <- nrow(dmm)
-}
-
-###User for the precursor intensity
-sel_files <- tab_summary[spec_idx,"file"]
-feat_idx <- supp_infos$FEATURE
-
-###We then write the file to the data by batches to prevent any overloading of memory
-quantities_idx <- to_cut:length(ocnames)
-for(i in 1:(length(seq_cut)-1)){
-    firstLine <- seq_cut[i]
-    lastLine <- seq_cut[i+1]-1
-
-    ###We recover the spec to write
-    first_spec <- last_spec+1
-    last_spec <- first_spec
-
-    while((pos_dm[o_dm_idx[last_spec]]<(lastLine-1))&
-    (last_spec<=length(o_dm_idx))){
-        last_spec <- last_spec+1
-    }
-    last_spec <- last_spec-1
-
-
-    sub_dm <- fread(PATH_DATAMATRIX,sep = "\t",skip=firstLine-1,nrows=lastLine-firstLine+1,header=TRUE)
-    colnames(sub_dm) <- ocnames
-
-    ###We write the elemnts in the new column
-    seq_ms2_idx <- rep(NA,nrow(sub_dm))
-    seq_num_ms2 <- rep(NA,nrow(sub_dm))
-
-    ###Adding the supplementary MS2 informations to the table.
-    if(last_spec>first_spec){
-        ###We always verify that the msms spectra are non negative
-        sel_pos <- pos_dm[o_dm_idx[first_spec:last_spec]]
-        sel_ppos <- sel_pos>(firstLine-1)
-        if(sum(sel_ppos)>=1){
-          seq_ms2_idx[pos_dm[o_dm_idx[first_spec:last_spec]][sel_ppos]-firstLine+1] <- id_ener_summary[o_dm_idx[first_spec:last_spec][sel_ppos]]
-          seq_num_ms2[pos_dm[o_dm_idx[first_spec:last_spec]][sel_ppos]-firstLine+1] <- num_fused_all[o_dm_idx[first_spec:last_spec][sel_ppos]]
-          #This is to update the intensities
-          temp_col_idx <- quantities_idx[sel_files[first_spec:last_spec]]
-          prec_intensities[first_spec:last_spec] <- sub_dm[feat_idx[first_spec:last_spec],..temp_col_idx,drop=FALSE]
-        }
-    }
-
-    ###WE add it to the data table eventually
-    cnames <- colnames(sub_dm)
-    cnames <- c(cnames[1:(to_cut-1)],"ms2_id","num_clustered_ms2",cnames[quantities_idx])
-    sub_dm <- cbind(sub_dm[,1:(to_cut-1),drop=FALSE],seq_ms2_idx,seq_num_ms2,
-    sub_dm[,..quantities_idx,drop=FALSE])
-    colnames(sub_dm) <- cnames
-    if(i==1){
-        fwrite(sub_dm,file=TEMP_LOCATION,sep = "\t",row.names = FALSE,col.names = TRUE)
-    }else{
-        fwrite(sub_dm,file=TEMP_LOCATION,sep = "\t",append=TRUE,row.names = FALSE,col.names = FALSE)
-    }
-}
-
-
-
-###We store the feature information into a file.
-##We always write the spectra
-tcon <- file(description = PATH_MGF, open = "w")
-supp_infos$PRECURSOR_INTENSITY <- prec_intensities
-writeMgfDataFileToConnection(consensus_specs, con = tcon,
-                             addFields = supp_infos)
-close.connection(tcon)
-
-
-
-###We then rename and remove the file.
-a <- file.rename(PATH_DATAMATRIX,TEMP_FILE_SWITCHING)
-a <- file.rename(TEMP_LOCATION,PATH_DATAMATRIX)
-a <- file.remove(TEMP_FILE_SWITCHING)
+o_dm_idx <- order(pos_dm,decreasing=FAL

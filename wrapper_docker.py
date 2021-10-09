@@ -29,16 +29,18 @@ if __name__=="__main__":
     logging.StreamHandler(sys.stdout)
     timer = Timer()
     timer.store_point("wstart")
-    avail_memory = (psutil.virtual_memory()[1] >> 20)
 
+    #This part handle the memory. No less than 500 Mo.
+    avail_memory = (psutil.virtual_memory()[1] >> 20)
 
     ###We allocate the memory to each process
     num_cpus = int(multiprocessing.cpu_count()-1)
-    if num_cpus<=2:
+    if num_cpus<=4:
         num_cpus = int(multiprocessing.cpu_count())
     ###Two limits to check, the number of CPUs and the memory consumption eventually.
     #1.5 Go
-    memory_by_core = 1048*1.2
+    # recommended_memory_by_core
+    memory_by_core = 500
 
     if "MEMORY" in os.environ:
         memory_by_core = int(math.floor(float(os.environ["MEMORY"])))
@@ -46,17 +48,13 @@ if __name__=="__main__":
         ##We save it ofr optimization
         os.environ["MEMORY"] = str(math.floor(memory_by_core))
 
-
-    ##This is the number of thread
-    ncores = avail_memory//memory_by_core
-
+    ##This is the theoric number of maximum threads available
+    n_theoric_cores = avail_memory//memory_by_core
     ###Now we check if this number is bigger than the number of thread
-    if ncores <= num_cpus:
-        num_cpus = ncores
-        if not "MEMORY" in os.environ:
-            memory_by_core = avail_memory/num_cpus
+    if n_theoric_cores <= num_cpus:
+        num_cpus = n_theoric_cores
 
-    ###Specific case on EULER cluster
+    ###Specific case on Spectrum cluster
     if "LSB_MAX_NUM_PROCESSORS" in os.environ and int(os.environ["LSB_MAX_NUM_PROCESSORS"])<num_cpus:
         num_cpus = int(os.environ["LSB_MAX_NUM_PROCESSORS"])
 
@@ -115,6 +113,7 @@ if __name__=="__main__":
 
     ###The polarity computed at this step does not need to mahke any sense.
     path_ms2 = None
+    path_ms2 = None
     if "MS2" in os.environ:
         path_ms2 = os.environ["MS2"]
     ###We try to guess the polarity form the middle file.
@@ -155,7 +154,7 @@ if __name__=="__main__":
         #If necessary we optimize the parameters
         if not ph.is_optimized():
             vui.generate_yaml_files()
-            vui.initialize_yaml_polarity(PATH_YAML, pol)
+            vui.initialize_yaml_polarity(pol,PATH_YAML)
             with open(vui.path_yaml, 'r') as stream:
                 raw_yaml = yaml.safe_load(stream)
             num_points = int(ph["optimization__number_of_points"]["value"])

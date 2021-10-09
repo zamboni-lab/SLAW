@@ -1,5 +1,7 @@
 # SLAW
 
+### You can find the last SLAW version on adelabriere/slaw:dev. It notably includes a fix for low memory/ processor settings. The main docker will be updated once the reviewing process in over.
+
 SLAW is a scalable containerized untargeted LC-MS processing workflow developped by Alexis Delabriere in the [Zamboni Lab](https://imsb.ethz.ch/research/zamboni.html) at ETH Zurich. An explanation of the advantages of SLAW and its motivations of development can be found in this [blog post](https://metabolomics.blog/2021/07/02/slaw/). If you want to cite SLAW please use the following (updated when accepted):
 
 Delabriere A, Warmer P, Brennsteiner V and Zamboni N, SLAW: A scalable and self-optimizing processing workflow for untargeted LC-MS, 2021, submitted).

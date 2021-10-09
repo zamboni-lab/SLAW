@@ -7,8 +7,6 @@ suppressWarnings(suppressMessages(library(BiocParallel,warn.conflicts = FALSE)))
 ###We need to read the peaktable and the data matrices.
 
 ###TODO includes dilutionQC.
-
-
 get_os <- function() {
   if (.Platform$OS.type == "windows") {
     return("win")
@@ -21,30 +19,13 @@ get_os <- function() {
   }
 }
 
-
-
 sink(file=stdout())
-# ##Argument passed by Python
 args <- commandArgs(trailingOnly = TRUE)
-
-
 PATH_DB <- args[1]
 PATH_DM <- args[2]
 TEMP_DM <- args[3]
 FOLD_BLANK <- as.numeric(args[4])
 QC_FRACTION <- as.numeric(args[5])
-
-if(FALSE){
-  PATH_DB <-  "U:/processing/out/sammy slaw 2/processing_db.sqlite"
-  PATH_DM <- "E:/test.csv"
-  TEMP_DM <- "E:/temp_test.csv"
-  FOLD_BLANK <- 1
-  QC_FRACTION <- 0.1
-}
-
-
-
-
 
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
 all_types <- dbGetQuery(dbb, "SELECT types FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")[, 1]
@@ -55,18 +36,11 @@ dbDisconnect(dbb)
 
 ###We get the size of the data matrix.
 dm <- fread(PATH_DM,nrows = 2,sep="\t")
-ccol <- ncol(dm)
-
 cnames <- colnames(dm)
 int_prefix <- str_split(cnames,"_")[length(cnames)][[1]][1]
-
 sel_int <- which(str_starts(cnames,int_prefix))
-
-
 sampled_match_name <- str_match(basename(all_samples),"(.+)\\.[a-zA-Z]+")[,2]
 col_match_names <- str_match(cnames[sel_int],paste(int_prefix,"_(.+)\\.csv",sep=""))[,2]
-vma <- match(sampled_match_name,col_match_names)
-
 
 first_line <- 0
 batch_size <- ceiling((4000**2)/ncol(dm))
