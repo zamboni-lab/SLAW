@@ -523,7 +523,7 @@ options(warn = 2, keep.source = TRUE, error = quote({
       adducts = adducts,
       main_adducts = main_adducts,
       ionization_mode = ionization_mode,
-      val_int = val_int,SIMPLIFY = FALSE)
+      val_int = val_int),SIMPLIFY = FALSE
     )
 
 

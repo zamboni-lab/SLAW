@@ -56,7 +56,7 @@ class UI:
         if not os.path.isfile(self.path_yaml) or force:
             with open(self.path_yaml, 'w') as outfile:
                 yaml.dump(raw_yaml,outfile, default_flow_style=False)
-            self.initialize_yaml_polarity(self.path_yaml,self.polarity)
+            self.initialize_yaml_polarity(self.polarity,self.path_yaml)
 
 
     def generate_MZmine_XML(self,path_xml=None,algorithm="ADAP"):

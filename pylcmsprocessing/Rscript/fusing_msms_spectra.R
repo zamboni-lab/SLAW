@@ -263,30 +263,24 @@ spec_idx <- sapply(fcc,"[[",i=2)
 consensus_specs <- apply(tab_summary[spec_idx,,drop=FALSE],1,function(x,ref){ref[[x[4]]][[x[1]]]},ref=vmgf)
 
 
-###WE make a table of fileds to add
-supp_infos <- data.frame(SCANS=1:nrow(dm_idx),FEATURE=dm_idx[,1],ENERGY=dm_idx[,2],
-                         PRECURSOR_INTENSITY = ,NUM_CLUSTERED=sapply(fcc,function(x){x[[4]]}))
+###We make a table of the supplementary informations
+supp_infos <- data.frame(SCANS=1:nrow(dm_idx),FEATURE=dm_idx[,1],ENERGY=dm_idx[,2],NUM_CLUSTERED=sapply(fcc,function(x){x[[4]]}))
 
-###We store the feature information into a file.
-##We always write the spectra
-tcon <- file(description = PATH_MGF, open = "w")
-writeMgfDataFileToConnection(consensus_specs, con = tcon,
-addFields = supp_infos)
-close.connection(tcon)
-
-##We now add two oclumns ot the data matrix add two columns to the data matrix to avoid later complication.
-###We rewrite the data matrix by batch
-
-###Reading the column name first.
+###We find the columns with the quantitive informations
 ocnames <- as.character(fread(PATH_DATAMATRIX,sep = "\t",nrows=1,header=FALSE)[1,])
 
 ###We detect the position of the first qaunt_columns
 quant_prefix <- paste(str_split(ocnames[length(ocnames)],fixed("_"))[[1]][1],"_",sep="")
 to_cut <- which(startsWith(ocnames,quant_prefix))[1]
+
+##We now add two oclumns ot the data matrix add two columns to the data matrix to avoid later complication.
+###We rewrite the data matrix by batch
+
 df_meta <- data.frame(feature=dm_idx[,1],energy=dm_idx[,2],index=1:nrow(dm_idx))
 id_ener_summary <- by(df_meta,INDICES =df_meta$feature,FUN=function(x){
   paste(x[["index"]],paste("(e",x[["energy"]],")",sep=""),sep="_",collapse = "|")
 })
+prec_intensities <- rep(0.0,length(id_ener_summary))
 num_fused_all <- tapply(num_fused,INDEX = df_meta$feature,FUN = sum)
 pos_dm <- as.integer(names(id_ener_summary))
 o_dm_idx <- order(pos_dm,decreasing=FALSE)
@@ -296,7 +290,12 @@ if(seq_cut[length(seq_cut)]!=nrow(dmm)){
     seq_cut[length(seq_cut)+1] <- nrow(dmm)
 }
 
+###User for the precursor intensity
+sel_files <- tab_summary[spec_idx,"file"]
+feat_idx <- supp_infos$FEATURE
+
 ###We then write the file to the data by batches to prevent any overloading of memory
+quantities_idx <- to_cut:length(ocnames)
 for(i in 1:(length(seq_cut)-1)){
     firstLine <- seq_cut[i]
     lastLine <- seq_cut[i+1]-1
@@ -327,14 +326,17 @@ for(i in 1:(length(seq_cut)-1)){
         if(sum(sel_ppos)>=1){
           seq_ms2_idx[pos_dm[o_dm_idx[first_spec:last_spec]][sel_ppos]-firstLine+1] <- id_ener_summary[o_dm_idx[first_spec:last_spec][sel_ppos]]
           seq_num_ms2[pos_dm[o_dm_idx[first_spec:last_spec]][sel_ppos]-firstLine+1] <- num_fused_all[o_dm_idx[first_spec:last_spec][sel_ppos]]
+          #This is to update the intensities
+          temp_col_idx <- quantities_idx[sel_files[first_spec:last_spec]]
+          prec_intensities[first_spec:last_spec] <- sub_dm[feat_idx[first_spec:last_spec],..temp_col_idx,drop=FALSE]
         }
     }
 
     ###WE add it to the data table eventually
     cnames <- colnames(sub_dm)
-    cnames <- c(cnames[1:(to_cut-1)],"ms2_id","num_clustered_ms2",cnames[to_cut:ncol(sub_dm)])
+    cnames <- c(cnames[1:(to_cut-1)],"ms2_id","num_clustered_ms2",cnames[quantities_idx])
     sub_dm <- cbind(sub_dm[,1:(to_cut-1),drop=FALSE],seq_ms2_idx,seq_num_ms2,
-    sub_dm[,to_cut:ncol(sub_dm),drop=FALSE])
+    sub_dm[,..quantities_idx,drop=FALSE])
     colnames(sub_dm) <- cnames
     if(i==1){
         fwrite(sub_dm,file=TEMP_LOCATION,sep = "\t",row.names = FALSE,col.names = TRUE)
@@ -342,6 +344,18 @@ for(i in 1:(length(seq_cut)-1)){
         fwrite(sub_dm,file=TEMP_LOCATION,sep = "\t",append=TRUE,row.names = FALSE,col.names = FALSE)
     }
 }
+
+
+
+###We store the feature information into a file.
+##We always write the spectra
+tcon <- file(description = PATH_MGF, open = "w")
+supp_infos$PRECURSOR_INTENSITY <- prec_intensities
+writeMgfDataFileToConnection(consensus_specs, con = tcon,
+                             addFields = supp_infos)
+close.connection(tcon)
+
+
 
 ###We then rename and remove the file.
 a <- file.rename(PATH_DATAMATRIX,TEMP_FILE_SWITCHING)
