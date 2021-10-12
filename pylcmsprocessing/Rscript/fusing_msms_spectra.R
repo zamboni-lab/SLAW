@@ -184,7 +184,7 @@ if(length(PATH_MSMS)==0) stop("No MS2 spectra to Merge.")
 
 ###We read the data matrix.
 dmm <- fread(PATH_DATAMATRIX,sep="\t",header=TRUE)
-dmm <- dmm[,c("mz","rt","num_detection"),drop=FALSE]
+dmm <- dmm[,c("mz","rt","num_detection","mean_intensity"),drop=FALSE]
 dmm <- as.data.frame(dmm)
 num_line <- nrow(dmm)
 
@@ -264,7 +264,8 @@ consensus_specs <- apply(tab_summary[spec_idx,,drop=FALSE],1,function(x,ref){ref
 
 
 ###We make a table of the supplementary informations
-supp_infos <- data.frame(SCANS=1:nrow(dm_idx),FEATURE=dm_idx[,1],ENERGY=dm_idx[,2],NUM_CLUSTERED=sapply(fcc,function(x){x[[4]]}))
+supp_infos <- data.frame(SCANS=1:nrow(dm_idx),FEATURE=dm_idx[,1],ENERGY=dm_idx[,2],NUM_CLUSTERED=sapply(fcc,function(x){x[[4]]}),
+PRECURSOR_INTENSITY=dmm[dm_idx[,1],"mean_intensity"])
 
 ###We find the columns with the quantitive informations
 ocnames <- as.character(fread(PATH_DATAMATRIX,sep = "\t",nrows=1,header=FALSE)[1,])
@@ -280,7 +281,7 @@ df_meta <- data.frame(feature=dm_idx[,1],energy=dm_idx[,2],index=1:nrow(dm_idx))
 id_ener_summary <- by(df_meta,INDICES =df_meta$feature,FUN=function(x){
   paste(x[["index"]],paste("(e",x[["energy"]],")",sep=""),sep="_",collapse = "|")
 })
-prec_intensities <- rep(0.0,length(id_ener_summary))
+#prec_intensities <- rep(0.0,length(id_ener_summary))
 num_fused_all <- tapply(num_fused,INDEX = df_meta$feature,FUN = sum)
 pos_dm <- as.integer(names(id_ener_summary))
 o_dm_idx <- order(pos_dm,decreasing=FALSE)
@@ -292,7 +293,7 @@ if(seq_cut[length(seq_cut)]!=nrow(dmm)){
 
 ###User for the precursor intensity
 sel_files <- tab_summary[spec_idx,"file"]
-feat_idx <- supp_infos$FEATURE
+feat_idx <- df_meta$feature
 
 ###We then write the file to the data by batches to prevent any overloading of memory
 quantities_idx <- to_cut:length(ocnames)
@@ -326,9 +327,6 @@ for(i in 1:(length(seq_cut)-1)){
         if(sum(sel_ppos)>=1){
           seq_ms2_idx[pos_dm[o_dm_idx[first_spec:last_spec]][sel_ppos]-firstLine+1] <- id_ener_summary[o_dm_idx[first_spec:last_spec][sel_ppos]]
           seq_num_ms2[pos_dm[o_dm_idx[first_spec:last_spec]][sel_ppos]-firstLine+1] <- num_fused_all[o_dm_idx[first_spec:last_spec][sel_ppos]]
-          #This is to update the intensities
-          temp_col_idx <- quantities_idx[sel_files[first_spec:last_spec]]
-          prec_intensities[first_spec:last_spec] <- sub_dm[feat_idx[first_spec:last_spec],..temp_col_idx,drop=FALSE]
         }
     }
 
@@ -350,7 +348,6 @@ for(i in 1:(length(seq_cut)-1)){
 ###We store the feature information into a file.
 ##We always write the spectra
 tcon <- file(description = PATH_MGF, open = "w")
-supp_infos$PRECURSOR_INTENSITY <- prec_intensities
 writeMgfDataFileToConnection(consensus_specs, con = tcon,
                              addFields = supp_infos)
 close.connection(tcon)

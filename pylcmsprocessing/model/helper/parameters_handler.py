@@ -1,6 +1,7 @@
 import yaml
 from pydoc import locate
 import common.references as cr
+import logging
 
 
 def check_peakpicking(pp):
@@ -100,10 +101,25 @@ class ParametersFileHandler:
         self.path=path
         with open(self.path, 'r') as stream:
             self.dic = yaml.safe_load(stream)
+
+        self.dic = self.make_current_parameters(self.dic)
+
         self.param_path = get_all_parameters(self.dic)
         if ranges:
             self.ranges=[]
             self.find_ranges()
+
+    def make_current_parameters(self,params):
+        #This is only used for backcompatibility
+        with open(cr.DATA["YAML"], 'r') as stream:
+            current_parameters = yaml.safe_load(stream)
+        for key in current_parameters:
+            if key in params:
+                continue
+            else:
+                logging.info("Incomplete parameters detected, completing current parameters with for '{}'".format(key))
+                params[key] = current_parameters[key]
+        return params
 
     def __getitem__(self, item):
         if isinstance(item,str):

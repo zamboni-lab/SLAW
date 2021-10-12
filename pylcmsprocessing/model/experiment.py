@@ -822,7 +822,6 @@ class Experiment:
             annotaters = annotaters[0:count_annot]
             clis = [ann.command_line(self.output) for ann in annotaters if ann.need_computing()]
             if len(clis) > 0:
-                logging.info(clis)
                 runner.run(clis, silent=True)
         self.close_db()
         self.save_db()
