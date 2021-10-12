@@ -1,3 +1,14 @@
+#CHANGES
+
+Version v1.1.0: 12/10/2021 (adelabriere/slaw:dev and adelabriere/slaw:v1.1.0): 
+* Fixed a ton of bugs related notably to:
+ * Empty peaktables produced in some settings
+ * Incorrect cores estimations
+ * Incorrect parametrization
+* Added precursor intensity to mgf
+
+Initial release
+
 # SLAW
 ### You can find the last SLAW version on adelabriere/slaw:dev. It notably includes a fix for low memory/ processor settings. The main docker will be updated once the reviewing process in over.
 
@@ -17,7 +28,7 @@ docker pull adelabriere/slaw:latest
 ```
 or from singularityHub.
 
-## Current version : 1.0.0
+## Current version : 1.1.0
 
 ## Running SLAW
 
