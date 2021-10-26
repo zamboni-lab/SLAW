@@ -30,12 +30,16 @@ def getOptimizer(name="rsm"):
 
 
 class samplingOptimizer:
-    def __init__(self,sampler,optimizer,bounds,weight=None,fixed_arguments=None):
+    def __init__(self,sampler,optimizer,bounds,weight=None,fixed_arguments=None,hard_threshold=None):
         if fixed_arguments is None:
             self.fixed_arguments = {}
         else:
             self.fixed_arguments = fixed_arguments
         self.bounds=bounds
+        if hard_threshold is None:
+            hard_threshold = [False]*len(hard_threshold)
+        self.hard_threshold = hard_threshold
+
         self.sampler=sampler
         if weight is not None:
             self.sampler.set_weight(weight)
@@ -94,7 +98,7 @@ class samplingOptimizer:
 
 
 class bounds:
-    def __init__(self,lb,ub,names):
+    def __init__(self,lb,ub,names,fixed=None):
         if ub is None:
             self.ub = [x[1] for x in lb]
             self.ub = dict(zip(names,self.ub))
@@ -118,11 +122,9 @@ class bounds:
                                  extreme=0.02, only_positive=True):
         if valid is None:
             valid = [True]*len(self.lb)
-
         tnlb = self.lb.copy()
         tnub = self.ub.copy()
         crange = {k:(self.ub[k] - self.lb[k]) *0.5 for k in self.lb}
-        key_list = list(self.lb.keys())
         for ip in range(len(names)):
             if not valid[ip]:
                 continue

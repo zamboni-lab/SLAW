@@ -21,4 +21,6 @@ COPY pylcmsprocessing /pylcmsprocessing
 #This is the 2 workflow running script
 COPY run_lcms_processing.sh /run_workflow.sh
 COPY wrapper_docker.py /wrapper_docker.py
-ENTRYPOINT bash run_workflow.sh
+ENV LC_ALL C
+ENV PATH="/:${PATH}"
+ENTRYPOINT bash /run_workflow.sh

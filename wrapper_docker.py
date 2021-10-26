@@ -167,7 +167,7 @@ if __name__=="__main__":
             ###We optimize the parameters
             num_cpus = int(num_cpus)
             par_opt = ParametersOptimizer(exp, PATH_OPTIM,DB_STORAGE,num_workers=num_cpus, input_par=PATH_YAML)
-            #To do remove this.
+            #TODO eventually prevent this retarded metrics from happening.
             optim_string = "balanced_rsm_combined_balanced_rsm_expalign"
             if "SAMPLER" in os.environ:
                 optim_string = os.environ["SAMPLER"]+"_rsm_combined_"+os.environ["SAMPLER"]+"_rsm_expalign"

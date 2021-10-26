@@ -117,7 +117,7 @@ class ParametersFileHandler:
             if key in params:
                 continue
             else:
-                logging.info("Incomplete parameters detected, completing current parameters with for '{}'".format(key))
+                logging.info("Incomplete parameters detected, completing current parameters with defaults for '{}'".format(key))
                 params[key] = current_parameters[key]
         return params
 

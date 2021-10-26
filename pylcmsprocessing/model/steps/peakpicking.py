@@ -5,17 +5,13 @@ import hashlib
 import logging
 from common.tools import get_platform,find_rscript
 
-
 class PeakPicking(ABC):
-
     @abstractmethod
     def need_computing(self):
         pass
-
     @abstractmethod
     def command_line_processing(self):
         pass
-
 
 ###We eill test this one a billion time because we don t really need the rest
 class PeakPickingMZmine(PeakPicking):
