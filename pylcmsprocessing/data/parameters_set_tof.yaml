@@ -54,7 +54,7 @@ peakpicking:
       description: Integer. (All peakpicker) The minimum number of points detected in consecutive scans for a trace to be valid. Any trace containing less than min_scan point is discarded.
       value: 15
       range:
-        - 2.5
+        - 4.5
         - 8.5
     num_outliers:
       priority: LOW

@@ -56,8 +56,6 @@ class ParallelRunner:
             run_cl_solo(command_lines[0],timeout=timeout)
         else:
             supp_str=""
-            # if log is not None:
-            #     supp_str = " >> "+log+" 2>&1"
             largs = [(cl+supp_str,timeout) for cl in command_lines]
             with mp.Pool(min(self.max_jobs,len(command_lines))) as executor:
                 executor.map(run_cl, largs)

@@ -8,9 +8,20 @@ from common.tools import get_platform,find_rscript
 class PeakPicking(ABC):
     @abstractmethod
     def need_computing(self):
+        """Check if the processing need to be done (eg the peaktable does not exist already)"""
         pass
     @abstractmethod
     def command_line_processing(self):
+        """Return the CLI used by SLAW"""
+        pass
+
+    @abstractmethod
+    def get_output(self):
+        """Get the filename of the resulting peaktable."""
+        pass
+
+    def filtering_peaktable(self,filtering):
+        """Filter the peaktable if it exists"""
         pass
 
 ###We eill test this one a billion time because we don t really need the rest
@@ -114,13 +125,6 @@ class PeakPickingXCMS(PeakPicking):
 
     def command_line_processing(self):
         pjoin = os.path.join(find_rscript(), "wrapper_xcms_peak_picking.R")
-        # PATH_RAW < - args[1]
-        # PATH_OUTPUT < - args[2]
-        # PPM < - as.numeric(args[3])
-        # PEAKWDITH < - as.numeric(c(args[4], args[5]))
-        # SNT < - as.numeric(args[6])
-        # PREFILTER < - as.numeric(c(args[7], args[8]))
-        # NOISE < - as.numeric(args[9])
         cli_args = ["Rscript",pjoin,'"'+self.input+'"','"'+self.output+'"',self.ppm,self.min_peakwidth,
                     self.max_peakwidth,self.snt,
                     self.point_prefilter,self.int_prefilter,self.min_int]

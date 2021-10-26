@@ -50,7 +50,7 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
     all_peaktables <- dbGetQuery(dbb, "SELECT output_ms FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")[, 1]
     dbDisconnect(dbb)
     
-    ###We check the number of file by batch. No more than 300000 peaks
+    ###We check the number of file by batch. No more than 700000 peaks
     to_check <- sample(all_peaktables,min(length(all_peaktables),10))
     MAX_PEAKS <- 700000
     peaks_by_sample <- mean(sapply(to_check,function(x){

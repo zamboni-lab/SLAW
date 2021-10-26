@@ -47,6 +47,11 @@ peakpicking:
     description: Integer. An absolute noise threshold to be used on MS2. Any points in a RAW file below this file will be discarded. This should not be too high, as low intensity part can still occurs at the border of a peak,
     value: 0
     type: float
+  peaktable_filter:
+    priority: LOW
+    description: String. A string describing the postprocessing to apply to the peaktable. See the wiki for examples. The default is to only take the 30000 most intense peaks.
+    value: absolute_intensity top 30000
+    type: str
   traces_construction:
     description: Parameters used in the detection of consecutive mass points with similar masses in different acquisitions.
     ppm:
@@ -70,7 +75,7 @@ peakpicking:
       description: Integer. (All peakpicker) The minimum number of points detected in consecutive scans for a trace to be valid. Any trace containing less than min_scan point is discarded.
       value: 15
       range:
-        - 1
+        - 4.5
         - 100
       type: int
     num_outliers:

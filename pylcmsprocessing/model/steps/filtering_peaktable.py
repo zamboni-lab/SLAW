@@ -1,5 +1,6 @@
 
 import pandas as pd
+import numpy as np
 
 # Reference term
 ABSOLUTE_PREFIX = "absolute"
@@ -81,8 +82,6 @@ def apply_filter(peaktable,metric,operator,value):
     sel_elems = eval(func_filter+"(raw_values,value)")
     return peaktable[sel_elems.tolist()]
 
-
-
 class PeaktableFilter:
     def __init__(self,fstring):
         self.filters = parse_filters(fstring)
@@ -92,17 +91,8 @@ class PeaktableFilter:
             peaktable = apply_filter(peaktable,metric,operator,value)
         return peaktable
 
-
-
-
-
-if __name__=="__main__":
-    import pandas as pd
-    import numpy as np
-    PATH_DT = "U:/processing/out/lcms_red2_redo2/CENTWAVE/peaktables/KO1_BN051189-91_MN-agar_7_DCM_Pos_R1.csv"
-    peaktable = pd.read_csv(PATH_DT)
-    TEST_STRING = "absolute_height greater 10000 & relative_height bottom 100"
-    pf = PeaktableFilter(TEST_STRING)
-    res_peaktable = pf.filter_peaktable(peaktable)
-    res_peaktable
+def par_peaktable_filtering(path_peaktable,peak_filter):
+    peaktable = pd.read_csv(path_peaktable)
+    peaktable = peak_filter.filter_peaktable(peaktable)
+    peaktable.to_csv(path_peaktable,sep=",",index=False)
 

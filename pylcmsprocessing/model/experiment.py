@@ -1,8 +1,9 @@
 import sqlite3
-import subprocess
+import multiprocessing
 import os
 import logging
 import time
+from functools import partial
 import common.references as cr
 import common.tools as ct
 import model.helper.output_handler as oh
@@ -15,6 +16,7 @@ import model.steps.grouping as mg
 import model.steps.annotating_adducts_isotopes as mai
 import model.steps.post_processing as pp
 import model.steps.information_completion as ic
+import model.steps.filtering_peaktable as fp
 import common.slaw_exception as cs
 import pandas as pd
 import math
@@ -655,6 +657,22 @@ class Experiment:
             c.execute(query)
         self.close_db()
         self.save_db()
+
+    def filter_peaktables(self,filtering_string):
+        """Filter all the peaktables according to the filtering string"""
+        peak_filter = fp.PeaktableFilter(filtering_string)
+        self.open_db()
+        c = self.conn.cursor()
+        c.execute("SELECT output_ms FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")
+        all_peaktables = c.fetchall()
+        self.close_db()
+        self.save_db()
+        all_peaktables = [x[0] for x in all_peaktables]
+        num_workers = self.get_workers()
+        logging.info("Starting peaktable filtration")
+        with multiprocessing.Pool(min(num_workers, len(all_peaktables))) as executor:
+            executor.map(partial(fp.par_peaktable_filtering,peak_filter=peak_filter),all_peaktables)
+        logging.info("Done peaktables filtration")
 
 
     def extract_ms2(self,output,noise_level=0,all=False):
