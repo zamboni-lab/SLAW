@@ -204,7 +204,7 @@ if __name__=="__main__":
             exp.extract_ms2(noise_level=ms2_noise, output=pcr.OUT[peakpicking]["MSMS"])
 
     if peakpicking=="OPENMS":
-            ###In this case arugment are read directly
+            #We have to extract the ms2 as openMS does not extract them easely.
             max_outlier = math.floor(float(ph["peakpicking__traces_construction__num_outliers"]["value"]))
             peak_width_fac = float(ph["peakpicking__peaks_deconvolution__peak_width_fac"]["value"])
             exp.run_openms(min_peakwidth, max_peakwidth, peak_width_fac, sn, ppm, min_int, max_outlier, min_scan, quant,log = LOG)
@@ -217,7 +217,10 @@ if __name__=="__main__":
                         output=pcr.OUT["CENTWAVE"]["MSMS"], all=True)
         exp.post_processing_peakpicking_xcms()
 
-    ###As openMS does not give nativelyt MS-MS
+    ### This step filter filter all th epeaktable according to a filtering string
+    filtering_string = ph["peakpicking__peaktable_filter"]["value"]
+    exp.filter_peaktables(filtering_string)
+
     timer.store_point("peakpicking")
     timer.print_point("peakpicking")
 
