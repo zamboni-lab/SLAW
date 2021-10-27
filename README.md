@@ -1,25 +1,27 @@
 # SLAW
-### You can find the last SLAW version on adelabriere/slaw:dev. It notably includes a fix for low memory/ processor settings. The main docker will be updated once the reviewing process in over.
 
-### You can find the last SLAW version on adelabriere/slaw:dev. It notably includes a fix for low memory/ processor settings. The main docker will be updated once the reviewing process in over.
-
-SLAW is a scalable containerized untargeted LC-MS processing workflow developped by Alexis Delabriere in the [Zamboni Lab](https://imsb.ethz.ch/research/zamboni.html) at ETH Zurich. An explanation of the advantages of SLAW and its motivations of development can be found in this [blog post](https://metabolomics.blog/2021/07/02/slaw/). If you want to cite SLAW please use the following (updated when accepted):
-
-Delabriere A, Warmer P, Brennsteiner V and Zamboni N, SLAW: A scalable and self-optimizing processing workflow for untargeted LC-MS, 2021, submitted).
-
-The three core points of SLAW are:
+SLAW is a scalable, containerized workflow for untargeted LC-MS processing. It was developed by Alexis Delabriere in the [Zamboni Lab](https://imsb.ethz.ch/research/zamboni.html) at ETH Zurich. An explanation of the advantages of SLAW and its motivations of development can be found in this [blog post](https://metabolomics.blog/2021/07/02/slaw/). In brief, the core advantages of SLAW are:
+ * Complete processing including peak picking, sample alignment, pick picking, grouping of isotopologues and adducts, gap-filling by data recursion, extraction of consolidated MS2 spectra and isotopic data.
  * Scalability: SLAW can process thousands of SAMPLES efficiently
- * Inclusion of 3 peak picking algorithms (Centwave, FeatureFinderMetabo, ADAP)
- * Parameters optimization: SLAW allows the parameters optimization for all the peak pickers considered, in an efficient manner.
- The source code here should not be used directly and is just shown as a reference if needed.
+ * Wrapping of three main peak picking algorithms: Centwave, FeatureFinderMetabo, ADAP
+ * Automated parameter optimization for picking, alignment, gap-filling
+
+If you want to use SLAW, please cite the following paper:
+
+> Delabriere A, Warmer P, Brennsteiner V and Zamboni N, *SLAW: A scalable and self-optimizing processing workflow for untargeted LC-MS*, 2021 (accepted)
  
-The recommended way to use SLAW is to download the associated *Docker* from the dockerHub like this:
+## This repository contains the current stable version (1.0.0)
+
+The latest development version can be found on adelabriere/slaw:dev. It notably includes a fix for low memory/processor settings. 
+
+## Installation
+
+The source code provided here is meant for developers. For an average user, setting up an environment with R, python, mzMine, etc. is a cumbersome process. Instead, **the recommended way to use SLAW is to pull the container from *DockerHub*** that come preconfigured with all components and can be used as a black box:
+
 ```
 docker pull adelabriere/slaw:latest
 ```
-or from singularityHub.
-
-## Current version : 1.0.0
+An equivalent container is available on SingularityHub for operating on a HPC cluster.
 
 ## Running SLAW
 
