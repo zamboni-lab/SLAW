@@ -10,7 +10,7 @@ If you want to use SLAW, please cite the following paper:
 
 > Delabriere A, Warmer P, Brennsteiner V and Zamboni N, *SLAW: A scalable and self-optimizing processing workflow for untargeted LC-MS*, 2021 (accepted)
  
-## This repository contains the current stable version (1.0.0)
+### This repository contains the current stable version (1.0.0)**
 
 The latest development version can be found on adelabriere/slaw:dev. It notably includes a fix for low memory/processor settings. 
 
