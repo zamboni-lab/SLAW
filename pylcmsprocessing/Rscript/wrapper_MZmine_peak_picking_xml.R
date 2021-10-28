@@ -121,15 +121,6 @@ allsampseq <-
     BPPARAM=bpp
   )
 
-if(FALSE){
-  singleXMLgeneration(  samplist[1],
-                        samplist_ids[1],mxml = mxml,
-                       prefix = prefix_xml,
-                       out_peaktable = path_peaktables,
-                       out_msms = path_msms,
-                       tids= 1)
-  
-}
 
 btab <- do.call(rbind, allsampseq)
 ###We have all the hashes in btab$hash_input

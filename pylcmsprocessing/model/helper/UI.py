@@ -103,7 +103,6 @@ class UI:
         ###We write the XML file somewhere
         tree.write(path_xml)
 
-
     def openYamlParameters(self):
         raw_yaml = None
         with open(self.path_yaml, 'r') as stream:
@@ -113,35 +112,3 @@ class UI:
     def availableCpus(self):
         return multiprocessing.cpu_count()-1
 
-    ####Generate the python file used to process the data eventually
-    def generate_python_file(self,path_python = None):
-        #We get the dayabase storage stuff eventually
-        path_db = self.output.getFile(cr.OUT["DB"])
-        raw_yaml = self.openYamlParameters()
-        if path_python is None:
-            path_python = self.output.getFile(cr.OUT["PYTHON_SCRIPT"])
-        if self.num_workers is None:
-            self.num_workers=self.availableCpus()
-        vfile = ('from model.experiment import Experiment\n'
-                 '\n'
-                 'if __name__ == "__main__":\n'
-                 '    exp = Experiment("') + path_db + '''",reset=True)
-    exp.initialise_database(''' + str(multiprocessing.cpu_count()-1) +''',
-    "''' + os.path.normpath(self.output.getRoot())+'''",
-    "''' + self.polarity+'''",
-    "''' + os.path.normpath(self.path_rawfiles) +'''",
-    ["ADAP"], 1)
-    exp.building_inputs_single_processing(
-        "''' + self.path_xml +'''")
-    ####The path to MZmine is always input in full
-    exp.run("''' + str(raw_yaml["constant"]["path_mzmine"]["value"]) + '''", ''' + str(self.availableCpus()) + ''')
-    exp.correct_conversion()
-    exp.group(max_workers=1,mztol='''+str(raw_yaml["grouping"]["dmz"]["value"])+\
-    ',rttol='+str(raw_yaml["grouping"]["drt"]["value"])+',intensity="'+\
-    str(raw_yaml["grouping"]["extracted_quantity"]["value"])+'''")
-    exp.annotate_ions('''+str(raw_yaml["ion_annotation"]["num_files"]["value"])+''','''+str(raw_yaml["ion_annotation"]["ppm"]["value"]) + ','+ \
-        str(raw_yaml["ion_annotation"]["dmz"]["value"]) +',min_filter='+str(raw_yaml["ion_annotation"]["min_filter"]["value"])+\
-                ',adducts=["' + '","'.join(raw_yaml["ion_annotation"]["adducts"]["value"]) + '"],main_adducts=["'+ \
-        '","'.join(raw_yaml["ion_annotation"]["main_adducts"]["value"])+'"], max_workers='+str(self.num_workers)+")"
-        with open(path_python,"w") as py_file:
-            py_file.write(vfile)
