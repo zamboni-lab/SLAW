@@ -176,12 +176,8 @@ extractMissingInformations <-
     suppressWarnings(suppressMessages(library(rhdf5, warn.conflicts = FALSE)))
     
     #Isotopes and inference
-    isotopes <- paste(ISOTOPES_GROUP,"/",ISTOPES_TO_FIND_PREFIX,samp,sep="")
-    infer <- paste(FEATURES_GROUP,"/",MISSING_FEATURES_PREFIX,batch_idx[idx_sample],sep="")
-    h5read(hdf5_file,path_isotopes)
-    h5read(hdf5_file,path_infer)
-    
-    
+    isotopes <- h5read(hdf5_file,path_isotopes)
+    infer <- h5read(hdf5_file,path_infer)
     xraw <- praw
     if(is.character(praw)){
       suppressWarnings(suppressMessages(library(xcms, warn.conflicts = FALSE)))

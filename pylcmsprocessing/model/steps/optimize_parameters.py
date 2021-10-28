@@ -163,7 +163,7 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
             exp.rebase_experiment(pdb)
         if peakpicking=="ADAP" or peakpicking=="BASELINE":
             #To rewrite processing/[output_ms,output_ms2], peakpicking/hash
-            shutil.copy(pd,exp.db)
+            shutil.copy(pdb,exp.db)
             #We update witht heold output folder
     else:
         try:

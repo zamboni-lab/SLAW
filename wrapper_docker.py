@@ -45,8 +45,9 @@ if __name__=="__main__":
     if "MEMORY" in os.environ:
         memory_by_core = int(math.floor(float(os.environ["MEMORY"])))
     else:
-        ##We save it ofr optimization
-        os.environ["MEMORY"] = str(math.floor(memory_by_core))
+        ##We save it for the optimization
+        possible_memory_by_core = math.floor(avail_memory/num_cpus)
+        os.environ["MEMORY"] = str(max(math.floor(memory_by_core),possible_memory_by_core))
 
     ##This is the theoric number of maximum threads available
     n_theoric_cores = avail_memory//memory_by_core
@@ -200,8 +201,8 @@ if __name__=="__main__":
         exp.correct_conversion()
         exp.post_processing_peakpicking_mzmine(algorithm=peakpicking)
         ###If there is an MS2 folder we process it
-        if "MS2" in os.environ:
-            exp.extract_ms2(noise_level=ms2_noise, output=pcr.OUT[peakpicking]["MSMS"])
+        exp.extract_ms2(noise_level=ms2_noise,
+                        output=pcr.OUT["ADAP"]["MSMS"], all=True)
 
     if peakpicking=="OPENMS":
             #We have to extract the ms2 as openMS does not extract them easely.
