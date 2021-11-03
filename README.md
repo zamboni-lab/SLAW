@@ -8,7 +8,7 @@ SLAW is a scalable, containerized workflow for untargeted LC-MS processing. It w
 
 If you want to use SLAW, please cite the following paper:
 
-> Delabriere A, Warmer P, Brennsteiner V and Zamboni N, *SLAW: A scalable and self-optimizing processing workflow for untargeted LC-MS*, 2021 (accepted)
+> Delabriere A, Warmer P, Brennsteiner V and Zamboni N, *SLAW: A scalable and self-optimizing processing workflow for untargeted LC-MS*, 2021 (https://doi.org/10.1021/acs.analchem.1c02687)
  
 ### This repository contains the current stable version (1.0.0)**
 
