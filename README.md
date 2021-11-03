@@ -1,4 +1,7 @@
-#CHANGES
+THE DEVELOPMENT OF SLAW CONTINUE ON THE [ZAMBONI-LAB GITHUB.](https://github.com/zamboni-lab/SLAW).
+
+
+# CHANGES
 
 Version v1.1.0: 12/10/2021 (adelabriere/slaw:dev and adelabriere/slaw:v1.1.0): 
 * Fixed a ton of bugs related notably to:
