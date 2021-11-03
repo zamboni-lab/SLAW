@@ -883,6 +883,40 @@ class Experiment:
                 runner.run(clis, silent=True)
         logging.info("Gap filling and isotopic pattern extraction finished.")
 
+    def add_missing_informations_refactored(self, max_iso, max_charge, quant, ppm, dmz):
+        num_workers = self.get_workers()
+        runner = pr.ParallelRunner(num_workers)
+        ###Data of previous steps
+        path_isotopes = cr.DATA["ISOTOPES"]
+        path_rt_model = self.output.getFile(cr.TEMP["GROUPING"]["ALIGNMENT"])
+        path_temp = self.output.getDir(cr.TEMP["DIR"])
+        path_hdf5 = self.output.getDir(cr.TEMP["GROUPING"]["HDF5"])
+        self.open_db()
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM peakpicking")
+        all_peakpicking = c.fetchall()
+
+        expanders = [0] * len(all_peakpicking)
+        count_expand = 0
+
+        # The number of files is determined based on the available memory
+        num_files = 3
+        if "TOTAL_SLAW_MEMORY" in os.environ:
+            num_files = max(math.floor(int(os.environ["TOTAL_SLAW_MEMORY"]) / 2000), 3)
+        if num_files > 10:
+            num_files = 10
+        for pp in all_peakpicking:
+            ie = ic.InformationExpanderRefactored(self.db, pp[4], path_temp, path_rt_model,path_hdf5, path_isotopes,
+                                        max_iso, max_charge, quant,ppm,dmz, num_files, num_workers)
+            expanders[count_expand] = ie
+            count_expand += 1
+        if count_expand != 0:
+            expanders = expanders[0:count_expand]
+            clis = [iexp.command_line() for iexp in expanders if iexp.need_computing()]
+            if len(clis) > 0:
+                runner.run(clis, silent=True)
+        logging.info("Gap filling and isotopic pattern extraction finished.")
+
     def post_processing(self,targets,path_raw_files=None,mztol=0.05,rttol=0.03):
         if path_raw_files is None:
             self.open_db()
