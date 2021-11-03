@@ -156,13 +156,15 @@ def peak_picking_alignment_scoring(peakpicking__noise_level_ms1,peakpicking__noi
             builder = ib.openMSBuilder(exp.db, output=exp.output)
             ###Dummy arugment used to initialize the database only.
             builder.build_inputs_single_parameter_set(0.01, 0.1, 10, 10, 500, 3, 5, "intensity")
+            exp.rebase_experiment(pdb)
         if peakpicking=="CENTWAVE":
             builder = ib.xcmsBuilder(exp.db, output=exp.output)
             builder.build_inputs_single_parameter_set(0.01, 0.1, 10, 10, 500, 3)
-        # if peakpicking=="ADAP" or peakpicking=="BASELINE":
-        #     exp.run_mzmine(pmzmine="/MZmine-2.52-Linux", xml_file=PATH_XML, batch_size=int(num_cpus),
-        #                    algorithm=peakpicking, log=LOG_PATH, input_only=True)
-        exp.rebase_experiment(pdb)
+            exp.rebase_experiment(pdb)
+        if peakpicking=="ADAP" or peakpicking=="BASELINE":
+            #To rewrite processing/[output_ms,output_ms2], peakpicking/hash
+            shutil.copy(pdb,exp.db)
+            #We update witht heold output folder
     else:
         try:
             if peakpicking=="ADAP" or peakpicking=="BASELINE":
@@ -435,8 +437,6 @@ class ParametersOptimizer:
                     pdb = pda.db[idmax]
                 except AttributeError as e:
                     pass
-                    # print(e)
-                    # print(pdb.head())
                 ###In any case we recompute a single parameters with enough cores
                 ###In every case we recompute a single paramters with the best peakpicking
                 dic_call = dic_fixed_grouping
