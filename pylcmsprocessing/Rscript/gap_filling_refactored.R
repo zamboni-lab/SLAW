@@ -17,15 +17,15 @@ sink(file=stdout())
 ##Argument passed by Python
 args <- commandArgs(trailingOnly = TRUE)
 
-if(FALSE){
-  args <- c("/output/temp_processing_db.sqlite",
-            "/output/datamatrices/datamatrix_fc9ed745628d36db1c9f5ff4ffcd0ab2.csv",
-            "/output/temp",
-            "/output/temp/alignement.rds",
-            "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/isotopes.tsv","intensity",
-            "4","3","15.0","0.01","3","5")
-  args <- str_replace(args,"/output","E:/data/mzML/toutput")
-}
+#if(FALSE){
+#  args <- c("/output/temp_processing_db.sqlite",
+#            "/output/datamatrices/datamatrix_fc9ed745628d36db1c9f5ff4ffcd0ab2.csv",
+#            "/output/temp",
+#            "/output/temp/alignement.rds",
+#            "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/isotopes.tsv","intensity",
+#            "4","3","15.0","0.01","3","5")
+#  args <- str_replace(args,"/output","E:/data/mzML/toutput")
+#}
 
 
 PATH_DB <- args[1]
@@ -97,12 +97,12 @@ all_infos <-
 all_peaktables <- all_infos[,2]
 all_samples <- all_infos[,1]
 
-if(FALSE){
+#if(FALSE){
   #all_peaktables <- str_replace(all_peaktables,"/output","U:/processing/out/pfd_for_SP_filtered")
-  all_peaktables <- str_replace(all_peaktables,"/output","E:/data/mzML/toutput")
+  #all_peaktables <- str_replace(all_peaktables,"/output","E:/data/mzML/toutput")
   #all_samples <- str_replace(all_samples,"/input","U:/processing/out/pfd_for_SP_filtered/mzMLs-delete-when-done")
-  all_samples <- str_replace(all_samples,"/input","E:/data/mzML/mzML")
-}
+  #all_samples <- str_replace(all_samples,"/input","E:/data/mzML/mzML")
+#}
 num_samples <- length(all_samples)
 
 # Extracting quantitative columns and infos from the data matrix
@@ -238,10 +238,6 @@ extractMissingInformations <-
     suppressWarnings(suppressMessages(library(pracma, warn.conflicts = FALSE)))
     suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
     suppressWarnings(suppressMessages(library(rhdf5, warn.conflicts = FALSE)))
-    #print("INFER")
-    #print(infer)
-    #print("ISOTOPES")
-    #print(isotopes)
     #Isotopes and inference
     xraw <- praw
     if(is.character(praw)){
@@ -562,8 +558,8 @@ extractMissingInformations <-
     }
     #We only store the inferred values to avoid the cost
     inferred_values_pos <- which(inferred_values!=0.0)
-    print(sprintf("range to_infer %d-%d length(infer): %d, length inferred %d pos: %d-%d",min(infer),max(infer),length(infer),
-                  length(inferred_values_pos),min(inferred_values_pos),max(inferred_values_pos)))
+    #print(sprintf("range to_infer %d-%d length(infer): %d, length inferred %d pos: %d-%d",min(infer),max(infer),length(infer),
+    #              length(inferred_values_pos),min(inferred_values_pos),max(inferred_values_pos)))
     ##Both inferred value will be written in the data
     return(list(list(visotopes_pos,visotopes_values_pos),
                 list(inferred_values_pos,inferred_values[inferred_values_pos])))
@@ -594,7 +590,7 @@ extractMissingInformationsHDF5 <- function(praw,
   library(rhdf5)
   isotopes <- h5read(hdf5_file,path_isotopes)
   infer <- h5read(hdf5_file,path_infer)
-  print(sprintf("xraw: %s file_hdf5: %s path_hdf5: %s length(infer): %d",basename(praw),hdf5_file,path_infer,length(infer)))
+  #print(sprintf("xraw: %s file_hdf5: %s path_hdf5: %s length(infer): %d",basename(praw),hdf5_file,path_infer,length(infer)))
   rlist <- extractMissingInformations(praw,
                              peaks,
                              isotopes,
