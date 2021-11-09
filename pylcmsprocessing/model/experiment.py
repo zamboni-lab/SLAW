@@ -890,7 +890,7 @@ class Experiment:
         path_isotopes = cr.DATA["ISOTOPES"]
         path_rt_model = self.output.getFile(cr.TEMP["GROUPING"]["ALIGNMENT"])
         path_temp = self.output.getDir(cr.TEMP["DIR"])
-        path_hdf5 = self.output.getDir(cr.TEMP["GROUPING"]["HDF5"])
+        path_hdf5 = self.output.getFile(cr.TEMP["GROUPING"]["HDF5"])
         self.open_db()
         c = self.conn.cursor()
         c.execute("SELECT * FROM peakpicking")

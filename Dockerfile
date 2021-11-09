@@ -13,9 +13,10 @@ COPY onlineLCMSaligner /onlineLCMSaligner
 RUN R -e "setwd('/onlineLCMSaligner');library(devtools);remove.packages('onlineLCMSaligner');install(pkg='/onlineLCMSaligner')"
 COPY MZmineXMLManipulator /MZmineXMLManipulator
 RUN R -e "setwd('/MZmineXMLManipulator');library(devtools);remove.packages('MZmineXMLManipulator');install(pkg='/MZmineXMLManipulator')"
-RUN R -e "install.packages('data.table')"
+RUN R -e "library(BiocManager);BiocManager::install('rhdf5')"
 
 #Resinstalling data.table as it seems to become problematic after Rhdf5
+RUN R -e "install.packages('data.table')"
 
 #Dependency copy
 COPY MZmine-2.52-Linux /MZmine-2.52-Linux
