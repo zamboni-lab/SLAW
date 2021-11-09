@@ -12,7 +12,7 @@ If you want to use SLAW, please cite the following paper:
  
 ### This repository contains the current stable version (1.0.0)**
 
-The latest development version can be found on https://github.com/adelabriere/slaw. 
+The latest development version can be found on https://github.com/zamboni-lab/SLAW. 
 
 Additional information is available on the paper and in the wiki section.
 
