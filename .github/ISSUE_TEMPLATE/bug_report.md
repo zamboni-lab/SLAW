@@ -1,10 +1,17 @@
 ---
 name: Bug report
-about: Deprecated bur report
 title: ''
 labels: ''
 assignees: ''
 
 ---
+**Describe the bug**
+A clear and concise description of what the bug is.
 
-THIS ISSUE SECTION IS NOT MONITORED ANYMORE, PLEASE REPORT YOUR ISSUE IN THE (ZAMBONI-LAB GITHUB)[https://github.com/zamboni-lab/SLAW/issues].
+**To Reproduce**
+Please always provide: 
+1. A copy of your parameters.txt
+2. A broad name for the Mass Spec (ex: QE, TOF) aswell as the constructor.
+3. The length of your chromatographic gradient and your average file size, aswell as the size of your samples.
+
+Thanks.
