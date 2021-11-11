@@ -257,7 +257,7 @@ class Experiment:
             cline = cline + " -o '"+path_ms2+"'"
         if "SLAWSUMMARY" in os.environ and not is_optim:
             cline = cline + " -s "+ os.environ["SLAWSUMMARY"]
-        logging.info(cline)
+        logging.debug(cline)
         pr.run_cl_solo(cline,error=False,output=False)
         # subprocess.call(cline, shell=True)
         ##We check if the database has been created
@@ -883,7 +883,7 @@ class Experiment:
                 runner.run(clis, silent=True)
         logging.info("Gap filling and isotopic pattern extraction finished.")
 
-    def add_missing_informations_refactored(self, max_iso, max_charge, quant, ppm, dmz):
+    def add_missing_informations_refactored(self, max_iso, max_charge, quant, ppm, dmz, reset=False):
         num_workers = self.get_workers()
         runner = pr.ParallelRunner(num_workers)
         ###Data of previous steps
@@ -903,8 +903,8 @@ class Experiment:
         num_files = 3
         if "TOTAL_SLAW_MEMORY" in os.environ:
             num_files = max(math.floor(int(os.environ["TOTAL_SLAW_MEMORY"]) / 2000), 3)
-        if num_files > 10:
-            num_files = 10
+        if num_files > 5:
+            num_files = 5
         for pp in all_peakpicking:
             ie = ic.InformationExpanderRefactored(self.db, pp[4], path_temp, path_rt_model,path_hdf5, path_isotopes,
                                         max_iso, max_charge, quant,ppm,dmz, num_files, num_workers)
