@@ -21,13 +21,8 @@ The source code provided here is meant for developers. For an average user, sett
 ```
 docker pull adelabriere/slaw:latest
 ```
-<<<<<<< HEAD
-An equivalent container is available on SingularityHub for operating on a HPC cluster.
-=======
-or from singularityHub.
 
-## Current version : 1.1.0
->>>>>>> b0871ee7d94151955baf1c6400fbc273fdb152ab
+An equivalent container is available on SingularityHub for operating on a HPC cluster.
 
 ## Running SLAW
 
