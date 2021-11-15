@@ -73,7 +73,7 @@ peakpicking:
     min_scan:
       priority: ESSENTIAL
       description: Integer. (All peakpicker) The minimum number of points detected in consecutive scans for a trace to be valid. Any trace containing less than min_scan point is discarded.
-      value: 15
+      value: 5
       range:
         - 1
         - 100
@@ -123,8 +123,8 @@ peakpicking:
       priority: ESSENTIAL
       description: Floats. (ADAP only) The minimum and width width the wavelets used for peak detection.
       value:
-        - 0.0005
-        - 0.005
+        - 0.0007
+        - 0.01
       range:
         - 0.0001
         - 10.0
