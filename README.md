@@ -32,13 +32,13 @@ If you need to run SLAW on a HPC infrastructure that does not provide the rights
 
 ## Quick start
 
-In principle, SLAW is executed by running the Docker container in terminal window (Linux) or in Powershell (Windows, don't use Powershell ISE). The minimum requirements are an input folder with centroided mzML files, and an output folder. Both are mounted with the -v option to either /input and /output: 
+In principle, SLAW is executed by running the Docker container in terminal window (Linux) or in Powershell (Windows, don't use Powershell ISE). The minimum requirements are an input folder with **centroided** mzML files, and an output folder. Both are mounted with the -v option to either /input and /output: 
 ```
 docker run --rm -v MZML_FOLDER:/input -v PATH_OUTPUT:/output adelabriere/slaw:latest
 ```
-_Note: we recommend using a local folder as output. Network mounts can create some problems._
+_Note: we recommend using a local folder as output. Network mounts can create problems._
 
-_Note: centroided mzML can be obtained with ProteoWizard. Discard profile data and always prioritize the centroid data provided by vendor's software over recalculating centroids with pwiz._
+_Note: centroided mzML can be obtained with ProteoWizard. Discard profile data and always prioritize the centroid data provided by vendor's software over recalculating centroids with pwiz. (Filter peakPicking vendor msLevel=1-2)_
 
 _Note: more CPU cores will accelerate computation. If you are running parallel containers, the number can be set with -e NCORES=xy
 
