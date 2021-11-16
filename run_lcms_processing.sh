@@ -10,7 +10,7 @@ if [ -z "${OUTPUT}" ]; then
  export OUTPUT='/output'
 fi
 
-python3 wrapper_docker.py
+python3 /wrapper_docker.py
 
 #Output log in file system
 if test -f "/log.txt"; then
