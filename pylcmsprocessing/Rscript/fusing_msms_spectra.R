@@ -7,6 +7,7 @@ suppressWarnings(suppressMessages(library(BiocParallel, warn.conflicts = FALSE))
 suppressWarnings(suppressMessages(library(igraph, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(rtree, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
+suppressWarnings(suppressMessages(library(rhdf5, warn.conflicts = FALSE)))
 
 sink(file=stdout())
 ###Merging of spectra using the msClust algorithm
@@ -111,6 +112,218 @@ mergeSpectra <- function(x,specs,tab_summary,cos_thresh=0.7,round=10){
 
 }
 
+###Merging of spectra using the msClust algorithm
+mergeSpectraEfficient <- function(x,small_spectra,cos_thresh=0.7,round=10){
+  
+  ###We always bin the spectra
+  binv <- seq(0.5,2000.5,by=0.1)
+  
+  approxCos <- function(s1,s2,npeaks=2){
+    v1 <- .bincode(s1[,1],breaks = binv)
+    v2 <- .bincode(s2[,1],breaks = binv)
+    
+    f1 <- s1[,1]**2*s1[,2]**0.5
+    f2 <- s2[,1]**2*s2[,2]**0.5
+    
+    ###We compute the intersection
+    vmm <- match(v1,v2)
+    
+    common_s1 <- which(!is.na(vmm))
+    common_s2 <- vmm[common_s1]
+    
+    if(length(common_s1)<npeaks) return(0)
+    
+    only_s1 <- which(is.na(vmm))
+    only_s2 <- setdiff(seq_along(f2),common_s2)
+    
+    ###We penalize it by the intensity of the non matche dpeaks
+    cos_term <- sum(f1[common_s1]*f2[common_s2])/
+      (sqrt(sum(f1[common_s1]**2))*sqrt(sum(f2[common_s2]**2)))
+    
+    if(length(only_s2)==0 & length(only_s1)==0) return(cos_term)
+    
+    0.5*cos_term +0.5*(sum(f1[common_s1]+f2[common_s2]))/(sum(f1)+sum(f2))
+  }
+  
+  fastCluster <- function(lspec,tau_min=0.5,nrounds=20){
+    if(length(lspec)==1) return(list(list(1),list(lspec),1))
+    change <- TRUE
+    tau <- 0.999
+    delta <- (1-tau_min)/nrounds
+    vclust <- seq_along(lspec)
+    to_consider <- rep(TRUE,length(lspec))
+    
+    ###Actual informatiosn about clusters.
+    clust_idx <- as.list(seq_along(lspec))
+    clust_size <- rep(1,length(lspec))
+    representative_spec <- lspec
+    representative_idx <- seq_along(lspec)
+    ncluster <- length(lspec)
+    for(i in 1:nrounds){
+      if(!change) break
+      change <- FALSE
+      sel_idx <- which(to_consider)
+      if(length(sel_idx)<=1) break
+      ssel_idx <- seq_along(sel_idx)
+      ssel_idx <- 2:length(sel_idx)
+      for(ic in ssel_idx){
+        min_vec <- sel_idx
+        sic <- sel_idx[ic]
+        if(is.na(sic)) next
+        sco <- to_consider[1:ic]
+        if(sum(sco)==0) next
+        sub_idx <- (1:(ic-1))[to_consider[1:(ic-1)]]
+        for(iic in seq_along(sub_idx)){
+          siic <- sub_idx[iic]
+          if(is.na(siic)) next
+          if(approxCos(representative_spec[[sic]],representative_spec[[siic]])>=tau){
+            ###We merge the cluster
+            clust_idx[[siic]] <- c(clust_idx[[siic]],clust_idx[[sic]])
+            ###We keep the spectrum with the highest number of peaks.
+            if(nrow(representative_spec[[sic]])>nrow(representative_spec[[siic]])){
+              representative_spec[[siic]] <- representative_spec[[sic]]
+              representative_idx[siic] <- representative_idx[sic]
+            }
+            ##We update the cluster in all cases
+            clust_size[siic] <- clust_size[siic]+clust_size[sic]
+            sel_idx[sic] <- NA
+            to_consider[sic] <- FALSE
+            change <- TRUE
+            break
+          }
+        }
+      }
+      tau <- tau-tau_min
+    }
+    ###Returning the cluster and the idx
+    return(list(clust_idx[to_consider],representative_spec[to_consider],
+                representative_idx[to_consider]))
+  }
+  
+  
+  ###extracting the data.frame
+  #specs <- apply(tab_summary[x,,drop=FALSE],1,function(x,ref){ref[[x[4]]][[x[1]]]},ref=specs)
+  small_spectra_df <- sapply(small_spectra,as.data.frame,simplify=FALSE)
+  fc <- fastCluster(small_spectra_df,nrounds=round,tau_min = cos_thresh)
+  
+  ##We keep the biggest components, or the one with the most peaks
+  size_comp <- sapply(fc[[1]],length)
+  ppmax <- which.max(size_comp)
+  ####We then return the informations, number of spectra avraged, number of spectra discarded
+  return(list(spec=small_spectra[[fc[[3]][ppmax]]],idx=x[fc[[3]][ppmax]],num_total=length(x),num_fused=size_comp[ppmax]))
+}
+
+
+mergeSpectraRefactored <- function(x,tab_summary,FILE_GROUP,SPEC_GROUP,hdf5_file,cos_thresh=0.7,round=10){
+  library(rhdf5)
+  ###We always bin the spectra
+  binv <- seq(0.5,2000.5,by=0.1)
+  
+  approxCos <- function(s1,s2,npeaks=2){
+    v1 <- .bincode(s1[,1],breaks = binv)
+    v2 <- .bincode(s2[,1],breaks = binv)
+    
+    f1 <- s1[,1]**2*s1[,2]**0.5
+    f2 <- s2[,1]**2*s2[,2]**0.5
+    
+    ###We compute the intersection
+    vmm <- match(v1,v2)
+    
+    common_s1 <- which(!is.na(vmm))
+    common_s2 <- vmm[common_s1]
+    
+    if(length(common_s1)<npeaks) return(0)
+    
+    only_s1 <- which(is.na(vmm))
+    only_s2 <- setdiff(seq_along(f2),common_s2)
+    
+    ###We penalize it by the intensity of the non matche dpeaks
+    cos_term <- sum(f1[common_s1]*f2[common_s2])/
+      (sqrt(sum(f1[common_s1]**2))*sqrt(sum(f2[common_s2]**2)))
+    
+    if(length(only_s2)==0 & length(only_s1)==0) return(cos_term)
+    
+    0.5*cos_term +0.5*(sum(f1[common_s1]+f2[common_s2]))/(sum(f1)+sum(f2))
+  }
+  
+  fastCluster <- function(lspec,tau_min=0.5,nrounds=20){
+    if(length(lspec)==1) return(list(list(1),list(lspec),1))
+    change <- TRUE
+    tau <- 0.999
+    delta <- (1-tau_min)/nrounds
+    vclust <- seq_along(lspec)
+    to_consider <- rep(TRUE,length(lspec))
+    
+    ###Actual informatiosn about clusters.
+    clust_idx <- as.list(seq_along(lspec))
+    clust_size <- rep(1,length(lspec))
+    representative_spec <- lspec
+    representative_idx <- seq_along(lspec)
+    ncluster <- length(lspec)
+    for(i in 1:nrounds){
+      if(!change) break
+      change <- FALSE
+      sel_idx <- which(to_consider)
+      if(length(sel_idx)<=1) break
+      ssel_idx <- seq_along(sel_idx)
+      ssel_idx <- 2:length(sel_idx)
+      for(ic in ssel_idx){
+        min_vec <- sel_idx
+        sic <- sel_idx[ic]
+        if(is.na(sic)) next
+        sco <- to_consider[1:ic]
+        if(sum(sco)==0) next
+        sub_idx <- (1:(ic-1))[to_consider[1:(ic-1)]]
+        for(iic in seq_along(sub_idx)){
+          siic <- sub_idx[iic]
+          if(is.na(siic)) next
+          if(approxCos(representative_spec[[sic]],representative_spec[[siic]])>=tau){
+            ###We merge the cluster
+            clust_idx[[siic]] <- c(clust_idx[[siic]],clust_idx[[sic]])
+            ###We keep the spectrum with the highest number of peaks.
+            if(nrow(representative_spec[[sic]])>nrow(representative_spec[[siic]])){
+              representative_spec[[siic]] <- representative_spec[[sic]]
+              representative_idx[siic] <- representative_idx[sic]
+            }
+            ##We update the cluster in all cases
+            clust_size[siic] <- clust_size[siic]+clust_size[sic]
+            sel_idx[sic] <- NA
+            to_consider[sic] <- FALSE
+            change <- TRUE
+            break
+          }
+        }
+      }
+      tau <- tau-tau_min
+    }
+    ###Returning the cluster and the idx
+    return(list(clust_idx[to_consider],representative_spec[to_consider],
+                representative_idx[to_consider]))
+  }
+  
+  make_group_name <- function(file_idx){
+    paste(FILE_GROUP,file_idx,sep="")
+  }
+  
+  make_spec_name <- function(file_idx,idx){
+    paste(make_group_name(file_idx),"/",SPEC_GROUP,idx,sep="")
+  }
+  
+  ###WE first read all the spectra in memory.
+  specs <- apply(tab_summary[x,,drop=FALSE],1,function(x){h5read(hdf5_file,make_spec_name(x[4],x[1]))})
+  
+  ###extracting the data.frame
+  fc <- fastCluster(specs,nrounds=round,tau_min = cos_thresh)
+  
+  ##We keep the biggest components, or the one with the most peaks
+  size_comp <- sapply(fc[[1]],length)
+  ppmax <- which.max(size_comp)
+  best_idx <- fc[[3]][ppmax]
+
+  ####We then return the informations, number of spectra averaged, number of spectra discarded
+  return(list(idx=x[fc[[3]][ppmax]],num_total=length(x),num_fused=size_comp[ppmax]))
+}
+
 
 get_os <- function() {
     if (.Platform$OS.type == "windows") {
@@ -148,6 +361,8 @@ addFields = NULL)
 
 
 args <- commandArgs(trailingOnly = TRUE)
+
+
 PATH_DB <- args[1]
 MZ_TOL <- as.numeric(args[2])
 RT_TOL <- as.numeric(args[3])
@@ -155,7 +370,9 @@ NUM_CORES <- as.numeric(args[4])
 PATH_MGF <- args[5]
 TEMP_LOCATION <- args[6]
 TEMP_FILE_SWITCHING <- args[7]
-
+HDF5_FILE <- args[8]
+FILE_GROUP <- "FILE"
+SPEC_GROUP <- "SPEC"
 
 ##Can be changed
 BY_BATCH <- 7000
@@ -167,7 +384,8 @@ if (get_os() == "win") {
     bpp <- MulticoreParam(workers = min(NUM_CORES, 4),progressbar=FALSE)
 }
 
-##We get the datamatrxi path
+
+##We get the datamatrix path
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
 PATH_DATAMATRIX <- dbGetQuery(dbb, "SELECT peaktable FROM peakpicking")[, 1]
 dbDisconnect(dbb)
@@ -188,7 +406,7 @@ dmm <- dmm[,c("mz","rt","num_detection","mean_intensity"),drop=FALSE]
 dmm <- as.data.frame(dmm)
 num_line <- nrow(dmm)
 
-##Rttol is 0.5 % of your datasets.
+##Rttol is 0.5 % of the rtrange of your dataset.
 if(is.na(RT_TOL)){
     RT_TOL <- diff(range(dmm[,"rt"]))/200
 }
@@ -199,15 +417,99 @@ vmat[,1] <- vmat[,1]/RT_TOL
 vmat[,2] <- vmat[,2]/MZ_TOL
 rtt <- RTree(vmat)
 
-####We read the mgf data from the disk.
+####################################################
+####THIS IS THE ONLINE IMPLEMENTATION IF NEEDED ####
+####################################################
+
+##We write all the MS2 data on the disk by file and by spectrum
+## and only return a bunch of precursor
+# make_group_name <- function(file_idx){
+#   paste(FILE_GROUP,file_idx,sep="")
+# }
+# 
+# make_spec_name <- function(file_idx,idx){
+#   paste(make_group_name(file_idx),"/",SPEC_GROUP,idx,sep="")
+# }
+# 
+# if(file.exists(HDF5_FILE)){
+#   dummy <-file.remove(HDF5_FILE)
+# }
+# 
+# dummy <- h5createFile(HDF5_FILE)
+# 
+# #We create all the group for each file
+# for(idx_file in seq_along(PATH_MSMS)){
+#   fidx <- make_group_name(idx_file)
+#   dummy <- h5createGroup(HDF5_FILE,fidx)
+# }
+# 
+# #We now write all the spectra into the hdf5 file by batch
+# seq_ms2 <- seq(1,length(PATH_MSMS),by=NUM_CORES*5)
+# if(seq_ms2[length(seq_ms2)]!=length(PATH_MSMS)){
+#   seq_ms2[length(seq_ms2)+1] <- length(PATH_MSMS)+1
+# }else{
+#   seq_ms2[length(seq_ms2)]  <- length(PATH_MSMS)+1
+# }
+# 
+# 
+# tab_summary <- list()
+# collision <- numeric(0)
+# #We add the rest of the data
+# 
+# hdf5_batch_idx
+# for(batch_idx in 1:(length(seq_ms2)-1)){
+#   sel_msms <- seq_ms2[batch_idx]:(seq_ms2[batch_idx+1]-1)
+#   ##File are read in parallel
+#   vmgf <- bplapply(PATH_MSMS[sel_msms],readMgfData,BPPARAM = bpp)
+# 
+#   #Reading headers informations
+#   vheaders <- lapply(vmgf,function(x){header(x)[,2:3]})
+#   tab_summary <- append(tab_summary,vheaders)
+#   
+#   #Parsing ocllisions
+#   if("COLLISIONENERGY" %in% fvarLabels(vmgf[[1]])){
+#     current_collision <- sapply(vmgf,function(x){as.numeric(as.character(fData(x)[,"COLLISIONENERGY"]))},simplify = FALSE)
+#   }else{
+#     ###In this case we don t know the collision energy, we set it to 0
+#     current_collision <- sapply(vmgf,function(x){rep(0,length(x))},simplify = FALSE)
+#   }
+#   collision <- c(collision,current_collision)
+#   
+#   ##We do a pre-aggregation by mass to avoid writing too much file in the data
+#   
+#   ##We write all the file in the file this is done in a loop
+#   for(sample_idx in seq_along(vmgf)){
+#     true_sample_idx <- sel_msms[sample_idx]
+#     for(spec_idx in seq_along(vmgf[[sample_idx]])){
+#       sp_group <- make_spec_name(true_sample_idx,spec_idx)
+#       dummy <- h5write(as.data.frame(vmgf[[sample_idx]][[spec_idx]]),file = HDF5_FILE,name = sp_group)
+#     }
+#   }
+# }
+# 
+# #now that the spectra are written we have to aggregate them
+# tab_summary <- mapply(tab_summary,seq_along(PATH_MSMS),FUN=function(x,y){
+#   cnames <- colnames(x)
+#   x <- cbind(1:nrow(x),x,rep(y,nrow(x)))
+#   colnames(x) <- c("idx",cnames,"file")
+#   return(x)
+# },SIMPLIFY = FALSE)
+# 
+# collision <- unlist(collision)
+
+####################################################
+####THIS IS THE END OF THE ONLINE IMPLEMENTATION####
+####################################################
+
+##We read the mgf data from the disk.
 vmgf <- bplapply(PATH_MSMS,readMgfData,BPPARAM = bpp)
 
-#### Building a summary table
+### Building a summary table
 tab_summary <- sapply(vmgf,function(x){
   header(x)[,c(2,3)]
   },simplify=FALSE)
 
-###We extract the collision energy 
+###We extract the collision energy
 collision <- NULL
 if("COLLISIONENERGY" %in% fvarLabels(vmgf[[1]])){
   collision <- sapply(vmgf,function(x){as.numeric(as.character(fData(x)[,"COLLISIONENERGY"]))},simplify = FALSE)
@@ -215,7 +517,6 @@ if("COLLISIONENERGY" %in% fvarLabels(vmgf[[1]])){
   ###In this case we don t know the collision energy, we set it to 0
   collision <- sapply(vmgf,function(x){rep(0,length(x))},simplify = FALSE)
 }
-
 collision <- unlist(collision)
 
 tab_summary <- mapply(tab_summary,seq_along(vmgf),FUN=function(x,y){
@@ -251,20 +552,45 @@ vfactor <- apply(cbind(unlist(def_val[is_fragmented]),collision[is_fragmented]),
 listidx <- by(is_fragmented,INDICES = vfactor,FUN=function(x){x})
 
 ####We now process the data by batch to avoid any overhead
-fcc <- bplapply(listidx,FUN = mergeSpectra,specs=vmgf,tab_summary=tab_summary,BPPARAM=bpp)
+listspecs <- lapply(
+  listidx,function(x,tab_summary,specs){
+    apply(tab_summary[x,,drop=FALSE],1,function(x,ref){ref[[x[4]]][[x[1]]]},ref=specs)
+  }
+,tab_summary=tab_summary,specs=vmgf)
+#print(head(listidx))
+#print(head(listspecs))
+  
+fcc <- bpmapply(listidx,listspecs,FUN = mergeSpectraEfficient,BPPARAM=bpp,SIMPLIFY = FALSE)
+
+
+#fcc <- bplapply(listidx,FUN = mergeSpectra,specs=vmgf,tab_summary=tab_summary,make_spec_path=make_spec_name,
+#               hdf5_file=HDF5_FILE,BPPARAM=bpp)
+
+###This is the refactored version
+#mergeSpectraRefactored <- function(x,tab_summary,make_spec_path,hdf5_file,cos_thresh=0.7,round=10){
+#fcc <- bplapply(listidx,FUN = mergeSpectraRefactored,tab_summary=tab_summary,
+#                FILE_GROUP=FILE_GROUP,SPEC_GROUP=SPEC_GROUP,hdf5_file=HDF5_FILE,BPPARAM=bpp)
+
+#list(idx=x[fc[[3]][ppmax]],num_total=length(x),num_fused=size_comp[ppmax]))
 
 ###We extract all the necessary spectra
 dm_idx <- str_split(names(listidx),fixed("_"),simplify = TRUE)
 dm_idx <- apply(dm_idx,2,as.numeric)
-num_fused <- sapply(fcc,function(x){x[[4]]})
-spec_idx <- sapply(fcc,"[[",i=2)
+num_fused <- sapply(fcc,"[[",i="num_fused")
+spec_idx <- sapply(fcc,"[[",i="idx")
+consensus_specs <- sapply(fcc,"[[",i="spec",simplify = FALSE)
+###We build a list of all the consensus spectra. At the moment it is just averaged spectra.
 
-###We build a list for all the spectra.
-consensus_specs <- apply(tab_summary[spec_idx,,drop=FALSE],1,function(x,ref){ref[[x[4]]][[x[1]]]},ref=vmgf)
-
+# consensus_specs <- apply(tab_summary[spec_idx,,drop=FALSE],1,function(x,hdf5_file){
+#   h5_name <- make_spec_name(x[4],x[1])
+#   peaks <- h5read(hdf5_file,h5_name)
+#   MSnbase:::Spectrum2(mz=peaks[,1],intensity = peaks[,2],
+#                       rt = x["retention.time"]*60,precursorMz = x["precursor.mz"],
+#                       msLevel = 2)
+#},hdf5_file=HDF5_FILE)
 
 ###We make a table of the supplementary informations
-supp_infos <- data.frame(SCANS=1:nrow(dm_idx),FEATURE=dm_idx[,1],ENERGY=dm_idx[,2],NUM_CLUSTERED=sapply(fcc,function(x){x[[4]]}),
+supp_infos <- data.frame(SCANS=1:nrow(dm_idx),FEATURE=dm_idx[,1],ENERGY=dm_idx[,2],NUM_CLUSTERED=num_fused,
 PRECURSOR_INTENSITY=dmm[dm_idx[,1],"mean_intensity"])
 
 ###We find the columns with the quantitive informations
@@ -358,3 +684,6 @@ close.connection(tcon)
 a <- file.rename(PATH_DATAMATRIX,TEMP_FILE_SWITCHING)
 a <- file.rename(TEMP_LOCATION,PATH_DATAMATRIX)
 a <- file.remove(TEMP_FILE_SWITCHING)
+
+
+

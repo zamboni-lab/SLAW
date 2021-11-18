@@ -22,14 +22,15 @@ PATH_DB <- args[1]
 PATH_DM <- args[2]
 PATH_TEMP <- args[3]
 PATH_MODEL <- args[4]
-PATH_ISOTOPES <- args[5]
-QUANT <- args[6]
-MAX_ISO <- as.integer(args[7])
-MAX_CHARGE <- as.integer(args[8])
-PPM <- as.numeric(args[9])
-DMZ <- as.numeric(args[10])
-NUM_FILES <- as.integer(args[11])
-NUM_WORKERS <- as.integer(args[12])
+HDF5_FILE <- args[5]
+PATH_ISOTOPES <- args[6]
+QUANT <- args[7]
+MAX_ISO <- as.integer(args[8])
+MAX_CHARGE <- as.integer(args[9])
+PPM <- as.numeric(args[10])
+DMZ <- as.numeric(args[11])
+NUM_FILES <- as.integer(args[12])
+NUM_WORKERS <- as.integer(args[13])
 
 
 #Path of the temporary filled matrix

@@ -80,10 +80,10 @@ TEMP={"DIR":"temp","CONVERSION":
       "GROUPING":{
       "TEMP":"temp/temp_grouping",
       "BLOCKS":"temp/blocks",
-      "ALIGNMENT":"temp/alignement.rds",
-      "HDF5":"temp/temp_filling.hdf5"},
+      "ALIGNMENT":"temp/alignement.rds"},
+      "MISSING":{"HDF5":"temp/gap_filling.hdf5"},
       "FUSING":{"TEMP1":"temp/temp_dm_1",
-      "TEMP2":"temp/temp_dm_2" },
+      "TEMP2":"temp/temp_dm_2","HDF5":"temp/fusing_msms.hdf5"},
       "REPLICATES":"temp/replicates",
       "IONANNOTATION":{"FULL":"temp/adducts.csv",
                        "MAIN":"temp/main_adducts.csv"},

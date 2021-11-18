@@ -32,7 +32,7 @@ def is_converted(csvfile):
     return False
 
 
-####We ensure that ther is a single databse connection at the same timnb
+####We ensure that ther is a single database connection at all time
 class Experiment:
 
     #####Databases peaks
@@ -752,7 +752,7 @@ class Experiment:
         path_temp_1 = self.output.getFile(cr.TEMP["FUSING"]["TEMP1"])
         path_temp_2 = self.output.getFile(cr.TEMP["FUSING"]["TEMP2"])
         path_fused_msms = self.output.getFile(cr.OUT["FUSED_MSMS"])
-
+        path_hdf5_fused = self.output.getFile(cr.TEMP["FUSING"]["HDF5"])
         for pp in all_peakpicking:
             ###name of file
             self.open_db()
@@ -761,7 +761,7 @@ class Experiment:
             ppg = mg.OnlineGrouper(pp,self.db,dir_blocks, dir_alignment,
             dir_datamatrix, intensity, mztol, ppm, rttol, n_ref, alpha,
                                    ms2_mz_tol,ms2_rt_tol,path_fused_msms,
-                                   path_temp_1,path_temp_2,num_workers,path_fig,
+                                   path_temp_1,path_temp_2,path_hdf5_fused,num_workers,path_fig,
                                    filter_qc,fold_blank)
             ###We update the peaktable path
             poutput_dm = ppg.get_output_datamatrix()
@@ -846,7 +846,9 @@ class Experiment:
         logging.info("Annotation finished")
         return successfull_processing
 
+
     def add_missing_informations(self,max_iso, max_charge, quant, ppm, dmz):
+        #This function is deprecated, the correct function which use hdf5 as a storage is below.
         num_workers = self.get_workers()
         runner = pr.ParallelRunner(num_workers)
         ###Data of previous steps
@@ -890,7 +892,7 @@ class Experiment:
         path_isotopes = cr.DATA["ISOTOPES"]
         path_rt_model = self.output.getFile(cr.TEMP["GROUPING"]["ALIGNMENT"])
         path_temp = self.output.getDir(cr.TEMP["DIR"])
-        path_hdf5 = self.output.getFile(cr.TEMP["GROUPING"]["HDF5"])
+        path_hdf5 = self.output.getFile(cr.TEMP["MISSING"]["HDF5"])
         self.open_db()
         c = self.conn.cursor()
         c.execute("SELECT * FROM peakpicking")

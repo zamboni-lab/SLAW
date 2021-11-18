@@ -68,16 +68,13 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
 
 
     ##mz and rt are always stored
-      lam <- tryCatch(LCMSAlignerModelFromDirectoryByBatch(all_peaktables,
-                                                                                             path_model=PATH_ALIGNMENT,
-                                                                                             output=PATH_BLOCKS,save_interval=max_by_batch,
-                                                                                             num_file=20,num_peaks=NUM_REF,col_int=VAL_INTENSITY,reset = FALSE,
-                                                                                             ppm = MZPPM, dmz=MZTOL,rt = RTTOL,rt_dens=RTTOL/2,n_clusters=10,
-                                                                                             supp_data=supp_args,ransac_l1=ALPHA_RT,bpp=bpp,
-                                                                                             max_cor=RTTOL*3,by_batch=max_by_batch,clustering=FALSE),error=function(e){
-                                                                                               print(e)
-                                                                                               return(NULL)
-                                                                                             })
+      lam <- LCMSAlignerModelFromDirectoryByBatch(all_peaktables,
+               path_model=PATH_ALIGNMENT,
+               output=PATH_BLOCKS,save_interval=max_by_batch,
+               num_file=20,num_peaks=NUM_REF,col_int=VAL_INTENSITY,reset = FALSE,
+               ppm = MZPPM, dmz=MZTOL,rt = RTTOL,rt_dens=RTTOL/2,n_clusters=10,
+               supp_data=supp_args,ransac_l1=ALPHA_RT,bpp=bpp,
+               max_cor=RTTOL*3,by_batch=max_by_batch,clustering=FALSE)
       if(is.null(lam)){
         stop("Empty datamatrix generated.")
       }
@@ -101,7 +98,6 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
       fwrite(dm,file = PATH_OUT_DATAMATRIX,sep="\t")
     }
     
-    # cat("Alignment done\n",file=stdout())
     
 }else{
   cat("Data matrix already exists alignement won't be performed: ",PATH_OUT_DATAMATRIX,"\n",file=stdout())

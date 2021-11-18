@@ -91,6 +91,6 @@ while(is.data.table(dm)){
   vv <- fwrite(x = dm,file = TEMP_DM,append=TRUE,sep="\t")
   first_line <- first_line+batch_size
 }
-message(paste("Conserving",nrow(dm),"rows in the data matrix."))
+#message(paste("Conserving",nrow(dm),"rows in the data matrix."))
 ff <- file.rename(TEMP_DM, PATH_DM)
 
