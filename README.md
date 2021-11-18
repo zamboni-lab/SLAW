@@ -1,7 +1,7 @@
 # SLAW
 
 ### Recent changes:
-__18/11/2021__: Memory efficient spectral merging. The memory efficiency has been upscaled by an order of magnitude following bug report. If you had some issues running SLAW with an OOM error after the datamatrix was generated please try with adelabriere/slaw:dev. 
+__18/11/2021__: Memory efficient spectral merging. The memory efficiency of ms-ms merging has been upscaled by an order of magnitude following bug report. If you had some issues running SLAW with an OOM error after the datamatrix was generated please try with adelabriere/slaw:dev. 
 
 ###Introduction
 
