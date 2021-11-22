@@ -45,7 +45,14 @@ _Note: we recommend using a local folder as output. Network mounts can create pr
 
 _Note: centroided mzML can be obtained with ProteoWizard. Discard profile data and always prioritize the centroid data provided by vendor's software over recalculating centroids with pwiz. (Filter peakPicking vendor msLevel=1-2)_
 
-_Note: more CPU cores will accelerate computation. If you are running parallel containers, the number can be set with -e NCORES=xy
+_Note: more CPU cores will accelerate computation. If you are running parallel containers, the number can be set with -e NCORES=xy_
+
+_Note: a verbose execution can be activated with -e LOGGING=DEBUG_
+
+Therefore, a more complete command-line example on a Windows machine is:
+```
+docker run --rm -v D:\mydata\input_folder_with_mzML:/input -v D:\mydata\output_folder:/output -e NCORES=16 -e LOGGING=DEBUG adelabriere/slaw:latest
+```
 
 If you specified the path correctly, you should see the following text:
 ```
