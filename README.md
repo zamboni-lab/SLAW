@@ -45,7 +45,7 @@ _Note: we recommend using a local folder as output. Network mounts can create pr
 
 _Note: centroided mzML can be obtained with ProteoWizard. Discard profile data and always prioritize the centroid data provided by vendor's software over recalculating centroids with pwiz. (Filter peakPicking vendor msLevel=1-2)_
 
-_Note: more CPU cores will accelerate computation. If you are running parallel containers, the number can be set with -e NCORES=xy_
+_Note: more CPU cores will accelerate computation. If you are running parallel containers, the number can be set with -e NCORES=xy. However a high number of cores (>80) may encounter internal R limitations, there keep this number below 80._
 
 _Note: a verbose execution can be activated with -e LOGGING=DEBUG_
 
