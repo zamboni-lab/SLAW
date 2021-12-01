@@ -1,7 +1,9 @@
 # SLAW
 
 ### Recent changes:
-__18/11/2021__: Memory efficient spectral merging. The memory efficiency has been upscaled by an order of magnitude following bug report. If you had some issues running SLAW with an OOM error after the datamatrix was generated please try with adelabriere/slaw:dev. 
+__18/11/2021__: Memory efficient spectral merging. The memory efficiency of ms-ms merging has been upscaled following bug report. It is still in dev as I am running some tests, but if you had some issues running SLAW with an OOM error after the datamatrix was generated please try with adelabriere/slaw:dev. 
+
+### Introduction
 
 SLAW is a scalable, containerized workflow for untargeted LC-MS processing. It was developed by Alexis Delabriere in the [Zamboni Lab](https://imsb.ethz.ch/research/zamboni.html) at ETH Zurich. An explanation of the advantages of SLAW and its motivations of development can be found in this [blog post](https://metabolomics.blog/2021/07/02/slaw/). In brief, the core advantages of SLAW are:
  * Complete processing including peak picking, sample alignment, pick picking, grouping of isotopologues and adducts, gap-filling by data recursion, extraction of consolidated MS2 spectra and isotopic data.
@@ -43,7 +45,14 @@ _Note: we recommend using a local folder as output. Network mounts can create pr
 
 _Note: centroided mzML can be obtained with ProteoWizard. Discard profile data and always prioritize the centroid data provided by vendor's software over recalculating centroids with pwiz. (Filter peakPicking vendor msLevel=1-2)_
 
-_Note: more CPU cores will accelerate computation. If you are running parallel containers, the number can be set with -e NCORES=xy
+_Note: more CPU cores will accelerate computation. If you are running parallel containers, the number can be set with -e NCORES=xy. However a high number of cores (>80) may encounter internal R limitations, there keep this number below 80._
+
+_Note: a verbose execution can be activated with -e LOGGING=DEBUG_
+
+Therefore, a more complete command-line example on a Windows machine is:
+```
+docker run --rm -v D:\mydata\input_folder_with_mzML:/input -v D:\mydata\output_folder:/output -e NCORES=16 -e LOGGING=DEBUG adelabriere/slaw:latest
+```
 
 If you specified the path correctly, you should see the following text:
 ```
