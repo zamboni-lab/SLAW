@@ -417,9 +417,9 @@ vmat[,1] <- vmat[,1]/RT_TOL
 vmat[,2] <- vmat[,2]/MZ_TOL
 rtt <- RTree(vmat)
 
-####################################################
-####THIS IS THE ONLINE IMPLEMENTATION IF NEEDED ####
-####################################################
+############################################################
+####THIS IS A MEMORY EFFICIENT IMPLEMENTATION IF NEEDED ####
+############################################################
 
 ##We write all the MS2 data on the disk by file and by spectrum
 ## and only return a bunch of precursor
@@ -501,29 +501,48 @@ rtt <- RTree(vmat)
 ####THIS IS THE END OF THE ONLINE IMPLEMENTATION####
 ####################################################
 
-##We read the mgf data from the disk.
-vmgf <- bplapply(PATH_MSMS,readMgfData,BPPARAM = bpp)
+###############################################################
+###This is a more efficient not totally online implmentation###
+###############################################################
 
-### Building a summary table
-tab_summary <- sapply(vmgf,function(x){
-  header(x)[,c(2,3)]
-  },simplify=FALSE)
-
-###We extract the collision energy
-collision <- NULL
-if("COLLISIONENERGY" %in% fvarLabels(vmgf[[1]])){
-  collision <- sapply(vmgf,function(x){as.numeric(as.character(fData(x)[,"COLLISIONENERGY"]))},simplify = FALSE)
-}else{
-  ###In this case we don t know the collision energy, we set it to 0
-  collision <- sapply(vmgf,function(x){rep(0,length(x))},simplify = FALSE)
+extract_informations <- function(x){
+  suppressWarnings(suppressMessages(library(MSnbase,warn.conflicts = FALSE)))
+  ###We parse the MGF
+  objv <- readMgfData(x)
+  ###The spectra are stroed as data.frane (3x less spaces)
+  spectra <- lapply(spectra(objv),as.data.frame)
+  
+  ###The precursor informations are extracted
+  fx <- fData(objv)
+  rt_col <- "RTINSECONDS"
+  if(!(rt_col %in% colnames(fx))){
+    rt_col <- "RT"
+  }
+  
+  precursors <- fx[,c("PEPMASS",rt_col)]
+  colnames(precursors) <- c("precursor.mz","retention.time")
+  precursors[,"precursor.mz"] <- as.numeric(precursors[,"precursor.mz"])
+  precursors[,"retention.time"] <- as.numeric(precursors[,"retention.time"])
+  
+  
+  ##Collision energy extraction
+  collision <- rep(0,length(objv))
+  if("COLLISIONENERGY" %in% fvarLabels(objv)){
+    collision <- as.numeric(as.character(fx[,"COLLISIONENERGY"]))
+  }
+  return(list(spectra,precursors,collision))
 }
-collision <- unlist(collision)
 
-tab_summary <- mapply(tab_summary,seq_along(vmgf),FUN=function(x,y){
-    cnames <- colnames(x)
-    x <- cbind(1:nrow(x),x,rep(y,nrow(x)))
-    colnames(x) <- c("idx",cnames,"file")
-    return(x)
+mgf_infos <- bplapply(as.list(PATH_MSMS),extract_informations)
+tab_summary <- sapply(mgf_infos,"[[",i=2,simplify = FALSE)
+collision <- unlist(sapply(mgf_infos,"[[",i=3,simplify = FALSE))
+
+
+tab_summary <- mapply(tab_summary,seq_along(mgf_infos),FUN=function(x,y){
+  cnames <- colnames(x)
+  x <- cbind(1:nrow(x),x,rep(y,nrow(x)))
+  colnames(x) <- c("idx",cnames,"file")
+  return(x)
 },SIMPLIFY = FALSE)
 
 ###We look for the nearest neighbour for each peak using the eclidien distnce weighted by the tolerance
@@ -532,14 +551,24 @@ tab_summary[,"precursor.mz"] <- tab_summary[,"precursor.mz"]/MZ_TOL
 tab_summary[,"retention.time"] <- tab_summary[,"retention.time"]/(60*RT_TOL)
 
 
+###We extract the collision energy
+# collision <- NULL
+# if("COLLISIONENERGY" %in% fvarLabels(vmgf[[1]])){
+#   collision <- sapply(vmgf,function(x){as.numeric(as.character(fData(x)[,"COLLISIONENERGY"]))},simplify = FALSE)
+# }else{
+#   ###In this case we don t know the collision energy, we set it to 0
+#   collision <- sapply(vmgf,function(x){rep(0,length(x))},simplify = FALSE)
+# }
+# collision <- unlist(collision)
+
 ####We find the nearest neighbour for eveyr spectrum.
 vclose <- rtree::knn.RTree(rtt,as.matrix(tab_summary[,c("retention.time","precursor.mz")]),as.integer(1))
 vbox <- rtree::withinBox.RTree(rtt,as.matrix(tab_summary[,c("retention.time","precursor.mz")]),dx=1,
-dy=1)
+                               dy=1)
 
 ##We calculate the intersection which give the real matched feature every time.
 def_val <- mapply(vclose,vbox,FUN=function(x,y){
-    intersect(x,y+1)
+  intersect(x,y+1)
 },SIMPLIFY = FALSE)
 
 ##We only keep the feature with a matching MS-MS spectra.
@@ -553,13 +582,14 @@ listidx <- by(is_fragmented,INDICES = vfactor,FUN=function(x){x})
 
 ####We now process the data by batch to avoid any overhead
 listspecs <- lapply(
-  listidx,function(x,tab_summary,specs){
-    apply(tab_summary[x,,drop=FALSE],1,function(x,ref){ref[[x[4]]][[x[1]]]},ref=specs)
+  listidx,function(x,tab_summary,specs_ref){
+    apply(tab_summary[x,,drop=FALSE],1,function(x,ref){specs_ref[[x[4]]][[1]][[x[1]]]},ref=specs_ref)
   }
-,tab_summary=tab_summary,specs=vmgf)
-#print(head(listidx))
-#print(head(listspecs))
-  
+  ,tab_summary=tab_summary,specs_ref=mgf_infos)
+
+#This is the aggregation
+fcc <- bpmapply(listidx,listspecs,FUN = mergeSpectraEfficient,BPPARAM=bpp,SIMPLIFY = FALSE)
+
 fcc <- bpmapply(listidx,listspecs,FUN = mergeSpectraEfficient,BPPARAM=bpp,SIMPLIFY = FALSE)
 
 
@@ -579,15 +609,110 @@ dm_idx <- apply(dm_idx,2,as.numeric)
 num_fused <- sapply(fcc,"[[",i="num_fused")
 spec_idx <- sapply(fcc,"[[",i="idx")
 consensus_specs <- sapply(fcc,"[[",i="spec",simplify = FALSE)
-###We build a list of all the consensus spectra. At the moment it is just averaged spectra.
 
-# consensus_specs <- apply(tab_summary[spec_idx,,drop=FALSE],1,function(x,hdf5_file){
-#   h5_name <- make_spec_name(x[4],x[1])
-#   peaks <- h5read(hdf5_file,h5_name)
-#   MSnbase:::Spectrum2(mz=peaks[,1],intensity = peaks[,2],
-#                       rt = x["retention.time"]*60,precursorMz = x["precursor.mz"],
-#                       msLevel = 2)
-#},hdf5_file=HDF5_FILE)
+consensus_specs <- lapply(fcc,function(x,tab_summary){
+  tx <- tab_summary[x[["idx"]],]
+  peaks <- x[["spec"]]
+  MSnbase:::Spectrum2(mz=peaks[,1],intensity = peaks[,2],
+                      rt = tx["retention.time"]*60,precursorMz = tx["precursor.mz"],
+                      msLevel = 2)
+},tab_summary=tab_summary)
+
+
+################################################
+##This is the basic inefficient implementation##
+################################################
+# 
+# ##We read the mgf data from the disk.
+# vmgf <- bplapply(PATH_MSMS,readMgfData,BPPARAM = bpp)
+# 
+# ### Building a summary table
+# tab_summary <- sapply(vmgf,function(x){
+#   header(x)[,c(2,3)]
+#   },simplify=FALSE)
+# 
+# ###We extract the collision energy
+# collision <- NULL
+# if("COLLISIONENERGY" %in% fvarLabels(vmgf[[1]])){
+#   collision <- sapply(vmgf,function(x){as.numeric(as.character(fData(x)[,"COLLISIONENERGY"]))},simplify = FALSE)
+# }else{
+#   ###In this case we don t know the collision energy, we set it to 0
+#   collision <- sapply(vmgf,function(x){rep(0,length(x))},simplify = FALSE)
+# }
+# collision <- unlist(collision)
+# 
+# tab_summary <- mapply(tab_summary,seq_along(vmgf),FUN=function(x,y){
+#     cnames <- colnames(x)
+#     x <- cbind(1:nrow(x),x,rep(y,nrow(x)))
+#     colnames(x) <- c("idx",cnames,"file")
+#     return(x)
+# },SIMPLIFY = FALSE)
+# 
+# ###We look for the nearest neighbour for each peak using the eclidien distnce weighted by the tolerance
+# tab_summary <- do.call(rbind,tab_summary)
+# tab_summary[,"precursor.mz"] <- tab_summary[,"precursor.mz"]/MZ_TOL
+# tab_summary[,"retention.time"] <- tab_summary[,"retention.time"]/(60*RT_TOL)
+# 
+# 
+# ####We find the nearest neighbour for eveyr spectrum.
+# vclose <- rtree::knn.RTree(rtt,as.matrix(tab_summary[,c("retention.time","precursor.mz")]),as.integer(1))
+# vbox <- rtree::withinBox.RTree(rtt,as.matrix(tab_summary[,c("retention.time","precursor.mz")]),dx=1,
+# dy=1)
+# 
+# ##We calculate the intersection which give the real matched feature every time.
+# def_val <- mapply(vclose,vbox,FUN=function(x,y){
+#     intersect(x,y+1)
+# },SIMPLIFY = FALSE)
+# 
+# ##We only keep the feature with a matching MS-MS spectra.
+# is_fragmented <- which(sapply(def_val,function(x){length(x)>0}))
+# if(length(is_fragmented)==0) stop("No MS-MS spectra found with matching LC-MS feature.")
+# message("Found ",length(is_fragmented)," features with associated MS-MS spectra")
+# 
+# ###We aggregate the  data by nearest neighbours and energy
+# vfactor <- apply(cbind(unlist(def_val[is_fragmented]),collision[is_fragmented]),1,paste,collapse="_")
+# listidx <- by(is_fragmented,INDICES = vfactor,FUN=function(x){x})
+# 
+# ####We now process the data by batch to avoid any overhead
+# listspecs <- lapply(
+#   listidx,function(x,tab_summary,specs){
+#     apply(tab_summary[x,,drop=FALSE],1,function(x,ref){ref[[x[4]]][[x[1]]]},ref=specs)
+#   }
+# ,tab_summary=tab_summary,specs=vmgf)
+# 
+# fcc <- bpmapply(listidx,listspecs,FUN = mergeSpectraEfficient,BPPARAM=bpp,SIMPLIFY = FALSE)
+# 
+# 
+# #fcc <- bplapply(listidx,FUN = mergeSpectra,specs=vmgf,tab_summary=tab_summary,make_spec_path=make_spec_name,
+# #               hdf5_file=HDF5_FILE,BPPARAM=bpp)
+# 
+# ###This is the refactored version
+# #mergeSpectraRefactored <- function(x,tab_summary,make_spec_path,hdf5_file,cos_thresh=0.7,round=10){
+# #fcc <- bplapply(listidx,FUN = mergeSpectraRefactored,tab_summary=tab_summary,
+# #                FILE_GROUP=FILE_GROUP,SPEC_GROUP=SPEC_GROUP,hdf5_file=HDF5_FILE,BPPARAM=bpp)
+# 
+# #list(idx=x[fc[[3]][ppmax]],num_total=length(x),num_fused=size_comp[ppmax]))
+# 
+# ###We extract all the necessary spectra
+# dm_idx <- str_split(names(listidx),fixed("_"),simplify = TRUE)
+# dm_idx <- apply(dm_idx,2,as.numeric)
+# num_fused <- sapply(fcc,"[[",i="num_fused")
+# spec_idx <- sapply(fcc,"[[",i="idx")
+# consensus_specs <- sapply(fcc,"[[",i="spec",simplify = FALSE)
+# ###We build a list of all the consensus spectra. At the moment it is just averaged spectra.
+# 
+# # consensus_specs <- apply(tab_summary[spec_idx,,drop=FALSE],1,function(x,hdf5_file){
+# #   h5_name <- make_spec_name(x[4],x[1])
+# #   peaks <- h5read(hdf5_file,h5_name)
+# #   MSnbase:::Spectrum2(mz=peaks[,1],intensity = peaks[,2],
+# #                       rt = x["retention.time"]*60,precursorMz = x["precursor.mz"],
+# #                       msLevel = 2)
+# #},hdf5_file=HDF5_FILE)
+
+##########################################################
+##This is theend of the basic inefficient implementation##
+##########################################################
+
 
 ###We make a table of the supplementary informations
 supp_infos <- data.frame(SCANS=1:nrow(dm_idx),FEATURE=dm_idx[,1],ENERGY=dm_idx[,2],NUM_CLUSTERED=num_fused,
