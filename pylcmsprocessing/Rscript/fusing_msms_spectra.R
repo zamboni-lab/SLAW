@@ -618,7 +618,7 @@ consensus_specs <- lapply(fcc,function(x,tab_summary){
   tx <- tab_summary[x[["idx"]],]
   peaks <- x[["spec"]]
   MSnbase:::Spectrum2(mz=peaks[,1],intensity = peaks[,2],
-                      rt = tx["retention.time"]*60,precursorMz = tx["precursor.mz"],
+                      rt = tx["retention.time"],precursorMz = tx["precursor.mz"],
                       msLevel = 2)
 },tab_summary=tab_summary)
 
