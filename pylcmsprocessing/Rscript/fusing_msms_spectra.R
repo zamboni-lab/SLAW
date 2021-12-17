@@ -610,6 +610,10 @@ num_fused <- sapply(fcc,"[[",i="num_fused")
 spec_idx <- sapply(fcc,"[[",i="idx")
 consensus_specs <- sapply(fcc,"[[",i="spec",simplify = FALSE)
 
+
+tab_summary[,"retention.time"] <- tab_summary[,"retention.time"]*(60*RT_TOL)
+tab_summary[,"precursor.mz"] <- tab_summary[,"precursor.mz"]*MZ_TOL
+
 consensus_specs <- lapply(fcc,function(x,tab_summary){
   tx <- tab_summary[x[["idx"]],]
   peaks <- x[["spec"]]
