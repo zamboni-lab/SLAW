@@ -55,7 +55,11 @@ convertToCliqueMS <- function(dm,
     sel_idx <- sort(sample(sel_idx, maxPeaks))
 
   getIntensityPos <- function(dm) {
-    which(startsWith(colnames(dm),"int"))
+    p0 <- which(startsWith(colnames(dm),"int"))
+    if(length(p0)==0){
+      p0 <- which(startsWith(colnames(dm),"hei")) 
+    }
+    return(p0)
   }
   # pint <- getIntensityPos(dm)
   intensity <- NULL
