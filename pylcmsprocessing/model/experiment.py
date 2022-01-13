@@ -670,8 +670,10 @@ class Experiment:
         all_peaktables = [x[0] for x in all_peaktables]
         num_workers = self.get_workers()
         logging.info("Starting peaktable filtration")
-        with multiprocessing.Pool(min(num_workers, len(all_peaktables))) as executor:
-            executor.map(partial(fp.par_peaktable_filtering,peak_filter=peak_filter),all_peaktables)
+        min_process = min(num_workers, len(all_peaktables)
+        if min_process>0:
+	    with multiprocessing.Pool(min_process)) as executor:
+	        executor.map(partial(fp.par_peaktable_filtering,peak_filter=peak_filter),all_peaktables)
         logging.info("Done peaktables filtration")
 
 
