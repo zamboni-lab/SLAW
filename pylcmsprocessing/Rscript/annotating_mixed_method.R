@@ -25,10 +25,13 @@ get_os <- function() {
     stop("Unknown OS")
   }
 }
-
-getIntensityPos <- function(dm) {
-  which(startsWith(colnames(dm), "int"))
-}
+  getIntensityPos <- function(dm) {
+    p0 <- which(startsWith(colnames(dm),"int"))
+    if(length(p0)==0){
+      p0 <- which(startsWith(colnames(dm),"hei"))
+    }
+    return(p0)
+  }
 
 
 ###Convert a data matrix in an output similar to XCMS output
@@ -177,7 +180,11 @@ computeNetworkRawfile <-
       # if needed add the maxPeks argument ot the function
 
       getIntensityPos <- function(dm) {
-        which(startsWith("int", colnames(dm)))
+        p0 <- which(startsWith(colnames(dm),"int"))
+        if(length(p0)==0){
+          p0 <- which(startsWith(colnames(dm),"hei"))
+        }
+        return(p0)
       }
       # pint <- getIntensityPos(dm)
       intensity <- NULL
