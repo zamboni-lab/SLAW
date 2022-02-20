@@ -36,9 +36,10 @@ class samplingOptimizer:
         else:
             self.fixed_arguments = fixed_arguments
         self.bounds=bounds
-        if hard_threshold is None:
-            hard_threshold = [False]*len(hard_threshold)
-        self.hard_threshold = hard_threshold
+
+#        if hard_threshold is None:
+#            hard_threshold = [False]*len(hard_threshold)
+#        self.hard_threshold = hard_threshold
 
         self.sampler=sampler
         if weight is not None:

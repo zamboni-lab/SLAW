@@ -68,16 +68,6 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
 
 
     ##mz and rt are always stored
-    #      lam <- tryCatch(suppressMessages(suppressWarnings(LCMSAlignerModelFromDirectoryByBatch(all_peaktables,
-    #                    path_model=PATH_ALIGNMENT,
-    #                     output=PATH_BLOCKS,save_interval=max_by_batch,
-    #                     num_file=20,num_peaks=NUM_REF,col_int=VAL_INTENSITY,reset = FALSE,
-    #                     ppm = MZPPM, dmz=MZTOL,rt = RTTOL,rt_dens=RTTOL/2,n_clusters=10,
-    #                     supp_data=supp_args,ransac_l1=ALPHA_RT,bpp=bpp,
-    #                    max_cor=RTTOL*3,by_batch=max_by_batch,clustering=FALSE))),error=function(e){
-    #                      
-    #                      return(NULL)
-    #                    })
       lam <- tryCatch(LCMSAlignerModelFromDirectoryByBatch(all_peaktables,
                                                                                              path_model=PATH_ALIGNMENT,
                                                                                              output=PATH_BLOCKS,save_interval=max_by_batch,
@@ -91,16 +81,7 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
       if(is.null(lam)){
         stop("Empty datamatrix generated.")
       }
-        
 
-    ###Figures updated later.
-    # if(!file.exists(OUTFIGURE)){
-    #   pdf(OUTFIGURE)
-    #   plotDevRt(lam,int_threshold=0.15)
-    #   dev.off()
-    # }else{
-    #   # cat("Rt deviation figure already exists.","\n",file=stdout())
-    # }
     ###We always filter out the peaks detected only once.
     vexp <- suppressMessages(suppressWarnings(exportDataMatrix(lam,path=PATH_OUT_DATAMATRIX,quant_var = VAL_INTENSITY,subvariable=which(lam@peaks$num>=2),summary_vars=c("mz","rt","rt_cor",supp_args))))
 
@@ -123,5 +104,5 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
     # cat("Alignment done\n",file=stdout())
     
 }else{
-  cat("Data matrix already exists alignement won t be performed: ",PATH_OUT_DATAMATRIX,"\n",file=stdout())
+  cat("Data matrix already exists alignement won't be performed: ",PATH_OUT_DATAMATRIX,"\n",file=stdout())
 }

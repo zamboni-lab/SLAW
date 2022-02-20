@@ -8,13 +8,11 @@ import sqlite3
 import logging
 import shutil
 
+# The builders files are just here to do
+
 
 ###Given a hash conrresponding to an experiemnet, handle the removal of the data if needed.
 class inputChecker:
-    # dir_blocks = self.output.getDir(cr.TEMP["GROUPING"]["BLOCKS"])
-    # dir_alignment = self.output.getFile(cr.TEMP["GROUPING"]["ALIGNMENT"])
-    # dir_datamatrix = self.output.getDir(cr.OUT["DATAMATRIX"])
-    # path_fig = self.output.getFile(cr.OUT["FIGURES"]["RT_DEV"])
     def __init__(self,output_handler,hash,path_db):
         ###Given an
         self.hash = hash
@@ -92,14 +90,6 @@ class MZMineBuilder(inputBuilder):
         super(inputBuilder, self).__init__()
 
     def build_inputs(self):
-        # OUT = {"ADAP":
-        #            {"SUMMARY": "ADAP/ADAP_parameters.csv",
-        #             "SUMMARY_TEMPLATES": "ADAP/candidates.csv",
-        #             "XML": "ADAP/xml",
-        #             "XML_TEMPLATES": "ADAP/xml_templates",
-        #             "CANDIDATES": "ADAP/candidates.csv"}
-        #        }
-
         ###We create the necessary directories
         xml_templates = self.output.getDir(cr.OUT["ADAP"]["XML_TEMPLATES"])
         summary_templates = self.output.getFile(cr.OUT["ADAP"]["SUMMARY_TEMPLATES"])
@@ -118,6 +108,57 @@ class MZMineBuilder(inputBuilder):
         logging.info("Computing MZmine parameters")
         subprocess.call("Rscript " + commandline, shell=True)
 
+    def build_inputs_single_parameter_set_optimization(self,xml_file):
+        hash_val = common.tools.md5sum(xml_file)
+        ###Checking if input folder exists.
+        icheck = inputChecker(self.output, hash_val, self.db)
+        icheck.prepare_directories()
+        icheck.prepare_db()
+
+        ###In this case we ust have to remap the parameters
+        ###We create the necessary directories
+        pxml = self.output.getDir(cr.OUT[self.algorithm]["XML"])
+        candidates = self.output.getFile(cr.OUT[self.algorithm]["CANDIDATES"])
+        peaktables = self.output.getDir(cr.OUT[self.algorithm]["PEAKTABLES"])
+        msms = self.output.getDir(cr.OUT[self.algorithm]["MSMS"])
+        prscript = common.tools.find_rscript()
+        tjson = self.output.getFile(cr.OUT[self.algorithm]["JSON"])
+        scriptMZmine = os.path.join(prscript, "wrapper_MZmine_peak_picking_xml.R")
+        commandline = " ".join([scriptMZmine, self.db, xml_file, pxml, candidates, peaktables, msms, tjson])
+        # logging.debug(commandline)
+        logging.info("Computing MZmine parameters")
+        subprocess.call("Rscript " + commandline, shell=True)
+        conn = sqlite3.connect(self.db)
+        c = conn.cursor()
+        try:
+            ctuple = (1, 1, xml_file, hash_val, "", "", "", "")
+            c.execute("""INSERT INTO peakpicking VALUES (?,?,?,?,?,?,?,?)""", ctuple)
+        except sqlite3.IntegrityError as e:
+            pass
+
+        ###We read the candidates table output by the R script.
+        path_candidates = self.output.getFile(cr.OUT[self.algorithm]["CANDIDATES"])
+        candidates = pd.read_csv(path_candidates,sep=";")
+
+        pid = 1
+        counter_processed = 0
+        counter_to_process = 0
+
+        for row in candidates.itertuples(index=False):
+            ###If the algorithm does not exist we skip
+            ###We try to insert it
+            try:
+                ctuple = (pid, 1, int(row[1]), row[2], row[3], row[4], row[5], 1, 1)
+                pid += 1
+                c.execute("""INSERT INTO processing VALUES (?,?,?,?,?,?,?,?,?)""", ctuple)
+                counter_to_process += 1
+            except sqlite3.IntegrityError as e:
+                counter_processed += 1
+
+        logging.info(str(counter_processed)+" existing peak picking "+ str(counter_to_process)+ " added.")
+        conn.commit()
+        conn.close()
+
     def build_inputs_single_parameter_set(self,xml_file):
         hash_val = common.tools.md5sum(xml_file)
         ###Checking if input folder exists.
@@ -134,7 +175,6 @@ class MZMineBuilder(inputBuilder):
         tjson = self.output.getFile(cr.OUT[self.algorithm]["JSON"])
         scriptMZmine = os.path.join(prscript, "wrapper_MZmine_peak_picking_xml.R")
         commandline = " ".join([scriptMZmine, self.db, xml_file, pxml, candidates, peaktables, msms, tjson])
-        # logging.debug(commandline)
         logging.info("Computing MZmine parameters")
         subprocess.call("Rscript " + commandline, shell=True)
         conn = sqlite3.connect(self.db)
@@ -274,8 +314,6 @@ class openMSBuilder(inputBuilder):
         for vid,path,level in samples:
             temp_l = list(args)+[path]
             hash_sample = hash_list(temp_l)
-            # / output / ADAP / msms / msms_1_3146b653da32a8d0806ec9c635c629e5.mgf
-            # / output / ADAP / peaktables / peaktable_1_3146b653da32a8d0806ec9c635c629e5.csv
             path_ms = os.path.join(path_peaktables,"peaktable_"+str(vid)+"_"+hash_sample+".featureXML")
             if level=="MS2":
                 path_ms = "NOT PROCESSED"

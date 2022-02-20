@@ -84,12 +84,6 @@ option_list = list(
 
 opt_parser <-  OptionParser(option_list = option_list)
 opt <- parse_args(opt_parser)
-if(FALSE){
-  opt <- list(directory="U:/users/Alaa/Projects/HT_LC_6546/BioMarCo19_mzML",summary="U:/users/Alaa/Projects/HT_LC_6546/BioMarCo19_mzML/summary.csv",
-              summarypath="path",summarytype="type",mzml="U:/users/Alaa/Projects/HT_LC_6546/BioMarCo19_mzML",summarysep=",")
-  
-}
-
 
 #####We move to the target experiment repostory.
 if (!is.null(opt$directory))
