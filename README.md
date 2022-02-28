@@ -47,8 +47,9 @@ SLAW is executed by running the Docker container in  a terminal window (on Linux
 ```
 docker run --rm -v INPUT_FOLDER:/input -v PATH_OUTPUT:/output zambonilab/slaw:latest
 ```
+In the above example, INPUT_FOLDER and PATH_OUTPUT should be replaced with the full path of the aforementioned input and output folder. An example can be found at the end of this section. Copying without updating will trigger an error because the paths are invalid. 
 
-If you specified the path correctly, you should see the following text:
+If you specified the paths correctly and they exist, you should see the following text:
 ```
 2020-12-02|12:39:28|INFO: Total memory available: 7556 and 6 cores. The workflow will use 1257 Mb by core on 5 cores.
 ....
