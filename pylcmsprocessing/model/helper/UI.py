@@ -45,7 +45,7 @@ class UI:
                 raw_yaml["ion_annotation"]["main_adducts_negative"]["value"] = cr.default_adducts_main_negative()
         # We write the yaml in the output directory
         with open(path_yaml, 'w') as outfile:
-            yaml.dump(raw_yaml, outfile, default_flow_style=False)
+            yaml.dump(raw_yaml, outfile, default_flow_style=False, sort_keys=False)
 
 
     def generate_yaml_files(self,force=False):
@@ -55,7 +55,7 @@ class UI:
         #We write the yaml in the output directory
         if not os.path.isfile(self.path_yaml) or force:
             with open(self.path_yaml, 'w') as outfile:
-                yaml.dump(raw_yaml,outfile, default_flow_style=False)
+                yaml.dump(raw_yaml,outfile, default_flow_style=False, sort_keys=False)
             self.initialize_yaml_polarity(self.polarity,self.path_yaml)
 
 
