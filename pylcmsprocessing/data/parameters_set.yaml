@@ -124,11 +124,11 @@ peakpicking:
     ms2_mz_tol:
       priority: LOW
       description: Float. (All peakpickers) The tolerance in mass in Dalton for MS-MS pairing.
-      value: 0.1
+      value: 0.01
     ms2_rt_tol:
       priority: LOW
       description: Float. (All peakpickers) The tolerance in rt for MS-MS pairing in minutes.
-      value: 0.1
+      value: 0.05
 grouping:
   description: Alignment of peaktables of different samples and building of a common data matrix. This step is done using a personnalized package for retention time correction.
   ppm:
