@@ -1,8 +1,8 @@
-library(DBI)
-library(RSQLite)
-library(stringr)
-library(openssl)
-library(BiocParallel)
+library(DBI, quietly = TRUE)
+library(RSQLite, quietly = TRUE)
+library(stringr, quietly = TRUE)
+library(openssl, quietly = TRUE)
+library(BiocParallel, quietly = TRUE)
 
 # INNER JOIN SYNTAX
 # SELECT path,output_ms FROM samples INNER JOIN processing on sample = samples.id;
