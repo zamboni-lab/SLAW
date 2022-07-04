@@ -16,7 +16,7 @@ RUN R -e "library(devtools);install.packages('/MZmineXMLManipulator',type='sourc
 RUN R -e "library(BiocManager);BiocManager::install('rhdf5')"
 
 #Resinstalling data.table as it seems to become problematic after Rhdf5
-RUN R -e "remove.packages('data.table');install.packages('data.table')"
+RUN R -e "install.packages('data.table')"
 
 #Dependency copy
 COPY MZmine-2.52-Linux /MZmine-2.52-Linux
