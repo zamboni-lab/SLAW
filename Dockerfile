@@ -1,5 +1,6 @@
 # Base image should always include all the dependencies
-FROM zambonilab/slaw_basis
+FROM adelabriere/basis_workflow
+# FROM zambonilab/slaw_basis
 
 # THis make the DOckerfile build work on github CI
 RUN apt-get update
