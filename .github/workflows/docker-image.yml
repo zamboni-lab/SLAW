@@ -2,7 +2,7 @@ name: SLAW Docker CI
 
 on:
   push:
-    branches: [ master,new_dev ]
+    branches: [ new_base ]
 
 jobs:
   build:
