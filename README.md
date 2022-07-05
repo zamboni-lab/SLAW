@@ -99,7 +99,7 @@ Additional information can be found in the Wiki section.
 
 ## Missing speed?
 * Don't use ADAP with parameter optimization. It's slower than the others, with obvious consequences on run time. The fastest is openMS. Based on our experience with different types of TOF and Orbi spectra (some of which is reported in the paper), we recommend to use centWave as default. OpenMS might be preferred for fast processing of large LC-MS studies with thousands of injections.
-* Increase **noise_level_MS1** to 100 or above.
+* Increase **noise_level_MS1** to 10-100.
 * Use a local folder as input.
 
 ## Use on HPC nodes
