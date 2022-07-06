@@ -11,9 +11,10 @@ RUN strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so
 
 ##We install the 2 packages in the same folder
 COPY onlineLCMSaligner /onlineLCMSaligner
-RUN R -e "setwd('/onlineLCMSaligner');library(devtools);install.packages('/onlineLCMSaligner/',type = 'ource',repos = NULL)"
+COPY onlineLCMSaligner /onlineLCMSaligner
+RUN R -e "setwd('/onlineLCMSaligner');library(devtools);remove.packages('onlineLCMSaligner');install_local('/onlineLCMSaligner')"
 COPY MZmineXMLManipulator /MZmineXMLManipulator
-RUN R -e "setwd('/MZmineXMLManipulator');library(devtools);install.packages('/MZmineXMLManipulator/',type = 'source',repos = NULL)"
+RUN R -e "setwd('/MZmineXMLManipulator');library(devtools);remove.packages('MZmineXMLManipulator');install_local('/MZmineXMLManipulator')"
 RUN R -e "library(BiocManager);BiocManager::install('rhdf5')"
 
 #Resinstalling data.table as it seems to become problematic after Rhdf5
