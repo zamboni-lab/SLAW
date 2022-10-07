@@ -8,7 +8,7 @@ __17/12/2021__: Fixed incorrect precursors and rt masses in MGF.
 __18/11/2021 (Solved the 01/12/2021)__: Memory efficient spectral merging. The memory efficiency of ms-ms merging has been upscaled following bug report. It is still in dev as I am running some tests, but if you had some issues running SLAW with an OOM error after the datamatrix was generated please try with adelabriere/slaw:dev.
 
 ## Introduction
-SLAW is a scalable, containerized workflow for untargeted LC-MS processing. It was developed by Alexis Delabriere in the [Zamboni Lab](https://imsb.ethz.ch/research/zamboni.html) at ETH Zurich. An explanation of the advantages of SLAW and its motivations of development can be found in this [blog post](https://metabolomics.blog/2021/07/02/slaw/). In brief, the core advantages of SLAW are:
+SLAW is a scalable, containerized workflow for untargeted LC-MS processing (DDA only). It was developed by Alexis Delabriere in the [Zamboni Lab](https://imsb.ethz.ch/research/zamboni.html) at ETH Zurich. An explanation of the advantages of SLAW and its motivations of development can be found in this [blog post](https://metabolomics.blog/2021/07/02/slaw/). In brief, the core advantages of SLAW are:
  * Complete processing including peak picking, sample alignment, pick picking, grouping of isotopologues and adducts, gap-filling by data recursion, extraction of consolidated MS2 spectra (only for DDA experiments! DIA-MS2 spectra will be skipped) and isotopic data.
  * Scalability: SLAW can process thousands of samples efficiently
  * Wrapping of three main peak picking algorithms: Centwave, FeatureFinderMetabo, ADAP
