@@ -14,9 +14,13 @@ EMPTY_ISOTOPES <- "EMPTY"
 MAX_FILES <- 10
 
 sink(file=stdout())
-
 ##Argument passed by Python
 args <- commandArgs(trailingOnly = TRUE)
+
+## testing
+# args <- c("D:\\SW\\SLAW_test_data_out\\temp_processing_db.sqlite","D:\\SW\\SLAW_test_data_out\\datamatrices\\datamatrix_741d552fefa0759df99c04af0d7f6562.csv",
+# "D:\\SW\\SLAW_test_data_out\\temp","D:\\SW\\SLAW_test_data_out\\temp\\alignement.rds","D:\\SW\\SLAW_test_data_out\\temp\\gap_filling.hdf5","D:\\SW\\SLAW\\pylcmsprocessing\\data\\isotopes.tsv","intensity"
+# ,4,3,15.0,0.01,5,39)
 
 PATH_DB <- args[1]
 PATH_DM <- args[2]
@@ -35,12 +39,12 @@ NUM_WORKERS <- as.integer(args[13])
 
 #Path of the temporary filled matrix
 TEMP_FILLED <- file.path(PATH_TEMP,"filled_dm.csv")
-TEMP_TRANSFER <- file.path(PATH_TEMP,"tranfer_dm.csv")
+TEMP_TRANSFER <- file.path(PATH_TEMP,"transfer_dm.csv")
 
 #Path of missing informations
 HDF5_FILE <- file.path(PATH_TEMP,"missing_infos.hdf5")
 
-#Istopes table
+#Isotopes table
 isotopes_table <- fread(PATH_ISOTOPES, sep = " ")
 
 #Column names of the data matrix
@@ -124,7 +128,6 @@ if (batches[length(batches)] != max_feat) {
   batches[length(batches)] <- max_feat + 1
 }
 
-
 #Extracting the features to infer from each samples
 raw_isotopes_samples <- rep(0,num_features)
 raw_isotopes_intensities <- rep(0,num_features)
@@ -181,484 +184,7 @@ for(samp in 1:num_samples){
   }
 }
 
-
-extractMissingInformations <-
-  function(praw,
-           peaks,
-           isotopes,
-           infer,
-           align,
-           table_iso,
-           dist_c13,
-           dm,
-           quant,
-           mean_int,
-           hdf5_file,
-           margin_dmz = 0.003,
-           margin_ppm = 10,
-           margin_mz = 0.001,
-           max_iso = 4,
-           max_charge = 2,
-           ppm = 8,
-           dmz = 0.002,
-           detect_isotopes = TRUE){
-    ###We create default vector to return if needed
-    def_isotopes <- rep(NA, length(isotopes))
-    def_missing <- rep(0.0, length(infer))
-    suppressWarnings(suppressMessages(library(pracma, warn.conflicts = FALSE)))
-    suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
-    suppressWarnings(suppressMessages(library(rhdf5, warn.conflicts = FALSE)))
-    #Isotopes and inference
-    xraw <- praw
-    if(is.character(praw)){
-      suppressWarnings(suppressMessages(library(xcms, warn.conflicts = FALSE)))
-      xraw <- suppressWarnings(suppressMessages(xcmsRaw(praw)))
-    }
-    if(is.character(peaks)){
-      peaks <- fread(peaks)
-    }
-    noise_level <- quantile(peaks$intensity, probs = 0.03)
-    noise_level_height <- quantile(peaks$height, probs = 0.03)
-    ###If the two values are equl  the noise is read from a file
-    if(noise_level_height==noise_level){
-      vsc <- getScan(xraw,floor(length(xraw@scantime)/2))[,2]
-      noise_level_height <- quantile(vsc, probs = 0.03)
-    }
-
-    ort <- order(dm[infer, ][[4]])
-    ###small cheat the correction is the closest
-    all_corrs <- rep(0,length(infer[ort]))
-    if(is.na(align[1, 1])){
-      dev_rt <- rep(0,length(infer[ort]))
-    }else{
-      vmatch  <-
-        xcms:::findEqualGreaterM(align[, 1], values = dm[infer[ort], ][[4]])
-      align <- rbind(align, align[nrow(align), ])
-      dev_rt <- align[vmatch, 2]
-    }
-    ###integrate the missing peak
-    rt_corr <- dm[[4]][infer[ort]] + dev_rt
-
-    ###we first perform gap filling
-    extractIntensity <-
-      function(min_mz,
-               max_mz,
-               rt,
-               peakwidth,
-               idx,
-               expected_intensity,
-               quant,
-               xraw,
-               margin_mz,
-               margin_ppm,
-               margin_dmz) {
-
-        integ_fun <- function(x,y){
-          trapz(x,y)
-        }
-        if (quant != "intensity") {
-          integ_fun <- function(x,y){
-            max(y)
-          }
-        }
-
-        rt_min <- rt - peakwidth / 2
-        rt_max <- rt + peakwidth / 2
-        #We shift the peak if it is negativer
-        if(rt_min<0){
-          rt_max <- rt_max+abs(rt_min)
-          rt_min <- 0
-        }
-
-
-        mean_mz <- (min_mz+max_mz)/2
-
-        ###Margin in ppm.
-        margin_mz <- max(margin_dmz,mean_mz*margin_ppm*1e-6)
-        min_mz <- min_mz - margin_mz
-        max_mz <- max_mz + margin_mz
-        total_extension <- margin_mz
-
-        tval <-
-          tryCatch(
-            rawEIC(
-              xraw,
-              rtrange = c(rt_min * 60, rt_max * 60),
-              mzrange = c(min_mz, max_mz)
-            ),
-            error = function(e) {
-              return(NA)
-            }
-          )
-        if (length(tval) == 1 && is.na(tval))
-          return(0)
-        val <- 0
-        ##We extend the limit one more time.
-        max_extension <- 0.07
-        current_extension <- 0
-        old_int <- -1
-        current_int <- integ_fun(x = xraw@scantime[tval[[1]]], tval[[2]])
-        ###We keep expanding the trace mass.
-        while ((abs(expected_intensity-current_int)<=abs(expected_intensity-old_int))&
-               (old_int != current_int) & (current_int<expected_intensity)&
-               (total_extension < max_extension)) {
-          min_mz <- min_mz - margin_mz
-          max_mz <- max_mz + margin_mz
-          tval <-
-            rawEIC(
-              xraw,
-              rtrange = c(rt_min * 60, rt_max * 60),
-              mzrange = c(min_mz, max_mz)
-            )
-          old_int <- current_int
-          current_int <- integ_fun(x = xraw@scantime[tval[[1]]], tval[[2]])
-          total_extension <- total_extension+margin_mz
-        }
-        val <- old_int
-        if(val==-1) val<- current_int
-        return(val)
-      }
-    inferred_values <-
-      tryCatch(
-        mapply(
-          dm[["min_mz"]][infer[ort]],
-          dm[["max_mz"]][infer[ort]],
-          rt_corr,
-          dm[["mean_peakwidth"]][infer[ort]],
-          infer[ort],
-          mean_int[infer[ort]],
-          FUN = extractIntensity,
-          MoreArgs = list(
-            quant = quant,
-            xraw = xraw,
-            margin_mz = margin_mz,
-            margin_ppm = margin_ppm,
-            margin_dmz = margin_dmz
-          )
-        ),
-        error = function(e) {
-          print(attr(e, "traceback"))
-          print(e)
-        }
-      )
-    inferred_values <-
-      inferred_values[order(ort, decreasing = FALSE)]
-
-
-    visotopes_pos <- numeric(0)
-    visotopes_values_pos <- list()
-    if(detect_isotopes&length(isotopes)!=0){
-
-      ##We map the feature to the peaktable
-      dm2 <- dm[isotopes, , drop = FALSE]
-      visotopes <- list()
-      if (length(isotopes) != 0) {
-        mapFeatures <- function(dm2, pt) {
-          mz_r <- max(dm2[, max_mz - min_mz])
-
-          vmm <-
-            xcms:::fastMatch(dm2[["mean_mz"]], pt[["mz"]], tol = mz_r)
-
-          vnull <- which(sapply(vmm, is.null))
-          lim <- mz_r*5
-          while (length(vnull) > 0 & mz_r<lim) {
-            mz_r <- mz_r * 1.5
-            vmm[vnull] <-
-              xcms:::fastMatch(dm2[["mean_mz"]][vnull], pt[["mz"]], tol = mz_r)
-            vnull <- which(sapply(vmm, is.null))
-          }
-          vfound <- which(!sapply(vmm, is.null))
-          vv <- rep(NA,length(vmm))
-
-          vv[vfound] <- sapply(
-            vmm[vfound],
-            FUN = function( y, rt_pp) {
-              y[[which.min(rt_pp[y])]]
-            },
-           rt_pp = pt[["rt"]]
-          )
-
-          ###We complete the mapping by pikcing the closest retention time
-          return(vv)
-        }
-        vmap <- mapFeatures(dm2, peaks)
-        extractIsotopes <- function(peak,
-                                    xraw,
-                                    iso_table,
-                                    dist_iso,
-                                    noise_level,
-                                    max_iso = 4,
-                                    max_charge = 2,
-                                    ppm = 10,
-                                    dmz = 0.004) {
-          mz_peak <- peak["mz"]
-          int_peak <- peak["height"]
-          ##We select the closest feature
-          sel_scan <-
-            which.min(abs(peak["rt"] * 60 - xraw@scantime))
-          mzrange <-
-            c(peak[["mz_min"]] - 0.001, peak["mz_max"] + max(4, max_iso) + 0.5)
-          sc <- getScan(xraw, sel_scan, mzrange = mzrange)
-          iso_table[2:nrow(iso_table), "proportion"] <-
-            iso_table[2:nrow(iso_table), "proportion"] * iso_table[2:nrow(iso_table), "max"]
-          maxCp <- (peak["mz_max"] / 14)
-          massC13 <- iso_table[["massdiff"]][1]
-          massdiffC13 <- massC13 * (1:max_iso)
-          idp <- floor(maxCp / 20)
-          if(idp==0){
-            return(NA)
-          }
-          distC13 <- dist_iso[, idp]
-          tol <- min((ppm * mz_peak * 1e-6), dmz)
-          max_theo_int <- int_peak * distC13
-          if (max(max_theo_int) < noise_level){
-            return(NA)
-          }
-
-          charge <- NA
-          sel_iso <- NULL
-          mass_diff <- NULL
-          for (charge in max_charge:1) {
-            mz_theo <- mz_peak + massdiffC13 / charge
-            miso <- xcms:::fastMatch(mz_theo, sc[, 1], tol = tol)
-
-            ###We filter by  intensity
-            if (is.null(miso[[1]]))
-              next
-            ###We unroll the index of isotopic pattern
-            idx <- 1
-            while (idx <= max_iso &&
-                   !is.null(miso[[idx]]) &&
-                   sc[miso[[idx]][1], 2] <= max_theo_int[idx]) {
-              miso[[idx]] <- miso[[idx]][1]
-              idx <- idx + 1
-            }
-            if (idx == 1)
-              return(NA)
-            sel_iso <- sc[unlist(miso[1:(idx - 1)]), 2]
-            mass_diff <- sc[unlist(miso[1:(idx - 1)]), 1] - mz_peak
-            break
-          }
-          if (is.null(sel_iso))
-            return(NA)
-          sel_iso_c13 <- c(sc[1, 2], sel_iso)
-          name_c13 <-
-            c("", paste(1:length(sel_iso), rep("C13", length(sel_iso)), sep = ""))
-          mass_diff <- c(0, mass_diff)
-          df_to_return <-
-            data.frame(
-              name = name_c13,
-              int = sel_iso_c13,
-              massdiff = mass_diff,
-              charge = rep(charge, length(mass_diff))
-            )
-
-          ##We remove the peaks which have already been matched to C13
-          sel_peaks <- 1:nrow(sc)
-          sel_peaks <- sel_peaks[-unlist(miso[1:(idx - 1)])]
-
-
-          mz_other_isotopes <-
-            iso_table[2:nrow(iso_table), "massdiff"]
-          name_other_isotopes <-
-            iso_table[2:nrow(iso_table), "isotope"]
-          dist_other_isotopes <-
-            iso_table[2:nrow(iso_table), "proportion"]
-          supp_mz <- unlist(mz_other_isotopes / charge + mz_peak)
-          msupp <-
-            xcms:::fastMatch(supp_mz, sc[sel_peaks, 1], tol = tol, symmetric = FALSE)
-
-          supp_found <- which(!sapply(msupp, is.null))
-          if (length(supp_found) == 0) {
-            return(df_to_return)
-          } else{
-            msupp[supp_found] <- lapply(msupp[supp_found], "[", i = 1)
-            msupp[supp_found] <-
-              lapply(msupp[supp_found], function(x, idx) {
-                idx[x]
-              }, idx = sel_peaks)
-            ###We check intensity
-            supp_found <-
-              supp_found[sc[unlist(msupp[supp_found]), 2] < 1.1 * int_peak * dist_other_isotopes[supp_found]]
-            if (length(supp_found) == 0)
-              return(df_to_return)
-            ###We check if there is a conflict if so we group it
-            matched_features <- msupp[supp_found]
-            supp_table <-
-              data.frame(
-                name = unlist(name_other_isotopes[supp_found]),
-                int = sc[unlist(msupp[supp_found]), 2],
-                massdiff = sc[unlist(msupp[supp_found]), 1] -
-                  mz_peak,
-                charge = rep(charge, length(supp_found))
-              )
-            supp_table <-
-              by(
-                supp_table,
-                INDICES = supp_table$int,
-                FUN = function(x) {
-                  data.frame(
-                    name = paste(x[["name"]], collapse = "@"),
-                    int = x[["int"]][1],
-                    massdiff = x[["massdiff"]][1],
-                    charge = x[["charge"]][1]
-                  )
-                }
-              )
-            supp_table <- do.call(rbind, supp_table)
-
-            if (length(supp_found) == 0)
-              return(df_to_return)
-            df_to_return <- rbind(df_to_return, supp_table)
-            return(df_to_return)
-          }
-        }
-        peaks_to_find <- which(!is.na(vmap))
-        if(length(peaks_to_find)!=0){ #Incorrect mapping case.
-          visotopes <-
-            tryCatch(
-              apply(
-                peaks[vmap[peaks_to_find]],
-                1,
-                extractIsotopes,
-                xraw = xraw,
-                iso_table = table_iso,
-                dist_iso = dist_c13,
-                noise_level = noise_level_height,
-                max_iso = max_iso,
-                max_charge = max_charge,
-                ppm = ppm,
-                dmz = dmz
-              ),error=function(e){
-                print(e)
-                print("peaks_to_find")
-                print(peaks_to_find)
-                print("vmap")
-                print(vmap)
-                print("vmap[peaks_to_find]")
-                print(vmap[peaks_to_find])
-
-              })
-        }
-      }
-      if(length(visotopes)!=0){#Can be 0 if the mapping fail
-        correct_pos <- which(sapply(visotopes, is.data.frame))
-        visotopes_pos <- peaks_to_find[correct_pos]
-        visotopes_values_pos <- visotopes[correct_pos]
-      }
-
-    }
-    #We only store the inferred values to avoid the cost
-    inferred_values_pos <- which(inferred_values!=0.0)
-    ##Both inferred value will be written in the data
-    return(list(list(visotopes_pos,visotopes_values_pos),
-                list(inferred_values_pos,inferred_values[inferred_values_pos])))
-  }
-
-
-
-extractMissingInformationsHDF5 <- function(praw,
-                                            peaks,
-                                            path_isotopes,#hdf5 file path
-                                            path_infer,#hdf5 file path
-                                            align,
-                                            table_iso,
-                                            dist_c13,
-                                            dm,
-                                            quant,
-                                            mean_int,
-                                            hdf5_file,
-                                            extractMissingInformations,
-                                            margin_dmz = 0.003,
-                                            margin_ppm = 10,
-                                            margin_mz = 0.001,
-                                            max_iso = 4,
-                                            max_charge = 2,
-                                            ppm = 8,
-                                            dmz = 0.002,
-                                            detect_isotopes = TRUE){
-  library(rhdf5)
-  isotopes <- h5read(hdf5_file,path_isotopes)
-  infer <- h5read(hdf5_file,path_infer)
-  rlist <- extractMissingInformations(praw,
-                             peaks,
-                             isotopes,
-                             infer,
-                             align,
-                             table_iso,
-                             dist_c13,
-                             dm,
-                             quant,
-                             mean_int,
-                             hdf5_file,
-                             margin_dmz = margin_dmz,
-                             margin_ppm = margin_ppm,
-                             margin_mz = margin_mz,
-                             max_iso = max_iso,
-                             max_charge = max_charge,
-                             ppm = ppm,
-                             dmz = dmz,
-                             detect_isotopes = detect_isotopes)
-
-  return(rlist)
-}
-
-
-extractMissingInformationsAllBatches <- function(praw,
-                                           peaks,
-                                           paths_isotopes,#hdf5 file path
-                                           paths_infer,#hdf5 file path
-                                           align,
-                                           extractMissingInformations, ##FOr parallelization purpose
-                                           table_iso,
-                                           dist_c13,
-                                           dm,
-                                           quant,
-                                           mean_int,
-                                           hdf5_file,
-                                           margin_dmz = 0.003,
-                                           margin_ppm = 10,
-                                           margin_mz = 0.001,
-                                           max_iso = 4,
-                                           max_charge = 2,
-                                           ppm = 8,
-                                           dmz = 0.002,
-                                           detect_isotopes = TRUE){
-
-
-  suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
-  suppressWarnings(suppressMessages(library(xcms, warn.conflicts = FALSE)))
-
-  ##Same function but in this case we read the file once and just pass it around across the dataset
-  praw <- xcmsRaw(praw)
-  peaks <- fread(peaks)
-  all_outputs <- mapply(paths_isotopes,paths_infer,FUN = extractMissingInformationsHDF5,
-                        MoreArgs = list(praw=praw,
-                                         peaks=peaks,
-                                         align=align,
-                                         table_iso=table_iso,
-                                         dist_c13=dist_c13,
-                                         extractMissingInformations=extractMissingInformations,
-                                         dm=dm,
-                                         quant=quant,
-                                         mean_int=mean_int,
-                                         hdf5_file=hdf5_file,
-                                         margin_dmz = margin_dmz,
-                                         margin_ppm = margin_ppm,
-                                         margin_mz = margin_mz,
-                                         max_iso = max_iso,
-                                         max_charge = max_charge,
-                                         ppm = ppm,
-                                         dmz = dmz,
-                                         detect_isotopes = detect_isotopes),SIMPLIFY = FALSE)
-
-  res_isos <- lapply(all_outputs,"[[",i=1)
-  res_infers <- lapply(all_outputs,"[[",i=2)
-  return(list(res_isos,res_infers))
-}
-
 #This part select the files and perform the optimization if needed.
-
 optim_idx <- seq_along(all_samples)
 
 if("QC" %in% all_infos[,3]){
@@ -712,9 +238,500 @@ if(is.matrix(to_infer)){
   to_infer <- split(to_infer,1:ncol(to_infer))
 }
 
-
 optim_intensity <- apply(dm[,..quant_cols_optim],1,mean,na.rm=TRUE)
 
+###
+# mapFeatures <- function(dm2, pt) {
+#   ## calculate initial tolerance
+#   mz_r <- median(dm2[, max_mz - min_mz])*5
+#
+#   vmm <- xcms:::fastMatch(dm2[["mean_mz"]], pt[["mz"]], tol = mz_r)
+#   vnull <- which(sapply(vmm, is.null))
+#
+#   ## gradual increase of tolerance
+#   lim <- mz_r*5
+#   while (length(vnull) > 0 & mz_r<lim) {
+#     mz_r <- mz_r * 1.5
+#     vmm[vnull] <-
+#       xcms:::fastMatch(dm2[["mean_mz"]][vnull], pt[["mz"]], tol = mz_r)
+#     vnull <- which(sapply(vmm, is.null))
+#   }
+#   vfound <- which(!sapply(vmm, is.null))
+#
+#   ## prepare output
+#   ## we complete the mapping by picking the closest retention time
+#   vv <- rep(NA,length(vmm))
+#
+#   # vv[vfound] <- sapply(vmm[vfound],
+#   #   FUN = function(y,rt_pp) {y[[which.min(rt_pp[y])]]},rt_pp = pt[["rt"]]
+#   # )
+#   for (i in vfound) {
+#     vmmi <- vmm[[i]]
+#     vv[i] <- vmmi[which.min(abs(pt$rt[vmmi]-dm2$mean_rt[i]))]
+#   }
+#
+#   return(vv)
+# }
+
+extractIsotopes <- function(peak,
+                            xraw,
+                            iso_table,
+                            dist_iso,
+                            noise_level,
+                            max_iso = 4,
+                            max_charge = 2,
+                            ppm = 10,
+                            dmz = 0.004) {
+  mz_peak <- peak["mz"]
+  int_peak <- peak["height"]
+  ##We select the closest feature
+  sel_scan <-
+    which.min(abs(peak["rt"] * 60 - xraw@scantime))
+  mzrange <-
+    c(peak[["mz_min"]] - 0.001, peak["mz_max"] + max(4, max_iso) + 0.5)
+  sc <- getScan(xraw, sel_scan, mzrange = mzrange)
+  iso_table[2:nrow(iso_table), "proportion"] <-
+    iso_table[2:nrow(iso_table), "proportion"] * iso_table[2:nrow(iso_table), "max"]
+  maxCp <- (peak["mz_max"] / 14)
+  massC13 <- iso_table[["massdiff"]][1]
+  massdiffC13 <- massC13 * (1:max_iso)
+  idp <- floor(maxCp / 20)
+  if (idp == 0) {
+    return(NA)
+  }
+  distC13 <- dist_iso[, idp]
+  tol <- min((ppm * mz_peak * 1e-6), dmz)
+  max_theo_int <- int_peak * distC13
+  if (max(max_theo_int) < noise_level) {
+    return(NA)
+  }
+
+  charge <- NA
+  sel_iso <- NULL
+  mass_diff <- NULL
+  for (charge in max_charge:1) {
+    mz_theo <- mz_peak + massdiffC13 / charge
+    miso <- xcms:::fastMatch(mz_theo, sc[, 1], tol = tol)
+
+    ###We filter by  intensity
+    if (is.null(miso[[1]]))
+      next
+    ###We unroll the index of isotopic pattern
+    idx <- 1
+    while (idx <= max_iso &&
+      !is.null(miso[[idx]])) {
+      miso[[idx]] <- miso[[idx]][1]
+      idx <- idx + 1
+    }
+    # DEBUG: REMOVE FILTER ON MAX_THEO_INT of single isotopes >> doesn't work for heavy stuff.
+    # while (idx <= max_iso &&
+    #        !is.null(miso[[idx]]) &&
+    #        sc[miso[[idx]][1], 2] <= max_theo_int[idx]) {
+    #   miso[[idx]] <- miso[[idx]][1]
+    #   idx <- idx + 1
+    # }
+    if (idx == 1)
+      return(NA)
+    sel_iso <- sc[unlist(miso[1:(idx - 1)]), 2]
+    mass_diff <- sc[unlist(miso[1:(idx - 1)]), 1] - mz_peak
+    break
+  }
+  if (is.null(sel_iso))
+    return(NA)
+  sel_iso_c13 <- c(sc[1, 2], sel_iso)
+  name_c13 <-
+    c("", paste(1:length(sel_iso), rep("C13", length(sel_iso)), sep = ""))
+  mass_diff <- c(0, mass_diff)
+  df_to_return <-
+    data.frame(
+      name = name_c13,
+      int = sel_iso_c13,
+      massdiff = mass_diff,
+      charge = rep(charge, length(mass_diff))
+    )
+
+  ##We remove the peaks which have already been matched to C13
+  sel_peaks <- 1:nrow(sc)
+  sel_peaks <- sel_peaks[-unlist(miso[1:(idx - 1)])]
+
+  mz_other_isotopes <-
+    iso_table[2:nrow(iso_table), "massdiff"]
+  name_other_isotopes <-
+    iso_table[2:nrow(iso_table), "isotope"]
+  dist_other_isotopes <-
+    iso_table[2:nrow(iso_table), "proportion"]
+  supp_mz <- unlist(mz_other_isotopes / charge + mz_peak)
+  msupp <-
+    xcms:::fastMatch(supp_mz, sc[sel_peaks, 1], tol = tol, symmetric = FALSE)
+
+  supp_found <- which(!sapply(msupp, is.null))
+  if (length(supp_found) == 0) {
+    return(df_to_return)
+  } else {
+    msupp[supp_found] <- lapply(msupp[supp_found], "[", i = 1)
+    msupp[supp_found] <-
+      lapply(msupp[supp_found], function(x, idx) {
+        idx[x]
+      }, idx = sel_peaks)
+    ###We check intensity
+    supp_found <-
+      supp_found[sc[unlist(msupp[supp_found]), 2] < 1.1 * int_peak * dist_other_isotopes[supp_found]]
+    if (length(supp_found) == 0)
+      return(df_to_return)
+    ###We check if there is a conflict if so we group it
+    matched_features <- msupp[supp_found]
+    supp_table <-
+      data.frame(
+        name = unlist(name_other_isotopes[supp_found]),
+        int = sc[unlist(msupp[supp_found]), 2],
+        massdiff = sc[unlist(msupp[supp_found]), 1] -
+          mz_peak,
+        charge = rep(charge, length(supp_found))
+      )
+    supp_table <-
+      by(
+        supp_table,
+        INDICES = supp_table$int,
+        FUN = function(x) {
+          data.frame(
+            name = paste(x[["name"]], collapse = "@"),
+            int = x[["int"]][1],
+            massdiff = x[["massdiff"]][1],
+            charge = x[["charge"]][1]
+          )
+        }
+      )
+    supp_table <- do.call(rbind, supp_table)
+
+    if (length(supp_found) == 0)
+      return(df_to_return)
+    df_to_return <- rbind(df_to_return, supp_table)
+    return(df_to_return)
+  }
+}
+
+extractMissingInformations <-
+  function(praw,
+           peaks,
+           isotopes,
+           infer,
+           align,
+           table_iso,
+           dist_c13,
+           dm,
+           quant,
+           mean_int,
+           hdf5_file,
+           margin_dmz = 0.003,
+           margin_ppm = 10,
+           margin_mz = 0.001,
+           max_iso = 4,
+           max_charge = 2,
+           ppm = 8,
+           dmz = 0.002,
+           detect_isotopes = TRUE) {
+    ###We create default vector to return if needed
+    def_isotopes <- rep(NA, length(isotopes))
+    def_missing <- rep(0.0, length(infer))
+    suppressWarnings(suppressMessages(library(pracma, warn.conflicts = FALSE)))
+    suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
+    suppressWarnings(suppressMessages(library(rhdf5, warn.conflicts = FALSE)))
+    #Isotopes and inference
+    xraw <- praw
+    if (is.character(praw)) {
+      suppressWarnings(suppressMessages(library(xcms, warn.conflicts = FALSE)))
+      xraw <- suppressWarnings(suppressMessages(xcmsRaw(praw)))
+    }
+    if (is.character(peaks)) {
+      peaks <- fread(peaks)
+    }
+    noise_level <- 1000 # quantile(peaks$intensity, probs = 0.005) ### THE CUTOFF HAS MAJOR IMPLICATIONS. ABSOLUTE OR QUANTILE? CHANGED FROM 3% to 0.5%
+    noise_level_height <- 1000 # quantile(peaks$height, probs = 0.005)
+    ###If the two values are equl  the noise is read from a file
+    if (noise_level_height == noise_level) {
+      vsc <- getScan(xraw, floor(length(xraw@scantime) / 2))[, 2]
+      noise_level_height <- quantile(vsc, probs = 0.005)
+    }
+
+    ort <- order(dm[infer,][[4]])
+    ###small cheat the correction is the closest
+    all_corrs <- rep(0, length(infer[ort]))
+    if (is.na(align[1, 1])) {
+      dev_rt <- rep(0, length(infer[ort]))
+    }else {
+      vmatch <-
+        xcms:::findEqualGreaterM(align[, 1], values = dm[infer[ort],][[4]])
+      align <- rbind(align, align[nrow(align),])
+      dev_rt <- align[vmatch, 2]
+    }
+    ###integrate the missing peak
+    rt_corr <- dm[[4]][infer[ort]] + dev_rt
+
+    ###we first perform gap filling
+    extractIntensity <-
+      function(min_mz,
+               max_mz,
+               rt,
+               peakwidth,
+               idx,
+               expected_intensity,
+               quant,
+               xraw,
+               margin_mz,
+               margin_ppm,
+               margin_dmz) {
+
+        integ_fun <- function(x, y) {
+          trapz(x, y)
+        }
+
+        if (quant != "intensity") {
+
+          integ_fun <- function(x, y) {
+            max(y)
+          }
+
+        }
+
+        rt_min <- rt - peakwidth / 2
+        rt_max <- rt + peakwidth / 2
+        #We shift the peak if it is negativer
+        if (rt_min < 0) {
+          rt_max <- rt_max + abs(rt_min)
+          rt_min <- 0
+        }
+
+
+        mean_mz <- (min_mz + max_mz) / 2
+
+        ###Margin in ppm.
+        margin_mz <- max(margin_dmz, mean_mz * margin_ppm * 1e-6)
+        min_mz <- min_mz - margin_mz
+        max_mz <- max_mz + margin_mz
+        total_extension <- margin_mz
+
+        tval <-
+          tryCatch(
+            rawEIC(
+              xraw,
+              rtrange = c(rt_min * 60, rt_max * 60),
+              mzrange = c(min_mz, max_mz)
+            ),
+            error = function(e) {
+              return(NA)
+            }
+          )
+        if (length(tval) == 1 && is.na(tval))
+          return(0)
+        val <- 0
+        ##We extend the limit one more time.
+        max_extension <- 0.07
+        current_extension <- 0
+        old_int <- -1
+        current_int <- integ_fun(x = xraw@scantime[tval[[1]]], tval[[2]])
+        ###We keep expanding the trace mass.
+        while ((abs(expected_intensity - current_int) <= abs(expected_intensity - old_int)) &
+          (old_int != current_int) &
+          (current_int < expected_intensity) &
+          (total_extension < max_extension)) {
+          min_mz <- min_mz - margin_mz
+          max_mz <- max_mz + margin_mz
+          tval <-
+            rawEIC(
+              xraw,
+              rtrange = c(rt_min * 60, rt_max * 60),
+              mzrange = c(min_mz, max_mz)
+            )
+          old_int <- current_int
+          current_int <- integ_fun(x = xraw@scantime[tval[[1]]], tval[[2]])
+          total_extension <- total_extension + margin_mz
+        }
+        val <- old_int
+        if (val == -1) val <- current_int
+        return(val)
+      }
+
+    inferred_values <-
+      tryCatch(
+        mapply(
+          dm[["min_mz"]][infer[ort]],
+          dm[["max_mz"]][infer[ort]],
+          rt_corr,
+          dm[["mean_peakwidth"]][infer[ort]],
+          infer[ort],
+          mean_int[infer[ort]],
+          FUN = extractIntensity,
+          MoreArgs = list(
+            quant = quant,
+            xraw = xraw,
+            margin_mz = margin_mz,
+            margin_ppm = margin_ppm,
+            margin_dmz = margin_dmz
+          )
+        ),
+        error = function(e) {
+          print(attr(e, "traceback"))
+          print(e)
+        }
+      )
+    inferred_values <- inferred_values[order(ort, decreasing = FALSE)]
+
+
+    visotopes_pos <- numeric(0)
+    visotopes_values_pos <- list()
+    if (detect_isotopes & length(isotopes) != 0) {
+
+      ##We map the feature to the peaktable
+      dm2 <- dm[isotopes, , drop = FALSE]
+      visotopes <- list()
+      if (length(isotopes) != 0) {
+
+        # vmap <- mapFeatures(dm2, peaks)
+        #peaks_to_find <- which(!is.na(vmap))
+        ## debug: get all
+        vmap <- 1:nrow(peaks)
+        peaks_to_find <- 1:length(vmap)
+
+        if (length(peaks_to_find) != 0) { #Incorrect mapping case.
+          visotopes <-
+            tryCatch(
+              apply(
+                peaks, #[vmap[peaks_to_find]]
+                1,
+                extractIsotopes,
+                xraw = xraw,
+                iso_table = table_iso,
+                dist_iso = dist_c13,
+                noise_level = noise_level_height,
+                max_iso = max_iso,
+                max_charge = max_charge,
+                ppm = ppm,
+                dmz = dmz
+              ), error = function(e) {
+                print(e)
+                print("peaks_to_find")
+                print(peaks_to_find)
+                print("vmap")
+                print(vmap)
+                print("vmap[peaks_to_find]")
+                print(vmap[peaks_to_find])
+
+              })
+        }
+      }
+      if (length(visotopes) != 0) { #Can be 0 if the mapping fail
+        correct_pos <- which(sapply(visotopes, is.data.frame))
+        visotopes_pos <- peaks_to_find[correct_pos]
+        visotopes_values_pos <- visotopes[correct_pos]
+      }
+
+    }
+    #We only store the inferred values to avoid the cost
+    inferred_values_pos <- which(inferred_values != 0.0)
+    ##Both inferred value will be written in the data
+    return(list(list(visotopes_pos, visotopes_values_pos),
+                list(inferred_values_pos, inferred_values[inferred_values_pos])))
+  }
+
+extractMissingInformationsHDF5 <- function(praw,
+                                           peaks,
+                                           path_isotopes, #hdf5 file path
+                                           path_infer, #hdf5 file path
+                                           align,
+                                           table_iso,
+                                           dist_c13,
+                                           dm,
+                                           quant,
+                                           mean_int,
+                                           hdf5_file,
+                                           extractMissingInformationFun,
+                                           margin_dmz = 0.003,
+                                           margin_ppm = 10,
+                                           margin_mz = 0.001,
+                                           max_iso = 4,
+                                           max_charge = 2,
+                                           ppm = 8,
+                                           dmz = 0.002,
+                                           detect_isotopes = TRUE) {
+  library(rhdf5)
+  isotopes <- h5read(hdf5_file, path_isotopes)
+  infer <- h5read(hdf5_file, path_infer)
+  rlist <- extractMissingInformationFun(praw,
+                                        peaks,
+                                        isotopes,
+                                        infer,
+                                        align,
+                                        table_iso,
+                                        dist_c13,
+                                        dm,
+                                        quant,
+                                        mean_int,
+                                        hdf5_file,
+                                        margin_dmz = margin_dmz,
+                                        margin_ppm = margin_ppm,
+                                        margin_mz = margin_mz,
+                                        max_iso = max_iso,
+                                        max_charge = max_charge,
+                                        ppm = ppm,
+                                        dmz = dmz,
+                                        detect_isotopes = detect_isotopes)
+
+  return(rlist)
+}
+
+
+extractMissingInformationsAllBatches <- function(praw,
+                                                 peaks,
+                                                 paths_isotopes, #hdf5 file path
+                                                 paths_infer, #hdf5 file path
+                                                 align,
+                                                 extractMissingInformationFun, ##FOr parallelization purpose
+                                                 table_iso,
+                                                 dist_c13,
+                                                 dm,
+                                                 quant,
+                                                 mean_int,
+                                                 hdf5_file,
+                                                 margin_dmz = 0.003,
+                                                 margin_ppm = 10,
+                                                 margin_mz = 0.001,
+                                                 max_iso = 4,
+                                                 max_charge = 2,
+                                                 ppm = 8,
+                                                 dmz = 0.002,
+                                                 detect_isotopes = TRUE) {
+
+
+  suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
+  suppressWarnings(suppressMessages(library(xcms, warn.conflicts = FALSE)))
+
+  ##Same function but in this case we read the file once and just pass it around across the dataset
+  praw <- xcmsRaw(praw)
+  peaks <- fread(peaks)
+  all_outputs <- mapply(paths_isotopes, paths_infer, FUN = extractMissingInformationsHDF5,
+                        MoreArgs = list(praw = praw,
+                                        peaks = peaks,
+                                        align = align,
+                                        table_iso = table_iso,
+                                        dist_c13 = dist_c13,
+                                        extractMissingInformationFun = extractMissingInformations,
+                                        dm = dm,
+                                        quant = quant,
+                                        mean_int = mean_int,
+                                        hdf5_file = hdf5_file,
+                                        margin_dmz = margin_dmz,
+                                        margin_ppm = margin_ppm,
+                                        margin_mz = margin_mz,
+                                        max_iso = max_iso,
+                                        max_charge = max_charge,
+                                        ppm = ppm,
+                                        dmz = dmz,
+                                        detect_isotopes = detect_isotopes), SIMPLIFY = FALSE)
+
+  res_isos <- lapply(all_outputs, "[[", i = 1)
+  res_infers <- lapply(all_outputs, "[[", i = 2)
+  return(list(res_isos, res_infers))
+}
 
 
 ###We keep increasing the tolerance until the distribution stat to match.
@@ -883,7 +900,7 @@ for(isamp in seq_along(all_peaktables)){
   feat_input_infos <- paste(FEATURES_GROUP,"/",MISSING_FEATURES_PREFIX,isamp,"_",1:(length(batches) - 1),sep="")
   isos_input_infos <- paste(ISOTOPES_GROUP,"/",ISOTOPES_TO_FIND_PREFIX,isamp,"_",1:(length(batches) - 1),sep="")
 
-  #The prefix to WRITE the infos fomr the hdf5
+  #The prefix to WRITE the infos from the hdf5
   feat_input_values <- paste(FEATURES_GROUP,"/",MISSING_FEATURES_VALUES_PREFIX,isamp,"_",1:(length(batches) - 1),sep="")
   isos_input_values <- paste(ISOTOPES_GROUP,"/",ISOTOPES_TO_FIND_VALUES_PREFIX,isamp,"_",1:(length(batches) - 1),sep="")
   feat_input_pos <- paste(FEATURES_GROUP,"/POS_",MISSING_FEATURES_VALUES_PREFIX,isamp,"_",1:(length(batches) - 1),sep="")
@@ -893,7 +910,7 @@ for(isamp in seq_along(all_peaktables)){
                                        feat_input_infos, align@rt_correction[[isamp]],
                                        table_iso=isotopes_table, dist_c13=dist_iso, dm=dm_peaks,
                                        quant=QUANT, mean_int=mean_int, hdf5_file=HDF5_FILE,
-                                       extractMissingInformations=extractMissingInformations,#For potential parallelization only
+                                       extractMissingInformationFun=extractMissingInformations,#For potential parallelization only
                                        margin_mz = margin_dmz,
                                        margin_ppm = margin_ppm,
                                        margin_dmz=margin_dmz,
@@ -903,7 +920,7 @@ for(isamp in seq_along(all_peaktables)){
                                        dmz = DMZ,
                                        detect_isotopes = TRUE)
 
-  #We now write all the possible values in the hdf5 file to avoid fillling th memeory in all cases
+  #We now write all the possible values in the hdf5 file to avoid fillling th memory in all cases
   for(idx in 1:length(isos_input_infos)){
     infer_idx <- reslist[[2]][[idx]][[1]]
     infer_val <- reslist[[2]][[idx]][[2]]
@@ -931,13 +948,12 @@ for(isamp in seq_along(all_peaktables)){
     ##WE write the 4 elements to the table
     dummy <- h5write(obj = infer_idx,file = HDF5_FILE,name = feat_input_pos[idx])
     dummy <- h5write(obj = infer_val,file = HDF5_FILE,name = feat_input_values[idx])
+    dummy <- h5write(obj = isos_idx,file = HDF5_FILE,name = isos_input_pos[idx])
     dummy <- h5write(obj = isos_vals,file = HDF5_FILE,name = isos_input_values[idx])
   }
 }
 
 # Write the datamatrix by batches in the pekatables
-
-###We now perform the actual processing while using the hdf5 peaks to reduce the overhead
 
 ###We now perform the actual processing while using the hdf5 peaks to reduce the overhead
 for (idx in 1:(length(batches) - 1)) {
@@ -1030,5 +1046,6 @@ for (idx in 1:(length(batches) - 1)) {
 }
 
 ##Move file around
+ww <- file.copy(PATH_DM, gsub('.csv','_prefill.csv',PATH_DM),overwrite = TRUE)
 ww <- file.rename(PATH_DM, TEMP_TRANSFER)
 ww <- file.rename(TEMP_FILLED, PATH_DM)
