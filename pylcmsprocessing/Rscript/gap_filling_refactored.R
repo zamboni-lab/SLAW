@@ -8,7 +8,8 @@ suppressWarnings(suppressMessages(library(rhdf5, warn.conflicts = FALSE)))
 
 ###COnstant add columns name
 ##We add the isotopic pattern
-ISO_DIST_COL <- "raw_isotopic_pattern"
+ISO_DIST_COL <- "isotopic_pattern_rel"
+ISOABS_DIST_COL <- "isotopic_pattern_abs"
 ISO_NAME_COL <- "isotopic_pattern_annot"
 EMPTY_ISOTOPES <- "EMPTY"
 MAX_FILES <- 10
@@ -17,7 +18,7 @@ sink(file=stdout())
 ##Argument passed by Python
 args <- commandArgs(trailingOnly = TRUE)
 
-## testing
+# testing
 # args <- c("D:\\SW\\SLAW_test_data_out\\temp_processing_db.sqlite","D:\\SW\\SLAW_test_data_out\\datamatrices\\datamatrix_741d552fefa0759df99c04af0d7f6562.csv",
 # "D:\\SW\\SLAW_test_data_out\\temp","D:\\SW\\SLAW_test_data_out\\temp\\alignement.rds","D:\\SW\\SLAW_test_data_out\\temp\\gap_filling.hdf5","D:\\SW\\SLAW\\pylcmsprocessing\\data\\isotopes.tsv","intensity"
 # ,4,3,15.0,0.01,5,39)
@@ -989,6 +990,7 @@ for (idx in 1:(length(batches) - 1)) {
   # We add the isotopic
   name_col <- rep(NA_character_, nrow(dm))
   dist_col <- rep(NA_real_, nrow(dm))
+  abs_col <- rep(NA_real_, nrow(dm))
 
   for (iquant in 1:length(all_samples)) {
     iquant_isos <- h5read(HDF5_FILE,isos_input_infos[iquant])
@@ -1020,12 +1022,19 @@ for (idx in 1:(length(batches) - 1)) {
     })
     names_isos[isos_pos] <- found_isotopes
 
+    # assemble relative distributions
     dists_isos <-rep(NA,length(iquant_isos))
     found_dists <- sapply(isos_values, function(x) {
       paste(sprintf("%0.4f", x[, "int"] / max(x[, "int"])), collapse = "|")
     })
     dists_isos[isos_pos] <- found_dists
 
+    #assemble absolute distributions
+    abs_isos <-rep(NA,length(iquant_isos))
+        found_abs <- sapply(isos_values, function(x) {
+      paste(sprintf("%0.0f", x[, "int"]), collapse = "|")
+    })
+    abs_col[isos_pos] <- found_abs
     name_col[iquant_isos] <- names_isos
     dist_col[iquant_isos] <- dists_isos
   }
@@ -1033,10 +1042,10 @@ for (idx in 1:(length(batches) - 1)) {
   infos_idx <- 1:(quant_cols[1] - 1)
   quant_idx <- quant_cols
   new_names <-
-    c(colnames(dm)[infos_idx], ISO_NAME_COL, ISO_DIST_COL, colnames(dm)[quant_idx])
-  quant_cols_2 <- quant_cols + 2
+    c(colnames(dm)[infos_idx], ISO_NAME_COL, ISO_DIST_COL, ISOABS_DIST_COL, colnames(dm)[quant_idx])
+  quant_cols_2 <- quant_cols + 3
   dm <-
-    cbind(dm[, ..infos_idx], name_col, dist_col, dm[, ..quant_idx])
+    cbind(dm[, ..infos_idx], name_col, dist_col, abs_col, dm[, ..quant_idx])
   colnames(dm) <- new_names
   if(!file.exists(TEMP_FILLED)){
     ww <- fwrite(dm, TEMP_FILLED,sep="\t")
