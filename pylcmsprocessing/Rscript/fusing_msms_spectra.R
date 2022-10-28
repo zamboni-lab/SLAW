@@ -719,8 +719,8 @@ consensus_specs <- lapply(fcc,function(x,tab_summary){
 
 
 ###We make a table of the supplementary informations
-supp_infos <- data.frame(SCANS=1:nrow(dm_idx),FEATURE=dm_idx[,1],ENERGY=dm_idx[,2],NUM_CLUSTERED=num_fused,
-PRECURSOR_INTENSITY=dmm[dm_idx[,1],"mean_intensity"],MSLEVEL=2)
+supp_infos <- data.frame(MSLEVEL=2, PRECURSOR_INDEX=spec_idx, MS2_ID=1:nrow(dm_idx),FEATURE=dm_idx[,1],ENERGY=dm_idx[,2],NUM_CLUSTERED=num_fused,
+PRECURSOR_INTENSITY=integer(dmm[dm_idx[,1],"mean_intensity"]))
 
 ###We find the columns with the quantitive informations
 ocnames <- as.character(fread(PATH_DATAMATRIX,sep = "\t",nrows=1,header=FALSE)[1,])
