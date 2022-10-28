@@ -208,9 +208,9 @@ cnames <- colnames(cnames)
 colnames(dm) <- cnames
 
 sel_columns <-
-  c("min_mz", "max_mz", "mean_mz", "mean_rt", "mean_peakwidth")
-if (max(dm[["mean_peakwidth"]]) > max(dm[["mean_rt"]])) {
-  dm[["mean_peakwidth"]] <- dm[["mean_peakwidth"]] / 60
+  c("mz_min", "mz_max", "mz_mean", "rt_mean", "peakwidth_mean")
+if (max(dm[["peakwidth_mean"]]) > max(dm[["rt_mean"]])) {
+  dm[["peakwidth_mean"]] <- dm[["peakwidth_mean"]] / 60
 }
 dm_peaks <- dm[, ..sel_columns]
 
@@ -555,10 +555,10 @@ extractMissingInformations <-
     inferred_values <-
       tryCatch(
         mapply(
-          dm[["min_mz"]][infer[ort]],
-          dm[["max_mz"]][infer[ort]],
+          dm[["mz_min"]][infer[ort]],
+          dm[["mz_max"]][infer[ort]],
           rt_corr,
-          dm[["mean_peakwidth"]][infer[ort]],
+          dm[["peakwidth_mean"]][infer[ort]],
           infer[ort],
           mean_int[infer[ort]],
           FUN = extractIntensity,
