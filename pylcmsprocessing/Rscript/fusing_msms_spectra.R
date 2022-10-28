@@ -358,10 +358,7 @@ addFields = NULL)
     }
 }
 
-
-
 args <- commandArgs(trailingOnly = TRUE)
-
 
 PATH_DB <- args[1]
 MZ_TOL <- as.numeric(args[2])
@@ -719,7 +716,7 @@ consensus_specs <- lapply(fcc,function(x,tab_summary){
 
 
 ###We make a table of the supplementary informations
-supp_infos <- data.frame(MSLEVEL=2, PRECURSOR_INDEX=spec_idx, MS2_ID=1:nrow(dm_idx),FEATURE=dm_idx[,1],ENERGY=dm_idx[,2],NUM_CLUSTERED=num_fused,
+supp_infos <- data.frame(MSLEVEL=2, MS2_ID=1:nrow(dm_idx),FEAT_ID=dm_idx[,1]-1,ENERGY=dm_idx[,2],NUM_CLUSTERED=num_fused,
 PRECURSOR_INTENSITY=as.integer(dmm[dm_idx[,1],"mean_intensity"]))
 
 ###We find the columns with the quantitive informations
@@ -787,7 +784,7 @@ for(i in 1:(length(seq_cut)-1)){
 
     ### we add the reference informaiton to the data table
     cnames <- colnames(sub_dm)
-    cnames <- c(cnames[1:(to_cut-1)],"mgf_feat_idx","mgf_ms2_id","num_clustered_ms2",cnames[quantities_idx])
+    cnames <- c(cnames[1:(to_cut-1)],"mgf_feat_id","mgf_ms2_id","num_clustered_ms2",cnames[quantities_idx])
     sub_dm <- cbind(sub_dm[,1:(to_cut-1),drop=FALSE],1:nrow(sub_dm),seq_ms2_idx,seq_num_ms2,
     sub_dm[,..quantities_idx,drop=FALSE])
     colnames(sub_dm) <- cnames
