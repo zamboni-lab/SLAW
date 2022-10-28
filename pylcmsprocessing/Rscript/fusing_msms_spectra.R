@@ -785,10 +785,10 @@ for(i in 1:(length(seq_cut)-1)){
         }
     }
 
-    ###WE add it to the data table eventually
+    ### we add the reference informaiton to the data table
     cnames <- colnames(sub_dm)
-    cnames <- c(cnames[1:(to_cut-1)],"ms2_id","num_clustered_ms2",cnames[quantities_idx])
-    sub_dm <- cbind(sub_dm[,1:(to_cut-1),drop=FALSE],seq_ms2_idx,seq_num_ms2,
+    cnames <- c(cnames[1:(to_cut-1)],"mgf_feat_idx","mgf_ms2_id","num_clustered_ms2",cnames[quantities_idx])
+    sub_dm <- cbind(sub_dm[,1:(to_cut-1),drop=FALSE],1:nrow(sub_dm),seq_ms2_idx,seq_num_ms2,
     sub_dm[,..quantities_idx,drop=FALSE])
     colnames(sub_dm) <- cnames
     if(i==1){
@@ -798,18 +798,13 @@ for(i in 1:(length(seq_cut)-1)){
     }
 }
 
-
-
-###We store the feature information into a file.
-##We always write the spectra
+## We store the feature information into a file.
+## We always write the spectra
 tcon <- file(description = PATH_MGF, open = "w")
-writeMgfDataFileToConnection(consensus_specs, con = tcon,
-                             addFields = supp_infos)
+writeMgfDataFileToConnection(consensus_specs, con = tcon, addFields = supp_infos)
 close.connection(tcon)
 
-
-
-###We then rename and remove the file.
+## We rename and remove temp files
 a <- file.rename(PATH_DATAMATRIX,TEMP_FILE_SWITCHING)
 a <- file.rename(TEMP_LOCATION,PATH_DATAMATRIX)
 a <- file.remove(TEMP_FILE_SWITCHING)
