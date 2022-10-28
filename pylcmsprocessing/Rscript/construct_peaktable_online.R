@@ -88,13 +88,14 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
       ocnames <- colnames(dm)
       quant_prefix <- paste(str_split(ocnames[length(ocnames)],fixed("_"))[[1]][1],"_",sep="")
       quant_cols <- which(startsWith(ocnames,quant_prefix))
+      quant_cols <- quant_cols[quant_cols>20] # removes the first ones
       raw_names_db <- basename(all_peaktables)
       raw_names_dm <- str_sub(colnames(dm)[quant_cols],nchar(quant_prefix)+1)
-      match(raw_names_dm,raw_names_db)
+      # match(raw_names_dm,raw_names_db)
       new_idx <- quant_cols[match(raw_names_dm,raw_names_db)]
-      ocnames[new_idx] <- ocnames[quant_cols]
+      ocnames[new_idx] <- lapply(ocnames[quant_cols],str_replace,quant_prefix,'quant')
       dm[,new_idx] <- dm[,..quant_cols]
-      colnames(dm) <- ocnames
+      colnames(dm) <- unlist(ocnames)
       fwrite(dm,file = PATH_OUT_DATAMATRIX,sep="\t")
     }
     
