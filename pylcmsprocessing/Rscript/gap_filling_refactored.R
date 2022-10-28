@@ -20,7 +20,7 @@ args <- commandArgs(trailingOnly = TRUE)
 
 # testing
 # args <- c("D:\\SW\\SLAW_test_data_out\\temp_processing_db.sqlite","D:\\SW\\SLAW_test_data_out\\datamatrices\\datamatrix_741d552fefa0759df99c04af0d7f6562.csv",
-# "D:\\SW\\SLAW_test_data_out\\temp","D:\\SW\\SLAW_test_data_out\\temp\\alignement.rds","D:\\SW\\SLAW_test_data_out\\temp\\gap_filling.hdf5","D:\\SW\\SLAW\\pylcmsprocessing\\data\\isotopes.tsv","intensity"
+# "D:\\SW\\SLAW_test_data_out\\temp","D:\\SW\\SLAW_test_data_out\\temp\\alignement.rds","D:\\SW\\SLAW_test_data_out\\temp\\gap_filling.hdf5","D:\\SW\\SLAW\\pylcmsprocessing\\data\\isotopes.tsv","quant"
 # ,4,3,15.0,0.01,5,39)
 
 PATH_DB <- args[1]
@@ -29,7 +29,7 @@ PATH_TEMP <- args[3]
 PATH_MODEL <- args[4]
 HDF5_FILE <- args[5]
 PATH_ISOTOPES <- args[6]
-QUANT <- args[7]
+QUANT <- 'quant' #args[7]
 MAX_ISO <- as.integer(args[8])
 MAX_CHARGE <- as.integer(args[9])
 PPM <- as.numeric(args[10])
