@@ -345,8 +345,8 @@ buildDataMatrix.datatable <- function(object,
   summary_vars <- summary_vars[sel_pos]
   unique_detection <- apply(vmat,1,function(x){sum(x!=0)})
   rmat <- cbind(unique_detection,nums,mu,vmin,vmax)
-  cnames <- c("num_detection","total_detection",paste("mean",summary_vars,sep="_"),
-              paste("min",summary_vars,sep="_"),paste("max",summary_vars,sep="_"))
+  cnames <- c("num_detection","total_detection",paste(summary_vars,"mean",sep="_"),
+              paste(summary_vars,"min",sep="_"),paste(summary_vars,"max",sep="_"))
   tsidx <- seq_along(summary_vars)
   new_order <- as.numeric(rbind(tsidx,tsidx+length(summary_vars),tsidx+2*length(summary_vars)))
   new_order <- c(1,2,new_order+2)
