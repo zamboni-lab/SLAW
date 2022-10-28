@@ -93,7 +93,7 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
       raw_names_dm <- str_sub(colnames(dm)[quant_cols],nchar(quant_prefix)+1)
       # match(raw_names_dm,raw_names_db)
       new_idx <- quant_cols[match(raw_names_dm,raw_names_db)]
-      ocnames[new_idx] <- lapply(ocnames[quant_cols],str_replace,quant_prefix,'quant')
+      ocnames[new_idx] <- lapply(ocnames[quant_cols],str_replace,quant_prefix,'quant_')
       dm[,new_idx] <- dm[,..quant_cols]
       colnames(dm) <- unlist(ocnames)
       fwrite(dm,file = PATH_OUT_DATAMATRIX,sep="\t")

@@ -723,7 +723,8 @@ PRECURSOR_INTENSITY=as.integer(dmm[dm_idx[,1],"mean_intensity"]))
 ocnames <- as.character(fread(PATH_DATAMATRIX,sep = "\t",nrows=1,header=FALSE)[1,])
 
 ###We detect the position of the first qaunt_columns
-quant_prefix <- paste(str_split(ocnames[length(ocnames)],fixed("_"))[[1]][1],"_",sep="")
+# quant_prefix <- paste(str_split(ocnames[length(ocnames)],fixed("_"))[[1]][1],"_",sep="")
+quant_prefix <- 'quant_'
 to_cut <- which(startsWith(ocnames,quant_prefix))[1]
 
 ##We now add two oclumns ot the data matrix add two columns to the data matrix to avoid later complication.
