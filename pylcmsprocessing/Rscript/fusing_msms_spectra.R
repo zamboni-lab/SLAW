@@ -399,7 +399,7 @@ if(length(PATH_MSMS)==0) stop("No MS2 spectra to Merge.")
 
 ###We read the data matrix.
 dmm <- fread(PATH_DATAMATRIX,sep="\t",header=TRUE)
-dmm <- dmm[,c("mz","rt","num_detection","mean_intensity"),drop=FALSE]
+dmm <- dmm[,c("mz","rt","num_detection","intensity_mean"),drop=FALSE]
 dmm <- as.data.frame(dmm)
 num_line <- nrow(dmm)
 
@@ -717,7 +717,7 @@ consensus_specs <- lapply(fcc,function(x,tab_summary){
 
 ###We make a table of the supplementary informations
 supp_infos <- data.frame(MSLEVEL=2, MS2_ID=1:nrow(dm_idx),FEAT_ID=dm_idx[,1]-1,ENERGY=dm_idx[,2],NUM_CLUSTERED=num_fused,
-PRECURSOR_INTENSITY=as.integer(dmm[dm_idx[,1],"mean_intensity"]))
+PRECURSOR_INTENSITY=as.integer(dmm[dm_idx[,1],"intensity_mean"]))
 
 ###We find the columns with the quantitive informations
 ocnames <- as.character(fread(PATH_DATAMATRIX,sep = "\t",nrows=1,header=FALSE)[1,])
