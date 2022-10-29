@@ -8,7 +8,7 @@ import shutil
 import logging
 
 os.environ["SLAWROOT"] = '/'
-os.environ['RScriptString'] = 'Rscript'
+os.environ['RscriptString'] = 'Rscript'
 
 ##We import the module of python processing.
 sys.path.append('/pylcmsprocessing')
