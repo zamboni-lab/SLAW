@@ -7,7 +7,7 @@ suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(rhdf5, warn.conflicts = FALSE)))
 
 ### DEBUG
-DEBUG <- TRUE
+DEBUG <- FALSE
 
 ###COnstant add columns name
 ##We add the isotopic pattern
