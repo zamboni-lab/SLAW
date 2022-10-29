@@ -35,38 +35,10 @@ class InformationExpander:
     def command_line(self):
         pscript = ct.find_rscript()
         command_line = os.path.join(pscript,"gap_filling.R")
-        return " ".join(["Rscript",command_line,'"'+self.db+'"','"'+self.dm+'"',
+        return " ".join([os.environ["RscriptString"]," ",command_line,'"'+self.db+'"','"'+self.dm+'"',
                          '"'+self.temp_dm+'"','"'+self.model+'"','"'+self.isotopes+'"',
                          str(self.max_iso),str(self.max_charge),self.quant,str(self.margin_mz),
                          str(self.ppm),str(self.dmz),str(self.num_files),str(self.num_workers)])
-
-#PATH_DB <- args[1]
-#PATH_DM <- args[2]
-#PATH_FILLED <- args[3]
-#PATH_MODEL <- args[4]
-#PATH_ISOTOPES <- args[5]
-#MAX_ISO <- as.integer(args[6])
-#MAX_CHARGE <- as.integer(args[7])
-#QUANT <- args[8]
-#MARGIN_MZ <- as.numeric(args[9])
-#PPM <- as.numeric(args[10])
-#DMZ <- as.numeric(args[11])
-#NUM_FILES <- as.integer(args[12])
-#NUM_WORKERS <- as.integer(args[13])
-
-#PATH_DB <- args[1]
-#PATH_DM <- args[2]
-#PATH_TEMP <- args[3]
-#PATH_MODEL <- args[4]
-#PATH_HDF5 <- args[5]
-#PATH_ISOTOPES <- args[6]
-#QUANT <- args[7]
-#MAX_ISO <- as.integer(args[8])
-#MAX_ISO <- as.interger(args[9])
-#PPM <- as.numeric(args[10])
-#DMZ <- as.numeric(args[11])
-#NUM_FILES <- as.integer(args[12])
-#NUM_WORKERS <- as.integer(args[13])
 
 class InformationExpanderRefactored:
     def __init__(self,db,dm,temp,rt_model,hdf5,isotopes,max_iso,max_charge,quant,ppm,dmz,num_files,num_workers):
@@ -101,7 +73,7 @@ class InformationExpanderRefactored:
     def command_line(self):
         pscript = ct.find_rscript()
         command_line = os.path.join(pscript,"gap_filling_refactored.R")
-        return " ".join(["Rscript",command_line,'"'+self.db+'"','"'+self.dm+'"',
+        return " ".join([os.environ["RscriptString"]," ",command_line,'"'+self.db+'"','"'+self.dm+'"',
                          '"'+self.temp+'"','"'+self.model+'"','"'+self.hdf5+'"','"'+self.isotopes+'"',self.quant,
                          str(self.max_iso),str(self.max_charge),str(self.ppm),str(self.dmz),str(self.num_files),str(self.num_workers)])
 

@@ -4,7 +4,6 @@ suppressWarnings(suppressMessages(library(RSQLite,warn.conflicts = FALSE,quietly
 suppressWarnings(suppressMessages(library(stringr,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
 suppressWarnings(suppressMessages(library(tools,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
 
-
 ###CONSTANT
 DBSAMPLES <-  "samples" ###Containing peak and path
 DBPROCESSINGSAMPLE <-  "processing" ###Containing peak and path
@@ -12,7 +11,7 @@ DBPEAKSPICKING <- "peakpicking"
 DBNAME <-    "MSexperiment"
 
 
-option_list = list(
+option_list <- list(
   make_option(
     c("-d", "--directory"),
     type = "character",
@@ -78,9 +77,6 @@ option_list = list(
   )
 
 )
-
-
-
 
 opt_parser <-  OptionParser(option_list = option_list)
 opt <- parse_args(opt_parser)

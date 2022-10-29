@@ -1,8 +1,12 @@
-import os.path
+import os
+
+if not('SLAWROOT' in os.environ):
+    os.environ['SLAWROOT'] = '/' # this is the default for the docker container
+
 
 ALGORITHMS_TABLE = {
-    "ADAP": ["MZmine", "adap.json", "/pylcmsprocessing/data/batch_adap_2_52.xml"],
-    "BASELINE": ["MZmine", "baseline.json", "/pylcmsprocessing/data/batch_baseline_2_52.xml"],
+    "ADAP": ["MZmine", "adap.json", os.environ['SLAWROOT']+ "pylcmsprocessing/data/batch_adap_2_52.xml"],
+    "BASELINE": ["MZmine", "baseline.json", os.environ['SLAWROOT']+ "pylcmsprocessing/data/batch_baseline_2_52.xml"],
     "FeatureFinderMetabo": ["openMS", "openms.json", None, None],
     "centWave": ["centWave",None,None,None]
 }
@@ -10,12 +14,12 @@ ALGORITHMS_TABLE = {
 MZMINE_ALGORITHM = ["BASELINE","ADAP"]
 
 
-TEMPLATE_TYPE = "/pylcmsprocessing/data/templates/template_types.yaml"
+TEMPLATE_TYPE = os.environ['SLAWROOT']+ "pylcmsprocessing/data/templates/template_types.yaml"
 TEMPLATES = {
-    "baseline": "/pylcmsprocessing/data/templates/template_adap.yaml",
-    "adap":"/pylcmsprocessing/data/templates/template_adap.yaml",
-    "openms":"/pylcmsprocessing/data/templates/template_openms.yaml",
-    "centwave":"/pylcmsprocessing/data/templates/template_centwave.yaml"
+    "baseline": os.environ['SLAWROOT']+ "pylcmsprocessing/data/templates/template_adap.yaml",
+    "adap":os.environ['SLAWROOT']+ "pylcmsprocessing/data/templates/template_adap.yaml",
+    "openms":os.environ['SLAWROOT']+ "pylcmsprocessing/data/templates/template_openms.yaml",
+    "centwave":os.environ['SLAWROOT']+ "pylcmsprocessing/data/templates/template_centwave.yaml"
 }
 
 SUMMARY_DIR = "summary_parameters"
@@ -116,15 +120,15 @@ ORDER_VARIABLES_GROUPING = ["grouping__ppm","grouping__drt","grouping__dmz",
                             "grouping__alpha","grouping__num_references"]
 
 DATA = {
-    "OPTIMIZATION":{"BALANCED_POINTS":"/pylcmsprocessing/data/balanced_samples.pickle"},
+    "OPTIMIZATION":{"BALANCED_POINTS":os.environ['SLAWROOT']+ "pylcmsprocessing/data/balanced_samples.pickle"},
     "IONANNOTATION":{
-        "XCMS_MODEL" : "/pylcmsprocessing/data/xcms_raw_model.RData",
-        "positive":{"FULL":"/pylcmsprocessing/data/adducts_pos.txt","MAIN":"/pylcmsprocessing/data/adducts_main_pos.txt"},
-        "negative":{"FULL":"/pylcmsprocessing/data/adducts_neg.txt","MAIN":"/pylcmsprocessing/data/adducts_main_neg.txt"}
+        "XCMS_MODEL" : os.environ['SLAWROOT']+ "pylcmsprocessing/data/xcms_raw_model.RData",
+        "positive":{"FULL":os.environ['SLAWROOT']+ "pylcmsprocessing/data/adducts_pos.txt","MAIN":os.environ['SLAWROOT']+ "pylcmsprocessing/data/adducts_main_pos.txt"},
+        "negative":{"FULL":os.environ['SLAWROOT']+ "pylcmsprocessing/data/adducts_neg.txt","MAIN":os.environ['SLAWROOT']+ "pylcmsprocessing/data/adducts_main_neg.txt"}
     },
-    "ISOTOPES":"/pylcmsprocessing/data/isotopes.tsv",
+    "ISOTOPES":os.environ['SLAWROOT']+ "pylcmsprocessing/data/isotopes.tsv",
     "IONMODE":["positive","negative"],
-    "YAML": "/pylcmsprocessing/data/parameters_set.yaml"
+    "YAML": os.environ['SLAWROOT']+ "pylcmsprocessing/data/parameters_set.yaml"
 }
 
 def default_adducts_positive():

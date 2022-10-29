@@ -7,6 +7,9 @@ import math
 import shutil
 import logging
 
+os.environ["SLAWROOT"] = '/'
+os.environ['RScriptString'] = 'Rscript'
+
 ##We import the module of python processing.
 sys.path.append('/pylcmsprocessing')
 from pylcmsprocessing.model.helper.UI import UI

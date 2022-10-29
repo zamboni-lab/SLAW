@@ -23,7 +23,7 @@ class PostProcessing:
         pscript = ct.find_rscript()
         command_line = os.path.join(pscript,"post_processing.R")
         ####We give all the name of the grouping parameters implicated in a single file
-        return " ".join(["Rscript",command_line,self.target,self.raw_files,self.db,
+        return " ".join([os.environ["RscriptString"]," ",command_line,self.target,self.raw_files,self.db,
                         self.path_hdf5,self.path_out_target,self.path_out_summary,
                         self.path_rt_table, self.path_int_table,
                         str(self.mztol),str(self.rttol),str(self.num_workers)])

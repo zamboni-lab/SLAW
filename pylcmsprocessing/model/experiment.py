@@ -109,7 +109,7 @@ class Experiment:
             path_raw = all_path[0]
 
         logging.info("Guessing polarity from file:"+os.path.basename(path_raw))
-        args = ["Rscript",pscript,'"'+path_raw+'"', '"'+output+'"']
+        args = [os.environ['RScriptString'],pscript,'"'+path_raw+'"', '"'+output+'"']
         cli = " ".join(args)
         ##We call the script eventually.
         par_run = pr.run_cl_solo(cli)
@@ -252,7 +252,7 @@ class Experiment:
 
         ###We build the majority
         pscript = os.path.join(ct.find_rscript(), "createSQLiteexperiment.R")
-        cline = "Rscript " + pscript + " -d '" + path_samples + "' -b '" + self.db + "'"
+        cline = os.environ['RScriptString'] + ' ' + pscript + ' -d "' + path_samples + '" -b "' + self.db + '"'
         if path_ms2 is not None:
             cline = cline + " -o '"+path_ms2+"'"
         if "SLAWSUMMARY" in os.environ and not is_optim:
@@ -441,7 +441,7 @@ class Experiment:
                 #
                 pjoin = os.path.join(ct.find_rscript(), "wrapper_MZmine_peak_table_conversion.R ")
                 # ###Calling the script on all the processed path
-                cline = "Rscript " + pjoin + " " + path_temp + " " + str(self.get_workers(open=False))
+                cline = os.environ['RScriptString'] + " " + pjoin + " " + path_temp + " " + str(self.get_workers(open=False))
                 pr.run_cl_solo(cline)
                 # subprocess.call(cline, shell=True)
                 need_processing = [not os.path.exists(row[5]) for row in rows]
@@ -494,7 +494,7 @@ class Experiment:
             # ###CWe create the command line to allow the peakpicking
             if len(names_output) > 0:
                 names_converted = [x.split(".")[0] + ".csv" for x in names_output]
-                clis_conversion = ["Rscript " + pjoin + ' "'+old+ '" "' +new+ '"' for old,new in zip(names_output,names_converted)]
+                clis_conversion = [os.environ['RScriptString'] + " " + pjoin + ' "'+old+ '" "' +new+ '"' for old,new in zip(names_output,names_converted)]
                 runner.run(clis_conversion, silent=silent, log = log, timeout = cr.CONSTANT["PEAKPICKING_TIMOUT"])
                 to_retry = []
                 for pid,nn,o in zip(ids_to_convert,names_converted,names_output):
@@ -507,7 +507,7 @@ class Experiment:
                 if len(to_retry)>0:
                     ###5 second waiting time to unlock file if needed.
                     time.sleep(2)
-                    clis_conversion_retry = ["Rscript " + pjoin +' "' + old +'" "'+ new+'"' for id,new,old in
+                    clis_conversion_retry = [os.environ['RScriptString'] + " " + pjoin +' "' + old +'" "'+ new+'"' for id,new,old in
                                        to_retry]
                     runner.run(clis_conversion_retry, silent=silent, log=log, timeout=cr.CONSTANT["PEAKPICKING_TIMOUT"])
                     for pid,nn,o in to_retry:
@@ -564,7 +564,7 @@ class Experiment:
             # logging.warning("correcting " + str(len(to_convert)) + " files:","|".join(to_convert))
             with open(path_temp, "w+") as summary:
                 summary.writelines(to_convert)
-            cline = "Rscript " + p_conversion + " " + path_temp + " " + str(self.get_workers(open=False))
+            cline = os.environ['RScriptString'] + " " + p_conversion + " " + path_temp + " " + str(self.get_workers(open=False))
             pr.run_cl_solo(cline)
             # subprocess.call(cline, shell=True)
         else:
@@ -681,7 +681,7 @@ class Experiment:
         num_workers = self.get_workers()
         dir_out= self.output.getDir(output)
         pscript = os.path.join(ct.find_rscript(),"extractingMGFfromMZML.R")
-        cli = " ".join(["Rscript",pscript,'"'+self.db+'"','"'+dir_out+'"',str(noise_level),str(num_workers),str(all)])
+        cli = " ".join([os.environ['RScriptString'],pscript,'"'+self.db+'"','"'+dir_out+'"',str(noise_level),str(num_workers),str(all)])
         pr.run_cl_solo(cli)
         # subprocess.call(cli,shell=True)
         logging.info("MS2 extraction finished")
@@ -799,9 +799,16 @@ class Experiment:
         c = self.conn.cursor()
         c.execute("SELECT * FROM peakpicking")
         all_peakpicking = c.fetchall()
-        #We create the ouput of the adducts files.
+        # We create the ouput of the adducts files.
         path_temp_adducts = self.output.getFile(cr.TEMP["IONANNOTATION"]["FULL"])
+        f = open(path_temp_adducts, "a")
+        f.writelines(adducts)
+        f.close()
         path_temp_adducts_main = self.output.getFile(cr.TEMP["IONANNOTATION"]["MAIN"])
+        f = open(path_temp_adducts_main, "a")
+        f.writelines(main_adducts)
+        f.close()
+
         runner = pr.ParallelRunner(min(num_workers, max_workers))
         successfull_processing = True
         #We get the polarity

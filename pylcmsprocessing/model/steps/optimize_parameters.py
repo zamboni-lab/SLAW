@@ -318,7 +318,7 @@ class ParametersOptimizer:
             output_par = self.temp_yaml
         initial_par = self.input_par
         num_cores = self.num_workers
-        cli = " ".join(["Rscript",pscript,'"'+path_db+'"','"'+initial_par+'"','"'+output_par+'"',str(num_cores)])
+        cli = " ".join([os.environ["RscriptString"]," ",pscript,'"'+path_db+'"','"'+initial_par+'"','"'+output_par+'"',str(num_cores)])
         self.input_par=output_par
         ###We read the polarity directly
         pr.run_cl_solo(cli)

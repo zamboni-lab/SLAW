@@ -125,7 +125,7 @@ class PeakPickingXCMS(PeakPicking):
 
     def command_line_processing(self):
         pjoin = os.path.join(find_rscript(), "wrapper_xcms_peak_picking.R")
-        cli_args = ["Rscript",pjoin,'"'+self.input+'"','"'+self.output+'"',self.ppm,self.min_peakwidth,
+        cli_args = [os.environ["RscriptString"]," ",pjoin,'"'+self.input+'"','"'+self.output+'"',self.ppm,self.min_peakwidth,
                     self.max_peakwidth,self.snt,
                     self.point_prefilter,self.int_prefilter,self.min_int]
         cli_args = [str(arg) for arg in cli_args]

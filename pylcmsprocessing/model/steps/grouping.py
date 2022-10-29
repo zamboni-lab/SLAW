@@ -9,8 +9,7 @@ class OnlineGrouper:
         self.hash = row[3]
         self.db=path_db
         self.output_data=os.path.join(out,"datamatrix_"+row[3]+".csv")
-        self.output_data_non_filled = os.path.join(out,"non_filled_datamatrix_"+row[3]+".csv")
-        #self.output_idx=os.path.join(out,"index_"+self.hash+".txt")
+        self.output_data_non_filled = os.path.join(out,"datamatrix_"+row[3]+"_prefill.csv")
         self.blocks=blocks
         self.alignment=alignment
         self.intensity=intensity
@@ -47,7 +46,7 @@ class OnlineGrouper:
         pscript = ct.find_rscript()
         command_line = os.path.join(pscript,"construct_peaktable_online.R")
         ####We give all the name of the grouping parameters implicated in a single file
-        return " ".join(["Rscript",command_line,'"'+self.db+'" "'+self.blocks+'" "'+self.alignment+'"',
+        return " ".join([os.environ["RscriptString"]," ",command_line,'"'+self.db+'" "'+self.blocks+'" "'+self.alignment+'"',
                         '"'+self.output_data+'"',self.intensity,str(self.rttol),str(self.mztol),str(self.ppm),
                         str(self.num_ref),str(self.alpha),str(self.num_workers),'"'+self.figure+'"'])
 
@@ -57,11 +56,11 @@ class OnlineGrouper:
         # args < - commandArgs(trailingOnly=TRUE)
 
         ####We give all the name of the grouping parameters implicated in a single file
-        return " ".join(["Rscript",command_line,'"'+self.db+'"','"'+self.output_data+'"',
+        return " ".join([os.environ["RscriptString"]," ",command_line,'"'+self.db+'"','"'+self.output_data+'"',
                          '"'+self.dm_1+'"',str(self.fold_blank),str(self.filter_qc)])
 
     def command_line_fusing_msms(self):
         pscript = ct.find_rscript()
         command_line = os.path.join(pscript,"fusing_msms_spectra.R")
-        return " ".join(["Rscript",command_line,'"'+self.db+'"',str(self.ms2_mz_tol),str(self.ms2_rt_tol),str(self.num_workers),
+        return " ".join([os.environ["RscriptString"]," ",command_line,'"'+self.db+'"',str(self.ms2_mz_tol),str(self.ms2_rt_tol),str(self.num_workers),
                 '"'+self.fused_mgf+'"','"'+self.dm_1+'"','"'+self.dm_2+'"','"'+self.hdf5+'"'])
