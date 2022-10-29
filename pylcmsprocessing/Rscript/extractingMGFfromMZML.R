@@ -1,8 +1,8 @@
-library(DBI)
-library(RSQLite)
-library(stringr)
-library(openssl)
-library(BiocParallel)
+suppressWarnings(suppressMessages(library(DBI,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
+suppressWarnings(suppressMessages(library(RSQLite,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
+suppressWarnings(suppressMessages(library(stringr,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
+suppressWarnings(suppressMessages(library(openssl,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
+suppressWarnings(suppressMessages(library(BiocParallel,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
 
 # INNER JOIN SYNTAX
 # SELECT path,output_ms FROM samples INNER JOIN processing on sample = samples.id;
