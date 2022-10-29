@@ -11,7 +11,6 @@ os.environ["SLAWROOT"] = '/'
 os.environ['RScriptString'] = 'Rscript'
 
 ##We import the module of python processing.
-sys.path.append('/pylcmsprocessing')
 from pylcmsprocessing.model.helper.UI import UI
 from pylcmsprocessing.model.experiment import Experiment
 from pylcmsprocessing.model.steps.optimize_parameters import ParametersOptimizer

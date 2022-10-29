@@ -73,7 +73,7 @@ class InformationExpanderRefactored:
     def command_line(self):
         pscript = ct.find_rscript()
         command_line = os.path.join(pscript,"gap_filling_refactored.R")
-        return " ".join([os.environ["RscriptString"]," ",command_line,'"'+self.db+'"','"'+self.dm+'"',
+        return " ".join([os.environ["RScriptString"]," ",command_line,'"'+self.db+'"','"'+self.dm+'"',
                          '"'+self.temp+'"','"'+self.model+'"','"'+self.hdf5+'"','"'+self.isotopes+'"',self.quant,
                          str(self.max_iso),str(self.max_charge),str(self.ppm),str(self.dmz),str(self.num_files),str(self.num_workers)])
 

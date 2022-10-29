@@ -3,7 +3,6 @@ import os
 if not('SLAWROOT' in os.environ):
     os.environ['SLAWROOT'] = '/' # this is the default for the docker container
 
-
 ALGORITHMS_TABLE = {
     "ADAP": ["MZmine", "adap.json", os.environ['SLAWROOT']+ "pylcmsprocessing/data/batch_adap_2_52.xml"],
     "BASELINE": ["MZmine", "baseline.json", os.environ['SLAWROOT']+ "pylcmsprocessing/data/batch_baseline_2_52.xml"],
