@@ -6,6 +6,9 @@ suppressWarnings(suppressMessages(library(BiocParallel, warn.conflicts = FALSE))
 suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(rhdf5, warn.conflicts = FALSE)))
 
+### DEBUG
+DEBUG <- TRUE
+
 ###COnstant add columns name
 ##We add the isotopic pattern
 ISO_DIST_COL <- "isotopic_pattern_rel"
@@ -19,9 +22,16 @@ sink(file=stdout())
 args <- commandArgs(trailingOnly = TRUE)
 
 # testing
-# args <- c("D:\\SW\\SLAW_test_data_out\\temp_processing_db.sqlite","D:\\SW\\SLAW_test_data_out\\datamatrices\\datamatrix_741d552fefa0759df99c04af0d7f6562.csv",
-# "D:\\SW\\SLAW_test_data_out\\temp","D:\\SW\\SLAW_test_data_out\\temp\\alignement.rds","D:\\SW\\SLAW_test_data_out\\temp\\gap_filling.hdf5","D:\\SW\\SLAW\\pylcmsprocessing\\data\\isotopes.tsv","quant"
-# ,4,3,15.0,0.01,5,39)
+if (DEBUG) {
+  DEBUG_OUTPUT <- "D:/SW/SLAW_test_data_out_ms1all/"
+  DEBUG_INPUT <- "D:/SW/SLAW_test_data_in/mzML/"
+  args <- c("/output/temp_processing_db.sqlite",
+            "/output/datamatrices/datamatrix_741d552fefa0759df99c04af0d7f6562.csv",
+            "/output/temp","/output/temp/alignement.rds","/output/temp/gap_filling.hdf5",
+            "D:\\SW\\SLAW\\pylcmsprocessing\\data\\isotopes.tsv","quant"
+            ,4,3,15.0,0.01,5,39)
+  args <- sapply(args,str_replace,"/output/",DEBUG_OUTPUT)
+}
 
 PATH_DB <- args[1]
 PATH_DM <- args[2]
@@ -93,6 +103,10 @@ all_infos <-
   )
 all_peaktables <- all_infos[,2]
 all_samples <- all_infos[,1]
+if (DEBUG) {
+  all_peaktables <- sapply(all_peaktables,str_replace,"/output/",DEBUG_OUTPUT)
+  all_samples <- sapply(all_samples,str_replace,"/input/",DEBUG_INPUT)
+}
 
 #The number of cores is potentially readjusted if the raw files are too big
 num_samples <- length(all_samples)
@@ -101,7 +115,7 @@ num_samples <- length(all_samples)
 quant_prefix <-
   paste(str_split(cnames[length(cnames)], fixed("_"))[[1]][1], "_", sep = "")
 quant_cols <- which(startsWith(cnames, quant_prefix))
-mean_int <- apply(dm[,..quant_cols],1,mean,na.rm=TRUE)
+quant_mean <- apply(dm[,..quant_cols],1,mean,na.rm=TRUE)
 #We define the batches of files if thee is too much
 seq_samples <- seq(0,num_features*length(quant_cols),by=700000)
 seq_samples <- seq_samples%/%num_features
@@ -421,7 +435,7 @@ extractMissingInformations <-
            dist_c13,
            dm,
            quant,
-           mean_int,
+           quant_mean,
            hdf5_file,
            margin_dmz = 0.003,
            margin_ppm = 10,
@@ -560,7 +574,7 @@ extractMissingInformations <-
           rt_corr,
           dm[["peakwidth_mean"]][infer[ort]],
           infer[ort],
-          mean_int[infer[ort]],
+          quant_mean[infer[ort]],
           FUN = extractIntensity,
           MoreArgs = list(
             quant = quant,
@@ -643,7 +657,7 @@ extractMissingInformationsHDF5 <- function(praw,
                                            dist_c13,
                                            dm,
                                            quant,
-                                           mean_int,
+                                           quant_mean,
                                            hdf5_file,
                                            extractMissingInformationFun,
                                            margin_dmz = 0.003,
@@ -666,7 +680,7 @@ extractMissingInformationsHDF5 <- function(praw,
                                         dist_c13,
                                         dm,
                                         quant,
-                                        mean_int,
+                                        quant_mean,
                                         hdf5_file,
                                         margin_dmz = margin_dmz,
                                         margin_ppm = margin_ppm,
@@ -691,7 +705,7 @@ extractMissingInformationsAllBatches <- function(praw,
                                                  dist_c13,
                                                  dm,
                                                  quant,
-                                                 mean_int,
+                                                 quant_mean,
                                                  hdf5_file,
                                                  margin_dmz = 0.003,
                                                  margin_ppm = 10,
@@ -718,7 +732,7 @@ extractMissingInformationsAllBatches <- function(praw,
                                         extractMissingInformationFun = extractMissingInformations,
                                         dm = dm,
                                         quant = quant,
-                                        mean_int = mean_int,
+                                        quant_mean = quant_mean,
                                         hdf5_file = hdf5_file,
                                         margin_dmz = margin_dmz,
                                         margin_ppm = margin_ppm,
@@ -776,7 +790,7 @@ optimizeParameters <-function(praws,peaks,isotopes,infer,
 
     vcomps <- mapply(xraws,peaks,isotopes,
                      infers,aligns, FUN = extractMissingInformations,
-                     MoreArgs=list(table_iso=table_iso,dist_c13=dist_c13,dm=dm,quant=quant,mean_int=optim_intensity,
+                     MoreArgs=list(table_iso=table_iso,dist_c13=dist_c13,dm=dm,quant=quant,quant_mean=optim_intensity,
                                    margin_mz = x,
                                    margin_ppm = x[2],
                                    margin_dmz = x[1],
@@ -880,7 +894,7 @@ rm(dm)
 
 
 #We read the elements that we will use for gap-filling
-rmz <- dm_peaks[["mean_mz"]][c(1,length(dm_peaks[["mean_mz"]]))]
+rmz <- dm_peaks[["mz_mean"]][c(1,length(dm_peaks[["mz_mean"]]))]
 max_iso <- seq(rmz[1], rmz[2] + 200, by = 20)
 maxC <- ceiling(max_iso / 14)
 maxC <- maxC
@@ -910,7 +924,7 @@ for(isamp in seq_along(all_peaktables)){
   reslist <- extractMissingInformationsAllBatches(all_samples[isamp],all_peaktables[isamp],isos_input_infos,
                                        feat_input_infos, align@rt_correction[[isamp]],
                                        table_iso=isotopes_table, dist_c13=dist_iso, dm=dm_peaks,
-                                       quant=QUANT, mean_int=mean_int, hdf5_file=HDF5_FILE,
+                                       quant=QUANT, quant_mean=quant_mean, hdf5_file=HDF5_FILE,
                                        extractMissingInformationFun=extractMissingInformations,#For potential parallelization only
                                        margin_mz = margin_dmz,
                                        margin_ppm = margin_ppm,
@@ -1035,8 +1049,8 @@ for (idx in 1:(length(batches) - 1)) {
       paste(sprintf("%0.0f", x[, "int"]), collapse = "|")
     })
     abs_col[isos_pos] <- found_abs
-    name_col[iquant_isos] <- names_isos
-    dist_col[iquant_isos] <- dists_isos
+    name_col[isos_pos] <- found_isotopes
+    dist_col[isos_pos] <- found_dists
   }
   ###The data matrix is expanded
   infos_idx <- 1:(quant_cols[1] - 1)
