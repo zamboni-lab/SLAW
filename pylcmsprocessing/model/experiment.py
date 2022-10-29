@@ -799,15 +799,6 @@ class Experiment:
         c = self.conn.cursor()
         c.execute("SELECT * FROM peakpicking")
         all_peakpicking = c.fetchall()
-        # We create the ouput of the adducts files.
-        path_temp_adducts = self.output.getFile(cr.TEMP["IONANNOTATION"]["FULL"])
-        f = open(path_temp_adducts, "a")
-        f.writelines(adducts)
-        f.close()
-        path_temp_adducts_main = self.output.getFile(cr.TEMP["IONANNOTATION"]["MAIN"])
-        f = open(path_temp_adducts_main, "a")
-        f.writelines(main_adducts)
-        f.close()
 
         runner = pr.ParallelRunner(min(num_workers, max_workers))
         successfull_processing = True
@@ -822,6 +813,16 @@ class Experiment:
 
         annotaters = [0] * len(all_peakpicking)
         count_annot = 0
+
+        # We create the output of the adducts files.
+        path_temp_adducts = self.output.getFile(cr.TEMP["IONANNOTATION"]["FULL"])
+        f = open(path_temp_adducts, "a")
+        f.writelines(adducts)
+        f.close()
+        path_temp_adducts_main = self.output.getFile(cr.TEMP["IONANNOTATION"]["MAIN"])
+        f = open(path_temp_adducts_main, "a")
+        f.writelines(main_adducts)
+        f.close()
 
         #If the adducts are not specified we load them
         for pp in all_peakpicking:

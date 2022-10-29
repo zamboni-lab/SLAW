@@ -12,7 +12,8 @@ suppressWarnings(suppressMessages(library(Rcpp, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(InterpretMSSpectrum, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
 
-DEBUG <- TRUE
+### SWITCH TO FALSE BEFORE COMMITTING!!
+DEBUG <- FALSE
 
 # testing
 if (DEBUG) {
