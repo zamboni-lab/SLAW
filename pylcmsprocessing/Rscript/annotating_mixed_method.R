@@ -341,8 +341,8 @@ computeNetworkRawfile <-
                 rtdiff = 1e-04,
                 cosFilter = 0.3)
       {
-        sink("D:/outout.txt")
-        # sink("/dev/null")
+        # sink("D:/outout.txt")
+        sink("/dev/null")
         eicmat <- cliqueMS:::defineEIC(mzdata)
         sink(file = NULL)
         sparseeic <- as(t(eicmat), "sparseMatrix")
@@ -1132,8 +1132,8 @@ groupFeatures <-
         bpp = bpp
       )
       ###we compute the cliques
-      # sink(file="/dev/null")
-      sink("D:/out.txt")
+      sink(file="/dev/null")
+      # sink("D:/out.txt")
       anclique <- computeCliques(anclique, 1e-5, TRUE)
       sink(NULL)
       ###We correct the index for subselection.
