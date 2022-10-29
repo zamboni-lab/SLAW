@@ -341,8 +341,8 @@ computeNetworkRawfile <-
                 rtdiff = 1e-04,
                 cosFilter = 0.3)
       {
-        # sink("E:/outout.txt")
-        sink("/dev/null")
+        sink("D:/outout.txt")
+        # sink("/dev/null")
         eicmat <- cliqueMS:::defineEIC(mzdata)
         sink(file = NULL)
         sparseeic <- as(t(eicmat), "sparseMatrix")
@@ -436,7 +436,7 @@ createNetworkMultifiles <-
       ###We compute the network for the selected files.
 
       ledges <-
-          bpmapply( # bptry({
+          bpmapply( # bptry({ bpmapply
             seq_cut[i]:(seq_cut[i + 1] - 1),
             as.list(raw_files[seq_cut[i]:(seq_cut[i + 1] - 1)]),
             as.list(opened_raw_files[seq_cut[i]:(seq_cut[i + 1] - 1)]),
@@ -445,8 +445,9 @@ createNetworkMultifiles <-
               ref_xcms = ref_xcms,
               dm = dm,
               cosFilter = cosFilter
-            ),
-            BPPARAM = bpp)
+            ),BPPARAM = SerialParam())
+      
+      #bpp
           #bptry( )
      #   )}, error=identity)
       # message("ledges",format(object.size(ledges),"Mb"))
@@ -1092,8 +1093,7 @@ groupFeatures <-
     if(cut_size>nrow(dm)) cut_size <- nrow(dm)
 
     ###We sort dm by retnetion time
-    ort <- order(dm[, "rt"], decreasing = FALSE)
-
+    ort <- order(as.matrix(dm[, "rt"]), decreasing = FALSE)
 
     ###We plit the files evnetually.
     number_features <- nrow(dm)
@@ -1132,7 +1132,8 @@ groupFeatures <-
         bpp = bpp
       )
       ###we compute the cliques
-      sink(file="/dev/null")
+      # sink(file="/dev/null")
+      sink("D:/out.txt")
       anclique <- computeCliques(anclique, 1e-5, TRUE)
       sink(NULL)
       ###We correct the index for subselection.
