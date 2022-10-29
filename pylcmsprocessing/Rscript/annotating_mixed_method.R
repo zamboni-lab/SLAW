@@ -1100,11 +1100,11 @@ groupFeatures <-
 
     summarized_df <- data.frame(
       mz = dm[, "mz"],
-      mzmin = dm[, "mz"] - (dm[, "max_mz"] - dm[, "min_mz"]) * 1.5 ,
-      mzmax = dm[, "mz"] + (dm[, "max_mz"] - dm[, "min_mz"]) * 1.5,
+      mzmin = dm[, "mz"] - (dm[, "mz_max"] - dm[, "mz_min"]) * 1.5 ,
+      mzmax = dm[, "mz"] + (dm[, "mz_max"] - dm[, "mz_min"]) * 1.5,
       rt = 60 * (dm[, "rt"]),
-      rtmin = 60 * (dm[, "rt"] - dm[, "mean_peakwidth"] - 0.002),
-      rtmax = 60 * (dm[, "rt"] + dm[, "mean_peakwidth"] + 0.002),
+      rtmin = 60 * (dm[, "rt"] - dm[, "peakwidth_mean"] - 0.002),
+      rtmax = 60 * (dm[, "rt"] + dm[, "peakwidth_mean"] + 0.002),
       into = val_int,
       intb = val_int,
       maxo = val_int,
@@ -1272,7 +1272,7 @@ match_files <- posIntensities
 
 # match_files <- sapply(base_sample,function(x,vref){which(endsWith(vref,suffix=x))},vref=colnames(dm),simplify=TRUE)
 
-kcnames <- c("mz", "rt","min_mz","max_mz","min_rt","max_rt","mean_peakwidth",cnames[posIntensities[sel_files]])
+kcnames <- c("mz", "rt","mz_min","mz_max","rt_min","rt_max","peakwidth_mean",cnames[posIntensities[sel_files]])
 dm <- fread(PATH_DATAMATRIX, header = TRUE, sep = "\t", select = kcnames)
 dm <- dm[vdetect, , drop = FALSE]
 val_int_var <- val_int_var[vdetect]
