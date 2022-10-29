@@ -12,6 +12,51 @@ suppressWarnings(suppressMessages(library(Rcpp, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(InterpretMSSpectrum, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
 
+DEBUG <- TRUE
+
+# testing
+if (DEBUG) {
+  DEBUG_OUTPUT <- "D:/SW/SLAW_test_data_out_ms1all/"
+  DEBUG_INPUT <- "D:/SW/SLAW_test_data_in/mzML/"
+  args <- c("/output/datamatrices/datamatrix_741d552fefa0759df99c04af0d7f6562.csv",
+            "/output/temp_processing_db.sqlite",
+            "/output/datamatrices/annotated_peaktable_741d552fefa0759df99c04af0d7f6562_full.csv",
+            "/output/datamatrices/annotated_peaktable_741d552fefa0759df99c04af0d7f6562_reduced.csv",
+            16,
+            "D:/SW/SLAW-pycharm/pylcmsprocessing/data/xcms_raw_model.RData",
+            "/output/temp/adducts.csv",
+            "/output/temp/main_adducts.csv",
+            "positive",
+            15.0,0.01,10,2.0,
+            "D:/SW/SLAW-pycharm/pylcmsprocessing/Rscript/cliques_matching.cpp"
+)
+  args <- sapply(args,str_replace,"/output/",DEBUG_OUTPUT)
+} else {
+  args <- commandArgs(trailingOnly = TRUE)
+}
+
+####Actual processing in the pipeline.
+PATH_DATAMATRIX <- args[1]
+PATH_DB <- args[2]
+PATH_OUTPUT_FULL <- args[3]
+PATH_OUTPUT_SIMPLE <- args[4]
+NUM_CORES <- max(as.numeric(args[5])-1,1)
+PATH_MODEL <- args[6]
+PATH_ADDUCTS <- args[7]
+PATH_MAIN_ADDUCTS <- args[8]
+POLARITY <- args[9]
+PPM <-  as.numeric(args[10])
+DMZ <-  as.numeric(args[11])
+###We peak the FILE_USED most intense files.
+FILES_USED <- min(as.numeric(args[12]), 25,NUM_CORES*2)
+FILTER_NUMS <- max(1, as.numeric(args[13]))
+PATH_MATCHING <- args[14]
+NUM_BY_BATCH <- 5000
+if (length(args) == 15) {
+  NUM_BY_BATCH <- as.numeric(args[15])
+}
+
+
 options(error=traceback)
 
 get_os <- function() {
@@ -1148,49 +1193,6 @@ groupFeatures <-
     return(annot)
   }
 
-####Actual processing in the pipeline.
-args <- commandArgs(trailingOnly = TRUE)
-
-
-library(stringr)
-# args <- c(
-#   "U:/users/Alexis/data/slaw_evaluation/MSV83010/output_cluster/datamatrices/datamatrix_a4b68bd9e6c73664a86dac3d1fdf7d78.csv",
-#   "U:/users/Alexis/data/slaw_evaluation/MSV83010/output_cluster/processing_db.sqlite",
-#   "U:/users/Alexis/data/slaw_evaluation/MSV83010/output_cluster/datamatrices/annotated_peaktable_ec33b0ccad6d47ab6b44cec104305d4b.csv",
-#   "U:/users/Alexis/data/slaw_evaluation/MSV83010/output_cluster/datamatrices/annotated_peaktable_ec33b0ccad6d47ab6b44cec104305d4b.csv",
-#   "2",
-#   "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/xcms_raw_model.RData",
-#   "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/adducts_pos.txt",
-#   "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/data/adducts_main_pos.txt",
-#   "positive",
-#   "15.0",
-#   "0.01",
-#   "50",
-#   "2",
-#   "C:/Users/dalexis/Documents/dev/lcmsprocessing_docker/pylcmsprocessing/Rscript/cliques_matching.cpp")
-
-
-# args <- str_replace(args,"/output","U:/users/Alexis/examples_lcms_workflow/output_optim")
-
-PATH_DATAMATRIX <- args[1]
-PATH_DB <- args[2]
-PATH_OUTPUT_FULL <- args[3]
-PATH_OUTPUT_SIMPLE <- args[4]
-NUM_CORES <- max(as.numeric(args[5])-1,1)
-PATH_MODEL <- args[6]
-PATH_ADDUCTS <- args[7]
-PATH_MAIN_ADDUCTS <- args[8]
-POLARITY <- args[9]
-PPM <-  as.numeric(args[10])
-DMZ <-  as.numeric(args[11])
-###We peak the FILE_USED most intense files.
-FILES_USED <- min(as.numeric(args[12]), 25,NUM_CORES*2)
-FILTER_NUMS <- max(1, as.numeric(args[13]))
-PATH_MATCHING <- args[14]
-NUM_BY_BATCH <- 5000
-if (length(args) == 15) {
-  NUM_BY_BATCH <- as.numeric(args[15])
-}
 
 ##reading data matrices
 
