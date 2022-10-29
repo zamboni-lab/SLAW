@@ -790,6 +790,7 @@ class Experiment:
                     runner.run(clis_fusing, log=log)
         self.save_db()
         logging.info("Alignment finished")
+
     #Parallelism is handled by R always a single trhead in this case
     def annotate_ions(self, nfiles, ppm, dmz, adducts=None, main_adducts=None, max_workers=2, min_filter = 2):
         num_workers = self.get_workers()
@@ -813,7 +814,6 @@ class Experiment:
 
         annotaters = [0] * len(all_peakpicking)
         count_annot = 0
-
         # We create the output of the adducts files.
         path_temp_adducts = self.output.getFile(cr.TEMP["IONANNOTATION"]["FULL"])
         f = open(path_temp_adducts, "a")

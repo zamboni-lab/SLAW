@@ -17,7 +17,7 @@ DEBUG <- FALSE
 
 # testing
 if (DEBUG) {
-  DEBUG_OUTPUT <- "D:/SW/SLAW_test_data_out_ms1all/"
+  DEBUG_OUTPUT <- "D:/SW/SLAW_test_data_out/"
   DEBUG_INPUT <- "D:/SW/SLAW_test_data_in/mzML/"
   args <- c("/output/datamatrices/datamatrix_741d552fefa0759df99c04af0d7f6562.csv",
             "/output/temp_processing_db.sqlite",
@@ -142,14 +142,14 @@ convertToCliqueMS <- function(dm,
   tdf <-
     data.frame(
       mz = dm[sel_idx, mz],
-      mzmin = dm[sel_idx, mz] - (dm[sel_idx, max_mz] - dm[sel_idx, min_mz]) *
+      mzmin = dm[sel_idx, mz] - (dm[sel_idx, mz_max] - dm[sel_idx, mz_min]) *
         1.5 ,
-      mzmax = dm[sel_idx, mz] + (dm[sel_idx, max_mz] - dm[sel_idx, min_mz]) *
+      mzmax = dm[sel_idx, mz] + (dm[sel_idx, mz_max] - dm[sel_idx, mz_min]) *
         1.5,
       rt = 60 * (dm[sel_idx, rt]),
-      rtmin = 60 * (dm[sel_idx, rt] - dm[sel_idx, mean_peakwidth] -
+      rtmin = 60 * (dm[sel_idx, rt] - dm[sel_idx, peakwidth_mean] -
                       0.002),
-      rtmax = 60 * (dm[sel_idx, rt] + dm[sel_idx, mean_peakwidth] +
+      rtmax = 60 * (dm[sel_idx, rt] + dm[sel_idx, peakwidth_mean] +
                       0.002),
       into = intensity,
       intb = intensity,
@@ -264,14 +264,14 @@ computeNetworkRawfile <-
       tdf <-
         data.frame(
           mz = dm[sel_idx, mz],
-          mzmin = dm[sel_idx, mz] - (dm[sel_idx, max_mz] - dm[sel_idx, min_mz]) *
+          mzmin = dm[sel_idx, mz] - (dm[sel_idx, mz_max] - dm[sel_idx, mz_min]) *
             1.5 ,
-          mzmax = dm[sel_idx, mz] + (dm[sel_idx, max_mz] - dm[sel_idx, min_mz]) *
+          mzmax = dm[sel_idx, mz] + (dm[sel_idx, mz_max] - dm[sel_idx, mz_min]) *
             1.5,
           rt = 60 * (dm[sel_idx, rt]),
-          rtmin = 60 * (dm[sel_idx, rt] - dm[sel_idx, mean_peakwidth] -
+          rtmin = 60 * (dm[sel_idx, rt] - dm[sel_idx, peakwidth_mean] -
                           0.002),
-          rtmax = 60 * (dm[sel_idx, rt] + dm[sel_idx, mean_peakwidth] +
+          rtmax = 60 * (dm[sel_idx, rt] + dm[sel_idx, peakwidth_mean] +
                           0.002),
           into = intensity,
           intb = intensity,
@@ -436,7 +436,7 @@ createNetworkMultifiles <-
       ###We compute the network for the selected files.
 
       ledges <-
-          bptry({bpmapply(
+          bpmapply( # bptry({
             seq_cut[i]:(seq_cut[i + 1] - 1),
             as.list(raw_files[seq_cut[i]:(seq_cut[i + 1] - 1)]),
             as.list(opened_raw_files[seq_cut[i]:(seq_cut[i + 1] - 1)]),
@@ -446,9 +446,9 @@ createNetworkMultifiles <-
               dm = dm,
               cosFilter = cosFilter
             ),
-            BPPARAM = bpp
+            BPPARAM = bpp)
           #bptry( )
-        )}, error=identity)
+     #   )}, error=identity)
       # message("ledges",format(object.size(ledges),"Mb"))
 
 
@@ -1113,9 +1113,9 @@ groupFeatures <-
     size <- rep(0L, nrow(dm))
     ###The first id needs to be -1
     current_id <- as.integer(-1)
-    
+
     # tlist <- list()
-    
+
     ##We update all the cliques.
     for (i in seq(1, length(cut_rts) - 2)) {
       message("Processing batch ",i)
@@ -1171,7 +1171,7 @@ groupFeatures <-
 
     anclique@network <- empty_graph()
     pint <- getIntensityPos(dm)[1]
-    
+
     ###We add the missing feature to the data
     num_features <- 1:nrow(dm)
     found_features <- unlist(cliques)
@@ -1236,9 +1236,10 @@ rm(sdata)
 ###Reading the raw files
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
 raw_files <- dbGetQuery(dbb, "SELECT path FROM samples INNER JOIN processing on samples.id=processing.sample WHERE level='MS1' AND output_ms!='NOT PROCESSED' AND valid=1")[, 1]
-# raw_files <- str_replace(raw_files,"/input","U:/users/Alexis/data/slaw_evaluation/MSV83010/mzML")
 dbDisconnect(dbb)
-
+if (DEBUG) {
+  raw_files <- sapply(raw_files,str_replace,"/input/",DEBUG_INPUT)
+}
 ####Selecting the msot intense files
 sel_files <-
   order(val_int, decreasing = TRUE)[1:min(FILES_USED, length(val_int))]
