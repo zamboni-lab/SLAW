@@ -102,7 +102,7 @@ if __name__=="__main__":
     PATH_TARGET = os.path.join(INPUT,"target.csv")
 
     # THE sample database is always calculated before doing any processing
-    PATH_DB = os.path.join(OUTPUT_DIR, "temp_processing_db.sqlite")
+    PATH_DB = os.path.join(pcr.TEMP["DIR"], "temp_processing_db.sqlite")
     DB_STORAGE = os.path.join(OUTPUT_DIR, "temp_optim", "db_storage")
     if os.path.isdir("/sauer1") or "CLUSTER" in os.environ:
         PATH_DB = "/temp_processing_db.sqlite"
