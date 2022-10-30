@@ -384,7 +384,7 @@ if (get_os() == "win") {
 
 ##We get the datamatrix path
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
-PATH_DATAMATRIX <- dbGetQuery(dbb, "SELECT peaktable FROM peakpicking")[, 1]
+PATH_DATAMATRIX <- gsub('data_filled_','data_prefill_',dbGetQuery(dbb, "SELECT peaktable FROM peakpicking")[, 1])
 dbDisconnect(dbb)
 
 ##We get all the MS2 paths.

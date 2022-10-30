@@ -23,10 +23,10 @@ args <- commandArgs(trailingOnly = TRUE)
 
 # testing
 if (DEBUG) {
-  DEBUG_OUTPUT <- "D:/SW/SLAW_test_data_out_ms1all/"
+  DEBUG_OUTPUT <- "D:/SW/SLAW_test_data_out/"
   DEBUG_INPUT <- "D:/SW/SLAW_test_data_in/mzML/"
   args <- c("/output/temp_processing_db.sqlite",
-            "/output/datamatrices/datamatrix_741d552fefa0759df99c04af0d7f6562.csv",
+            "/output/temp/data_prefill_741d552fefa0759df99c04af0d7f6562.csv",
             "/output/temp","/output/temp/alignement.rds","/output/temp/gap_filling.hdf5",
             "D:\\SW\\SLAW\\pylcmsprocessing\\data\\isotopes.tsv","quant"
             ,4,3,15.0,0.01,5,39)
@@ -34,7 +34,7 @@ if (DEBUG) {
 }
 
 PATH_DB <- args[1]
-PATH_DM <- args[2]
+PATH_DM <- gsub('data_filled_','data_prefill_',args[2]) #str_replace(args[2],'data_filled_','data_prefill_')
 PATH_TEMP <- args[3]
 PATH_MODEL <- args[4]
 HDF5_FILE <- args[5]
@@ -47,10 +47,13 @@ DMZ <- as.numeric(args[11])
 NUM_FILES <- as.integer(args[12])
 NUM_WORKERS <- as.integer(args[13])
 
-
+if(file.exists(gsub('data_prefill_','data_filled_',PATH_DM))){
+  cat("Matrix already exists.Gap filling won't be performed: ",gsub('data_prefill_','data_filled_',PATH_DM),"\n") # ,file=stdout()
+  return()
+}
 #Path of the temporary filled matrix
-TEMP_FILLED <- file.path(PATH_TEMP,"filled_dm.csv")
-TEMP_TRANSFER <- file.path(PATH_TEMP,"transfer_dm.csv")
+# TEMP_FILLED <- file.path(PATH_TEMP,"filled_dm.csv")
+# TEMP_TRANSFER <- file.path(PATH_TEMP,"transfer_dm.csv")
 
 #Path of missing informations
 HDF5_FILE <- file.path(PATH_TEMP,"missing_infos.hdf5")
@@ -1061,14 +1064,15 @@ for (idx in 1:(length(batches) - 1)) {
   dm <-
     cbind(dm[, ..infos_idx], name_col, dist_col, abs_col, dm[, ..quant_idx])
   colnames(dm) <- new_names
-  if(!file.exists(TEMP_FILLED)){
-    ww <- fwrite(dm, TEMP_FILLED,sep="\t")
+  # we don't write a temp and rename. We just write it to the final destination and keep the prefill around. This avoids a few problems when rerurring the analysis
+  if(!file.exists(gsub('data_prefill_','data_filled_',PATH_DM))){
+    ww <- fwrite(dm, gsub('data_prefill_','data_filled_',PATH_DM),sep="\t")
   }else{
-    ww <- fwrite(dm, TEMP_FILLED,sep="\t",append = TRUE)
+    ww <- fwrite(dm, gsub('data_prefill_','data_filled_',PATH_DM),sep="\t",append = TRUE)
   }
 }
 
 ##Move file around
-ww <- file.copy(PATH_DM, gsub('.csv','_prefill.csv',PATH_DM),overwrite = TRUE)
-ww <- file.rename(PATH_DM, TEMP_TRANSFER)
-ww <- file.rename(TEMP_FILLED, PATH_DM)
+# ww <- file.copy(PATH_DM, gsub('.csv','_prefill.csv',PATH_DM),overwrite = TRUE)
+# ww <- file.rename(PATH_DM, TEMP_TRANSFER)
+# ww <- file.rename(TEMP_FILLED, gsub('data_prefill_','data_filled_',PATH_DM))

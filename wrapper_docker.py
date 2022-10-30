@@ -267,12 +267,6 @@ if __name__=="__main__":
     max_charge = int(ph["ion_annotation__max_charge"]["value"])
 
 ###Gap filling and isotopic pattern extraction
-# Deprecated now.
-#    exp.add_missing_informations(max_iso=max_iso,
-#                                 max_charge=max_charge,
-#                                 quant=quant,
-#                                 ppm=ion_ppm,
-#                                 dmz=ion_dmz)
     exp.add_missing_informations_refactored(max_iso=max_iso,
                                  max_charge=max_charge,
                                  quant=quant,

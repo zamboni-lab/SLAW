@@ -101,5 +101,5 @@ if(!file.exists(PATH_OUT_DATAMATRIX)){
     
     
 }else{
-  cat("Data matrix already exists alignement won't be performed: ",PATH_OUT_DATAMATRIX,"\n",file=stdout())
+  cat("Data matrix already exists. Alignment won't be performed: ",PATH_OUT_DATAMATRIX,"\n",file=stdout())
 }

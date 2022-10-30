@@ -8,8 +8,8 @@ class OnlineGrouper:
                  temp_dm_2,path_hdf5,num_workers,outfig,filter_qc=0,fold_blank=3):
         self.hash = row[3]
         self.db=path_db
-        self.output_data=os.path.join(out,"datamatrix_"+row[3]+".csv")
-        self.output_data_non_filled = os.path.join(out,"datamatrix_"+row[3]+"_prefill.csv")
+        self.output_data=os.path.join(out,"data_filled_"+row[3]+".csv")
+        self.output_data_non_filled = os.path.join(out,"data_prefill_"+row[3]+".csv")
         self.blocks=blocks
         self.alignment=alignment
         self.intensity=intensity
@@ -47,7 +47,7 @@ class OnlineGrouper:
         command_line = os.path.join(pscript,"construct_peaktable_online.R")
         ####We give all the name of the grouping parameters implicated in a single file
         return " ".join([os.environ["RscriptString"]," ",command_line,'"'+self.db+'" "'+self.blocks+'" "'+self.alignment+'"',
-                        '"'+self.output_data+'"',self.intensity,str(self.rttol),str(self.mztol),str(self.ppm),
+                        '"'+self.output_data_non_filled+'"',self.intensity,str(self.rttol),str(self.mztol),str(self.ppm),
                         str(self.num_ref),str(self.alpha),str(self.num_workers),'"'+self.figure+'"'])
 
     def command_line_filtering(self):
@@ -56,7 +56,7 @@ class OnlineGrouper:
         # args < - commandArgs(trailingOnly=TRUE)
 
         ####We give all the name of the grouping parameters implicated in a single file
-        return " ".join([os.environ["RscriptString"]," ",command_line,'"'+self.db+'"','"'+self.output_data+'"',
+        return " ".join([os.environ["RscriptString"]," ",command_line,'"'+self.db+'"','"'+self.output_data_non_filled+'"',
                          '"'+self.dm_1+'"',str(self.fold_blank),str(self.filter_qc)])
 
     def command_line_fusing_msms(self):

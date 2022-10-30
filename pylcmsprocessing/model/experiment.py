@@ -748,7 +748,7 @@ class Experiment:
         dir_blocks = self.output.getDir(cr.TEMP["GROUPING"]["BLOCKS"])
         dir_alignment = self.output.getFile(cr.TEMP["GROUPING"]["ALIGNMENT"])
         dir_datamatrix = self.output.getDir(cr.OUT["DATAMATRIX"])
-        path_fig = "/output/figure"
+        path_fig = "/output/figures"
 
         ###Spectra fusing output
         path_temp_1 = self.output.getFile(cr.TEMP["FUSING"]["TEMP1"])
@@ -832,7 +832,7 @@ class Experiment:
                 successfull_processing=False
                 continue
 
-            ppg = mai.IonAnnotater(pp[3], self.db, pp[4], path_datamatrix, polarity, cr.DATA["IONANNOTATION"]["XCMS_MODEL"], num_workers, nfiles,
+            ppg = mai.IonAnnotater(pp[3], self.db, pp[4], os.environ['OUTPUT'], polarity, cr.DATA["IONANNOTATION"]["XCMS_MODEL"], num_workers, nfiles,
                                    ppm, dmz, min_filter, adducts, main_adducts)
 
             #We update the output of the processing into the database.
@@ -857,43 +857,43 @@ class Experiment:
         return successfull_processing
 
 
-    def add_missing_informations(self,max_iso, max_charge, quant, ppm, dmz):
-        #This function is deprecated, the correct function which use hdf5 as a storage is below.
-        num_workers = self.get_workers()
-        runner = pr.ParallelRunner(num_workers)
-        ###Data of previous steps
-        path_isotopes = cr.DATA["ISOTOPES"]
-        path_rt_model = self.output.getFile(cr.TEMP["GROUPING"]["ALIGNMENT"])
-        path_temp_1 = self.output.getFile(cr.TEMP["FUSING"]["TEMP1"])
-        self.open_db()
-        c = self.conn.cursor()
-        c.execute("SELECT * FROM peakpicking")
-        all_peakpicking = c.fetchall()
-        margin_mz = 0.005
-
-        expanders = [0] * len(all_peakpicking)
-        count_expand = 0
-
-        #The number of files is determined based on the available memory
-        num_files = 3
-        if "TOTAL_SLAW_MEMORY" in os.environ:
-            num_files = max(math.floor(int(os.environ["TOTAL_SLAW_MEMORY"])/2000),3)
-        if num_files > 10:
-            num_files = 10
-        
-        for pp in all_peakpicking:
-            ###pp 4,10,11
-            ie = ic.InformationExpander(self.db, pp[4], path_temp_1, path_rt_model, path_isotopes,
-                                         max_iso, max_charge, quant,
-                                         margin_mz, ppm, dmz,num_files, num_workers)
-            expanders[count_expand] = ie
-            count_expand += 1
-        if count_expand != 0:
-            expanders = expanders[0:count_expand]
-            clis = [iexp.command_line() for iexp in expanders if iexp.need_computing()]
-            if len(clis) > 0:
-                runner.run(clis, silent=True)
-        logging.info("Gap filling and isotopic pattern extraction finished.")
+    # def add_missing_informations(self,max_iso, max_charge, quant, ppm, dmz):
+    #     #This function is deprecated, the correct function which use hdf5 as a storage is below.
+    #     num_workers = self.get_workers()
+    #     runner = pr.ParallelRunner(num_workers)
+    #     ###Data of previous steps
+    #     path_isotopes = cr.DATA["ISOTOPES"]
+    #     path_rt_model = self.output.getFile(cr.TEMP["GROUPING"]["ALIGNMENT"])
+    #     path_temp_1 = self.output.getFile(cr.TEMP["FUSING"]["TEMP1"])
+    #     self.open_db()
+    #     c = self.conn.cursor()
+    #     c.execute("SELECT * FROM peakpicking")
+    #     all_peakpicking = c.fetchall()
+    #     margin_mz = 0.005
+    #
+    #     expanders = [0] * len(all_peakpicking)
+    #     count_expand = 0
+    #
+    #     #The number of files is determined based on the available memory
+    #     num_files = 3
+    #     if "TOTAL_SLAW_MEMORY" in os.environ:
+    #         num_files = max(math.floor(int(os.environ["TOTAL_SLAW_MEMORY"])/2000),3)
+    #     if num_files > 10:
+    #         num_files = 10
+    #
+    #     for pp in all_peakpicking:
+    #         ###pp 4,10,11
+    #         ie = ic.InformationExpander(self.db, pp[4], path_temp_1, path_rt_model, path_isotopes,
+    #                                      max_iso, max_charge, quant,
+    #                                      margin_mz, ppm, dmz,num_files, num_workers)
+    #         expanders[count_expand] = ie
+    #         count_expand += 1
+    #     if count_expand != 0:
+    #         expanders = expanders[0:count_expand]
+    #         clis = [iexp.command_line() for iexp in expanders if iexp.need_computing()]
+    #         if len(clis) > 0:
+    #             runner.run(clis, silent=True)
+    #     logging.info("Gap filling and isotopic pattern extraction finished.")
 
     def add_missing_informations_refactored(self, max_iso, max_charge, quant, ppm, dmz, reset=False):
         num_workers = self.get_workers()
@@ -918,7 +918,7 @@ class Experiment:
         if num_files > 5:
             num_files = 5
         for pp in all_peakpicking:
-            ie = ic.InformationExpanderRefactored(self.db, pp[4], path_temp, path_rt_model,path_hdf5, path_isotopes,
+            ie = ic.InformationExpanderRefactored(self.db, pp[4].replace('data_filled_','data_prefill_'), path_temp, path_rt_model,path_hdf5, path_isotopes,
                                         max_iso, max_charge, quant,ppm,dmz, num_files, num_workers)
             expanders[count_expand] = ie
             count_expand += 1

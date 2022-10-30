@@ -12,8 +12,8 @@ class IonAnnotater:
         self.hash = hash
         self.path_db = path_db
         self.path_datamatrix = path_datamatrix
-        self.output_dm_reduced = os.path.join(out,cr.OUT["ANNOTATION"]+self.hash+"_reduced.csv")
-        self.output_dm_full = os.path.join(out,cr.OUT["ANNOTATION"]+self.hash+"_full.csv")
+        self.output_dm_reduced = os.path.join(out,cr.OUT["ANNOTATION"]+'reduced_'+self.hash+".csv")
+        self.output_dm_full = os.path.join(out,cr.OUT["ANNOTATION"]+'full_'+self.hash+".csv")
         self.adducts = adducts
         self.main_adducts = main_adducts
         if not polarity in cr.DATA["IONMODE"]:

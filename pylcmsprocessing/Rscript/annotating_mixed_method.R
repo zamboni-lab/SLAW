@@ -17,6 +17,7 @@ DEBUG <- FALSE
 
 # testing
 if (DEBUG) {
+  ## FOR DEBUGGING, SWITCH ALLS SINKS TO LOCAL FOLDERS, AND USE SerialParam instad of bpp
   DEBUG_OUTPUT <- "D:/SW/SLAW_test_data_out/"
   DEBUG_INPUT <- "D:/SW/SLAW_test_data_in/mzML/"
   args <- c("/output/datamatrices/datamatrix_741d552fefa0759df99c04af0d7f6562.csv",
@@ -342,7 +343,8 @@ computeNetworkRawfile <-
                 cosFilter = 0.3)
       {
         # sink("D:/outout.txt")
-        sink("/dev/null")
+        # sink("/dev/null")
+        sink(NULL)
         eicmat <- cliqueMS:::defineEIC(mzdata)
         sink(file = NULL)
         sparseeic <- as(t(eicmat), "sparseMatrix")
@@ -409,8 +411,9 @@ createNetworkMultifiles <-
            cosFilter = 0.4,
            bpp = NULL) {
     size_batch <- min(size_batch, length(raw_files) - 1)
-    if (is.null(bpp))
-      bpp <- bpparam()
+    if(get_os()=="win"){
+      bpp <- SnowParam() # SerialParam()?
+    }
 
     ###The sparse matrix which will be used ot create the network.
     countMat <- Matrix(0,
@@ -445,7 +448,7 @@ createNetworkMultifiles <-
               ref_xcms = ref_xcms,
               dm = dm,
               cosFilter = cosFilter
-            ),BPPARAM = SerialParam())
+            ),BPPARAM = bpp)
       
       #bpp
           #bptry( )
@@ -836,7 +839,6 @@ annotateCliqueInterpretMSspectrum <-
         all_features[num_feat:(num_feat+length(val_split)-1)] <- val_split
         num_feat <- num_feat+length(val_split)
 
-
         ###We extract all the independent values.
         val_found <- lapply(val_split,function(x){x[,1]})
         val_found <- do.call(c,val_found)
@@ -1132,8 +1134,9 @@ groupFeatures <-
         bpp = bpp
       )
       ###we compute the cliques
-      sink(file="/dev/null")
+      # sink(file="/dev/null")
       # sink("D:/out.txt")
+      sink(NULL)
       anclique <- computeCliques(anclique, 1e-5, TRUE)
       sink(NULL)
       ###We correct the index for subselection.
