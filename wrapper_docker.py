@@ -111,7 +111,7 @@ if __name__=="__main__":
     #Procesinf of the pipeline eventually.
     path_save_db = os.path.join(OUTPUT_DIR,"processing_db.sqlite")
     if os.path.isfile(path_save_db):
-        shutil.copyfile(path_save_db,PATH_DB)
+        shutil.move(path_save_db,PATH_DB)
     exp = Experiment(PATH_DB,save_db = path_save_db,reset=False,temp_outdir=OUTPUT_DIR)
 
     ###The polarity computed at this step does not need to mahke any sense.
