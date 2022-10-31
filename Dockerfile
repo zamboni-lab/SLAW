@@ -10,15 +10,14 @@ RUN strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so
 
 ##We install the 2 packages in the same folder
 COPY onlineLCMSaligner /onlineLCMSaligner
-RUN R -e "setwd('/onlineLCMSaligner');library(devtools);remove.packages('onlineLCMSaligner');install(pkg='/onlineLCMSaligner')"
+RUN R -e "setwd('/onlineLCMSaligner');library(devtools);remove.packages('onlineLCMSaligner');install_local('/onlineLCMSaligner')"
 COPY MZmineXMLManipulator /MZmineXMLManipulator
-RUN R -e "setwd('/MZmineXMLManipulator');library(devtools);remove.packages('MZmineXMLManipulator');install(pkg='/MZmineXMLManipulator')"
-
-# Installing additional stuff
-RUN R -e "remove.packages('data.table');install.packages('data.table')"
+RUN R -e "setwd('/MZmineXMLManipulator');library(devtools);remove.packages('MZmineXMLManipulator');install_local('/MZmineXMLManipulator')"
 RUN R -e "library(BiocManager);BiocManager::install('rhdf5')"
 RUN R -e "library(devtools);install_github('rformassspectrometry/ProtGenerics');install_github('rformassspectrometry/MsCoreUtils');install_github('rformassspectrometry/Spectra');install_github('rformassspectrometry/MsBackendMgf')"
 
+#Resinstalling data.table as it seems to become problematic after Rhdf5
+RUN R -e "remove.packages('data.table');install.packages('data.table')"
 
 #Dependency copy
 COPY MZmine-2.52-Linux /MZmine-2.52-Linux
