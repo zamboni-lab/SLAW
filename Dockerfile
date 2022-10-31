@@ -15,6 +15,7 @@ RUN R -e "setwd('/onlineLCMSaligner');library(devtools);remove.packages('onlineL
 COPY MZmineXMLManipulator /MZmineXMLManipulator
 RUN R -e "setwd('/MZmineXMLManipulator');library(devtools);remove.packages('MZmineXMLManipulator');install_local('/MZmineXMLManipulator')"
 RUN R -e "library(BiocManager);BiocManager::install('rhdf5')"
+RUN R -e "library(devtools);install_github('rformassspectrometry/ProtGenerics');install_github('rformassspectrometry/MsCoreUtils');install_github('rformassspectrometry/Spectra';install_github('rformassspectrometry/MsBackendMgf')"
 
 #Resinstalling data.table as it seems to become problematic after Rhdf5
 RUN R -e "remove.packages('data.table');install.packages('data.table')"
