@@ -813,14 +813,15 @@ tcon <- file(description = PATH_MGF, open = "w")
 for (i in 1:length(consensus_specs)) {
   rows <- c('BEGIN IONS',
             paste0('SCANS=',supp_infos[i,'MS2_ID']),
-            paste0('TITLE=','MS2__mz=',consensus_specs[[i]]@precursorMz, '__RT=',consensus_specs[[i]]@rt, "__CE=", supp_infos[i,'ENERGY']),
-            paste0('RTinSeconds=',consensus_specs[[i]]@rt),
+            paste0('TITLE=','MS2_mz=',consensus_specs[[i]]@precursorMz, '_RT=',consensus_specs[[i]]@rt, "_CE=", supp_infos[i,'ENERGY']),
+            paste0('RTINSECONDS=',consensus_specs[[i]]@rt),
             paste0('PEPMASS=',consensus_specs[[i]]@precursorMz),
             paste0('PRECURSOR_INTENSITY=',supp_infos[i,'PRECURSOR_INTENSITY']),
             'MSLEVEL=2',
             paste0('ENERGY=',supp_infos[i,'ENERGY']),
             paste0('CHARGE=',CHARGE),
             paste0('MS2_ID=',supp_infos[i,'MS2_ID']),
+            paste0('FEAT_ID=',supp_infos[i,'FEAT_ID']),
             paste0('PEAKSCOUNT=',consensus_specs[[i]]@peaksCount))
   writeLines(rows,tcon)
   for (j in 1:consensus_specs[[i]]@peaksCount) {

@@ -37,7 +37,7 @@ class OnlineGrouper:
 
     def get_non_filleddatamatrix(self):
         """This function is only used to output the non filled data matrix"""
-
+        return self.output_data_non_filled
 
     def get_fused_mgf(self):
         return self.fused_mgf
@@ -62,5 +62,5 @@ class OnlineGrouper:
     def command_line_fusing_msms(self):
         pscript = ct.find_rscript()
         command_line = os.path.join(pscript,"fusing_msms_spectra.R")
-        return " ".join([os.environ["RscriptString"]," ",command_line,'"'+self.db+'"',str(self.ms2_mz_tol),str(self.ms2_rt_tol),str(self.num_workers),
+        return " ".join([os.environ["RscriptString"],command_line,'"'+self.db+'"',str(self.ms2_mz_tol),str(self.ms2_rt_tol),str(self.num_workers),
                 '"'+self.fused_mgf+'"','"'+self.dm_1+'"','"'+self.dm_2+'"','"'+self.hdf5+'"'])
