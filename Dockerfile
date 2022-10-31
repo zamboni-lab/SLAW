@@ -15,9 +15,10 @@ COPY MZmineXMLManipulator /MZmineXMLManipulator
 RUN R -e "setwd('/MZmineXMLManipulator');library(devtools);remove.packages('MZmineXMLManipulator');install(pkg='/MZmineXMLManipulator')"
 
 # Installing additional stuff
-RUN R -e "library(BiocManager);BiocManager::install('rhdf5')"
-RUN R -e "library(BiocManager);BiocManager::install('Spectra');library(devtools);install_github('rformassspectrometry/MsBackendMgf')"
 RUN R -e "remove.packages('data.table');install.packages('data.table')"
+RUN R -e "library(BiocManager);BiocManager::install('rhdf5')"
+RUN R -e "library(devtools);install_github('rformassspectrometry/ProtGenerics');install_github('rformassspectrometry/MsCoreUtils');install_github('rformassspectrometry/Spectra');install_github('rformassspectrometry/MsBackendMgf')"
+
 
 #Dependency copy
 COPY MZmine-2.52-Linux /MZmine-2.52-Linux
