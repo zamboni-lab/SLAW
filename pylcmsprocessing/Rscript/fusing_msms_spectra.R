@@ -9,6 +9,8 @@ suppressWarnings(suppressMessages(library(rtree, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
 suppressWarnings(suppressMessages(library(rhdf5, warn.conflicts = FALSE)))
 
+DEBUG <- FALSE
+
 sink(file=stdout())
 ###Merging of spectra using the msClust algorithm
 mergeSpectra <- function(x,specs,tab_summary,cos_thresh=0.7,round=10){
@@ -338,27 +340,32 @@ get_os <- function() {
 }
 
 
-###Modified Mgf Writing function
-writeMgfDataFileToConnection <- function (splist, con, TITLE = NULL,
-addFields = NULL)
-{
-    if (length(addFields)) {
-        if (length(dim(addFields)) != 2)
-        stop("'addFields' has to be a matrix or data.frame.")
-        if (!is.matrix(addFields))
-        addFields <- do.call(cbind, lapply(addFields, as.character))
-        if (is.null(colnames(addFields)))
-        stop("Column names required on 'addFields'.")
-        if (nrow(addFields) != length(splist))
-        stop("nrow of 'addFields' has to match length of 'splist'")
-    }
-    for (i in seq(along = splist)) {
-        MSnbase:::writeMgfContent(splist[[i]], TITLE = TITLE, con = con,
-        addFields = addFields[i, ])
-    }
-}
+# ###Modified Mgf Writing function
+# writeMgfDataFileToConnection <- function (splist, con, TITLE = NULL, addFields = NULL)
+# {
+#     if (length(addFields)) {
+#         if (length(dim(addFields)) != 2)
+#         stop("'addFields' has to be a matrix or data.frame.")
+#         if (!is.matrix(addFields))
+#         addFields <- do.call(cbind, lapply(addFields, as.character))
+#         if (is.null(colnames(addFields)))
+#         stop("Column names required on 'addFields'.")
+#         if (nrow(addFields) != length(splist))
+#         stop("nrow of 'addFields' has to match length of 'splist'")
+#     }
+#     for (i in seq(along = splist)) {
+#         MSnbase:::writeMgfContent(splist[[i]], TITLE = TITLE, con = con, addFields = addFields[i, ])
+#     }
+# }
 
 args <- commandArgs(trailingOnly = TRUE)
+
+if (DEBUG==T) {
+  args <- c("D:/SW/SLAW_test_data_out/temp_processing_db.sqlite",
+            0.01,0.05,19,
+            "D:/SW/SLAW_test_data_out/spectra_741d552fefa0759df99c04af0d7f6562.mgf","D:/SW/SLAW_test_data_out/temp/temp_dm_1",
+            "D:/SW/SLAW_test_data_out/temp/temp_dm_2","D:/SW/SLAW_test_data_out/temp/fusing_msms.hdf5")
+}
 
 PATH_DB <- args[1]
 MZ_TOL <- as.numeric(args[2])
@@ -616,7 +623,7 @@ consensus_specs <- lapply(fcc,function(x,tab_summary){
   peaks <- x[["spec"]]
   MSnbase:::Spectrum2(mz=peaks[,1],intensity = peaks[,2],
                       rt = tx["retention.time"],precursorMz = tx["precursor.mz"],
-                      msLevel = 2)
+                      msLevel = 2, collisionEnergy = )
 },tab_summary=tab_summary)
 
 
@@ -796,16 +803,41 @@ for(i in 1:(length(seq_cut)-1)){
     }
 }
 
-## We store the feature information into a file.
-## We always write the spectra
+dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
+POL <- dbGetQuery(dbb, "SELECT polarity FROM common")[, 1]
+if (POL=='positive') CHARGE<-'+1' else CHARGE<-'-1'
+dbDisconnect(dbb)
+
 tcon <- file(description = PATH_MGF, open = "w")
-writeMgfDataFileToConnection(consensus_specs, con = tcon, addFields = supp_infos)
+## WRITE "MANUALLY" > all packages tested so far did disappoint
+for (i in 1:length(consensus_specs)) {
+  rows <- c('BEGIN IONS',
+            paste0('SCANS=',supp_infos[i,'MS2_ID']),
+            paste0('TITLE=','MS2__mz=',consensus_specs[[i]]@precursorMz, '__RT=',consensus_specs[[i]]@rt, "__CE=", supp_infos[i,'ENERGY']),
+            paste0('RTinSeconds=',consensus_specs[[i]]@rt),
+            paste0('PEPMASS=',consensus_specs[[i]]@precursorMz),
+            paste0('PRECURSOR_INTENSITY=',supp_infos[i,'PRECURSOR_INTENSITY']),
+            'MSLEVEL=2',
+            paste0('ENERGY=',supp_infos[i,'ENERGY']),
+            paste0('CHARGE=',CHARGE),
+            paste0('MS2_ID=',supp_infos[i,'MS2_ID']),
+            paste0('PEAKSCOUNT=',consensus_specs[[i]]@peaksCount))
+  writeLines(rows,tcon)
+  for (j in 1:consensus_specs[[i]]@peaksCount) {
+    writeLines(paste(consensus_specs[[i]]@mz[[j]],consensus_specs[[i]]@intensity[[j]]),tcon)
+  }
+  rows <- c('END IONS','')
+  writeLines(rows,tcon)
+}
 close.connection(tcon)
+
+# ## We store the feature information into a file.
+# ## We always write the spectra
+# tcon <- file(description = PATH_MGF, open = "w")
+# suppressWarnings(writeMgfDataFileToConnection(consensus_specs, con = tcon, addFields = NULL)) 
+# close.connection(tcon)
 
 ## We rename and remove temp files
 a <- file.rename(PATH_DATAMATRIX,TEMP_FILE_SWITCHING)
 a <- file.rename(TEMP_LOCATION,PATH_DATAMATRIX)
 a <- file.remove(TEMP_FILE_SWITCHING)
-
-
-

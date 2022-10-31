@@ -116,7 +116,6 @@ if __name__=="__main__":
 
     ###The polarity computed at this step does not need to mahke any sense.
     path_ms2 = None
-    path_ms2 = None
     if "MS2" in os.environ:
         path_ms2 = os.environ["MS2"]
     ###We try to guess the polarity form the middle file.
@@ -197,7 +196,7 @@ if __name__=="__main__":
         if peakpicking=="ADAP" or peakpicking=="BASELINE":
             vui.generate_MZmine_XML(path_xml=PATH_XML,algorithm=peakpicking)
             logging.info("An ADAP batch file has been generated in the "+OUTPUT_DIR+" directory, you ca use it to refine peakpicking parameters using MZmine.")
-    exp.initialise_database(num_cpus,OUTPUT_DIR,vui.polarity,INPUT,["ADAP"], 1)
+    #exp.initialise_database(num_cpus,OUTPUT_DIR,vui.polarity,INPUT,["ADAP"], 1)
     if peakpicking=="ADAP" or peakpicking=="BASELINE":
         exp.run_mzmine(pmzmine="/MZmine-2.52-Linux",xml_file=PATH_XML,batch_size=int(num_cpus*3),algorithm=peakpicking,log = LOG)
         exp.correct_conversion()

@@ -13,5 +13,5 @@ class Export:
         pscript = ct.find_rscript()
         command_line = os.path.join(pscript, "export_mzTab.R")
         ####We give all the name of the grouping parameters implicated in a single file
-        return " ".join(
+        return "".join(
             [os.environ["RscriptString"], ' "', command_line,'" "', self.db,'" "', self.mztab_name,'" "', self.mztab_format,'"'])
