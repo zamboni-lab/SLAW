@@ -22,10 +22,6 @@ args <- commandArgs(trailingOnly = TRUE)
 #   "5"
 # )
 
-# args <- str_replace(args,"/sauer1","U:")
-
-
-
 
 INPUT_FEATURES <- args[1]
 ##For later use

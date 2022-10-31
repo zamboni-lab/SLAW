@@ -17,6 +17,7 @@ import model.steps.annotating_adducts_isotopes as mai
 import model.steps.post_processing as pp
 import model.steps.information_completion as ic
 import model.steps.filtering_peaktable as fp
+import model.steps.export as me
 import common.slaw_exception as cs
 import pandas as pd
 import math
@@ -1004,3 +1005,23 @@ class Experiment:
                     shutil.rmtree(pwaste, ignore_errors=True)
                 elif os.path.exists(pwaste):
                     os.remove(pwaste)
+
+    def export_mztab(self, mztab_format):
+        ###Generates a mzTab
+        self.open_db()
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM peakpicking")
+        all_peakpicking = c.fetchall()
+        self.close_db()
+        counter = 0
+        exporters = [0] * len(all_peakpicking)
+        for pp in all_peakpicking:
+            ee = me.Export(self.db, pp, mztab_format=mztab_format)
+            exporters[counter] = ee
+            counter += 1
+        if counter != 0:
+            exporters = exporters[0:counter]
+            clis = [eee.command_line_mztab() for eee in exporters]
+            runner = pr.ParallelRunner(1)
+            if len(clis) > 0:
+                runner.run(clis, silent=True)

@@ -1,8 +1,6 @@
 import os
 import common.tools as ct
 
-
-
 class PostProcessing:
 
     def __init__(self,path_db,path_targets,path_fig_target,path_fig_summary,

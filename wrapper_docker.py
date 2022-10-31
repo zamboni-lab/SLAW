@@ -285,6 +285,16 @@ if __name__=="__main__":
                 adducts=adducts_str,main_adducts=main_adducts_str, max_workers=num_cpus)
     timer.store_point("annotation")
     timer.print_point("annotation")
+
+    ## export mzTab
+    if 'MZTAB' in os.environ:
+        if "plus" in os.environ['MZTAB'].lower():
+            exp.export_mztab(mztab_format='mzTabPlus')
+        else:
+            exp.export_mztab(mztab_format='mzTab')
+    else:
+        exp.export_mztab(mztab_format='mzTab')
+
     if successfully_processed:
         exp.clean()
         logging.info("Processing finished.")
