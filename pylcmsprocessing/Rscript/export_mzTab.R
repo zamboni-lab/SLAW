@@ -6,7 +6,7 @@ suppressWarnings(suppressMessages(library(MsBackendMgf,warn.conflicts = FALSE,qu
 
 args <- commandArgs(trailingOnly = TRUE)
 
-DEBUG <- TRUE
+DEBUG <- FALSE
 
 if (DEBUG) {
   args <- c("D:\\SW\\SLAW_test_data_out\\temp_processing_db.sqlite",
