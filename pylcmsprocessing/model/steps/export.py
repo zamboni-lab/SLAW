@@ -6,7 +6,7 @@ class Export:
 
     def __init__(self, path_db, row, mztab_format):
         self.db = path_db
-        self.mztab_name = os.path.join(os.path.dirname(path_db), "data_" + row[3] + ".mzTab")
+        self.mztab_name = os.path.join(os.environ['OUTPUT'], "data_" + row[3] + ".mzTab")
         self.mztab_format = mztab_format
 
     def command_line_mztab(self):
