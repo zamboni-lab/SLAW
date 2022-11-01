@@ -111,6 +111,7 @@ if __name__=="__main__":
     #Procesinf of the pipeline eventually.
     path_save_db = os.path.join(OUTPUT_DIR,"processing_db.sqlite")
     if os.path.isfile(path_save_db):
+        os.makedirs(os.path.dirname(PATH_DB), exist_ok=True)
         shutil.move(path_save_db,PATH_DB)
     exp = Experiment(PATH_DB,save_db = path_save_db,reset=False,temp_outdir=OUTPUT_DIR)
 

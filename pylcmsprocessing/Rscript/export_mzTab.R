@@ -244,7 +244,7 @@ if("mgf_ms2_id" %in% colnames(dm)){
     v <- suppressWarnings(na.omit(as.numeric(str_extract_all(s,"\\(?[0-9,.]+\\)?")[[1]])))
     if (length(v)>0) {
       smf_opt_msms_index[i] <- paste(v,collapse = '|')
-      smf_id_map <- rbind(smf_id_map,data.frame(smf_id = replicate(length(v),SMF_ID[i]),mgf_id = v))
+      smf_id_map <- rbind(smf_id_map,data.frame(smf_id = replicate(length(v),SMF_ID[i]),mgf_id = as.integer(v))) #, mgf_feat_id = replicate(length(v),dm$mgf_feat_id[i])
     }
   }
 }
@@ -348,9 +348,9 @@ if (APPENDMGF==T) {
                    prec_id = as.numeric(mgf_dat$FEAT_ID),
                    prec_rt = mgf_dat$rtime,
                    prec_mz = mgf_dat$precursorMz,
-                   prec_int = mgf_dat$precursorIntensity,
+                   prec_int = as.integer(mgf_dat$precursorIntensity),
                    energy = as.numeric(mgf_dat$collisionEnergy),
-                   level = mgf_dat$msLevel,
+                   level = as.integer(mgf_dat$msLevel),
                    title = mgf_dat$TITLE,
                    spec_mz = I(replicate(n,list())),
                    spec_int = I(replicate(n,list())),
@@ -360,19 +360,17 @@ if (APPENDMGF==T) {
   mz_end <- c(0,mgf_dat$mz@partitioning@end)
   int_end <- c(0,mgf_dat$int@partitioning@end)
 
-  df <- merge(df,smf_id_map,by=c('mgf_id'),all.y = F)
-  df$prec_id <- df$smf_id
-
   for (i in 1:nrow(df)){
     df[[i,'spec_mz']] <- mgf_dat$mz@unlistData[(mz_end[i]+1):mz_end[i+1]]
     df[[i,'spec_int']] <- mgf_dat$intensity@unlistData[(int_end[i]+1):int_end[i+1]]
     df[i,'spec_tic'] <- sum(df[[i,'spec_int']])
     df[i,'spec_len'] <- mz_end[i+1]-mz_end[i]
   }
+  
+  df <- merge(df,smf_id_map,by=c('mgf_id'),all.y = F)
+  df$prec_id <- df$smf_id
 
   df <- df[order(df$mgf_id),c('COM','MGH','mgf_id','prec_id','prec_rt','prec_mz','prec_int','energy','level','title','spec_tic','spec_len','spec_mz','spec_int')]
-
-
 
   #df$MGH <- 'COM MGF'
   df[df==''] <- 'null'
