@@ -13,6 +13,8 @@ COPY onlineLCMSaligner /onlineLCMSaligner
 RUN R -e "setwd('/onlineLCMSaligner');library(devtools);install_local('/onlineLCMSaligner')"
 COPY MZmineXMLManipulator /MZmineXMLManipulator
 RUN R -e "setwd('/MZmineXMLManipulator');library(devtools);install_local('/MZmineXMLManipulator')"
+
+RUN R -e "install.packages('BiocManager')"
 RUN R -e "library(BiocManager);BiocManager::install('rhdf5')"
 RUN R -e "library(devtools);install_github('rformassspectrometry/ProtGenerics');install_github('rformassspectrometry/MsCoreUtils');install_github('rformassspectrometry/Spectra');install_github('rformassspectrometry/MsBackendMgf')"
 
