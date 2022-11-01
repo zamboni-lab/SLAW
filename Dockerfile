@@ -1,4 +1,4 @@
-FROM zambonilab/slaw_base
+FROM zambonilab/slaw_basis
 # Base image should always include all the dependencies
 
 # THis make the DOckerfile build work on github CI
