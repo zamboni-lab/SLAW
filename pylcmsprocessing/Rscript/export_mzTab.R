@@ -6,10 +6,10 @@ suppressWarnings(suppressMessages(library(MsBackendMgf,warn.conflicts = FALSE,qu
 
 args <- commandArgs(trailingOnly = TRUE)
 
-DEBUG <- FALSE
+DEBUG <- TRUE
 
 if (DEBUG) {
-  args <- c("D:\\SW\\SLAW_test_data_out\\temp_processing_db.sqlite",
+  args <- c("D:\\SW\\SLAW_test_data_out\\processing_db.sqlite",
             "D:\\SW\\SLAW_test_data_out\\data_741d552fefa0759df99c04af0d7f6562.mzTab",
             "plus")
 }
@@ -144,6 +144,7 @@ com <- c(paste("COM",paste("File generated from folder:",INPUT_SLAW_FOLDER, "(",
 ##All table are derived from the full table
 # DIR_DM <- file.path(INPUT_SLAW_FOLDER,"datamatrices")
 PATH_FULL <- list.files(INPUT_SLAW_FOLDER,"data_full.*.csv",full.names = TRUE)
+print(PATH_FULL)
 if (length(PATH_FULL)>0) {
   ##SMF table Construction
   dm <- fread(PATH_FULL,sep="\t")
@@ -155,7 +156,7 @@ if (length(PATH_FULL)>0) {
 
 } else {
   ## use data_filled instead
-  PATH_FULL <- list.files(file.path(INPUT_SLAW_FOLDER,"temp"),"data_filled*.csv",full.names = TRUE)
+  PATH_FULL <- list.files(file.path(INPUT_SLAW_FOLDER,"temp"),"data_filled.*.csv",full.names = TRUE)
   ##SMF table Construction
   dm <- fread(PATH_FULL,sep="\t")
   if (dim(dm)[2]<2) dm <- fread(PATH_FULL,sep=";")
@@ -215,8 +216,8 @@ known_charge <- !is.na(treated_annot[,3])
 smf_charge[known_charge] <- sapply(treated_annot[known_charge,3],parseCharge)
 
 smf_retention_time_in_seconds <- sprintf("%0.1f",dm$rt*60)
-smf_retention_time_in_seconds_start <- sprintf("%0.1f",dm$min_rt_cor*60)
-smf_retention_time_in_seconds_end <- sprintf("%0.1f",dm$max_rt_cor*60)
+smf_retention_time_in_seconds_start <- sprintf("%0.1f",dm$rt_cor_min*60)
+smf_retention_time_in_seconds_end <- sprintf("%0.1f",dm$rt_cor_max*60)
 
 smf_abundance_assay <- ceiling(dm[,..quant_cols])
 colnames(smf_abundance_assay) <- paste("abundance_assay[",1:length(quant_cols),"]",sep="")
@@ -383,3 +384,4 @@ if (APPENDMGF==T) {
   fwrite(df,OUTPUT_FILE_PATH,sep="\t",append = TRUE,col.names = TRUE)
 
 }
+
