@@ -8,7 +8,7 @@ args <- commandArgs(trailingOnly = TRUE)
 
 DEBUG <- FALSE
 
-INPUT_SLAW_FOLDER <- '/input/'
+INPUT_SLAW_FOLDER <- '/output/'
 if (DEBUG) {
   args <- c("D:\\SW\\SLAW_test_data_out\\processing_db.sqlite",
             "D:\\SW\\SLAW_test_data_out\\data_741d552fefa0759df99c04af0d7f6562.mzTab",
