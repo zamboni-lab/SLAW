@@ -1006,12 +1006,9 @@ class Experiment:
                 elif os.path.exists(pwaste):
                     os.remove(pwaste)
 
-    def export_mztab(self, path_db, mztab_format):
+    def export_mztab(self, mztab_format):
         ###Generates a mzTab
-        self.close_db()
-        self.conn = sqlite3.connect(self.path_save_db)
-        self.conn.execute("PRAGMA foreign_keys = 1")
-        c = self.conn.cursor()
+        self.open_db()
         c.execute("SELECT * FROM peakpicking")
         all_peakpicking = c.fetchall()
         self.close_db()
