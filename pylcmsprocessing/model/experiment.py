@@ -1009,6 +1009,7 @@ class Experiment:
     def export_mztab(self, mztab_format):
         ###Generates a mzTab
         self.open_db()
+        c = self.conn.cursor()
         c.execute("SELECT * FROM peakpicking")
         all_peakpicking = c.fetchall()
         self.close_db()
