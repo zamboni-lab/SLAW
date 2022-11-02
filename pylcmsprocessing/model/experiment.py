@@ -1041,7 +1041,7 @@ class Experiment:
             counter += 1
         if counter != 0:
             exporters = exporters[0:counter]
-            clis = [eee.command() for eee in exporters]
+            clis = [eee.command_line() for eee in exporters]
             runner = pr.ParallelRunner(1)
             if len(clis) > 0:
                 runner.run(clis, silent=True)
