@@ -20,6 +20,8 @@ RUN R -e "library(devtools);install_github('rformassspectrometry/ProtGenerics');
 
 #Resinstalling data.table as it seems to become problematic after Rhdf5
 RUN R -e "remove.packages('data.table');install.packages('data.table')"
+RUN R -e "install.packages('XML','stringr','DBI','RSQLite','igraph','Matrix','jsonlite','optparse','tools')"
+RUN R -e "library(BiocManager);BiocManager::install('RcppArmadillo','MSnbase','BiocParallel','CAMERA','cliqueMS','InterpretMSSpectrum','mzR','xcms')"
 
 #Dependency copy
 COPY MZmine-2.52-Linux /MZmine-2.52-Linux
