@@ -6,7 +6,7 @@ suppressWarnings(suppressMessages(library(stringr, warn.conflicts = FALSE)))
 # suppressWarnings(suppressMessages(library(BiocParallel, warn.conflicts = FALSE)))
 # suppressWarnings(suppressMessages(library(igraph, warn.conflicts = FALSE)))
 # suppressWarnings(suppressMessages(library(rtree, warn.conflicts = FALSE)))
-# suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
+suppressWarnings(suppressMessages(library(data.table, warn.conflicts = FALSE)))
 
 sink(file=stdout())
 

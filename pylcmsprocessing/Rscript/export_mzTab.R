@@ -243,7 +243,7 @@ if("mgf_ms2_id" %in% colnames(dm)){
     v <- suppressWarnings(na.omit(as.numeric(str_extract_all(s,"\\(?[0-9,.]+\\)?")[[1]])))
     if (length(v)>0) {
       smf_opt_msms_index[i] <- paste(v,collapse = '|')
-      smf_id_map <- rbind(smf_id_map,data.frame(smf_id = replicate(length(v),SMF_ID[i]),mgf_id = as.integer(v))) #, mgf_feat_id = replicate(length(v),dm$mgf_feat_id[i])
+      smf_id_map <- rbind(smf_id_map,data.frame(smf_id = replicate(length(v),SMF_ID[i]),mgf_id = as.integer(v))) #, slaw_id = replicate(length(v),dm$slaw_id[i])
     }
   }
 }
@@ -333,7 +333,7 @@ fwrite(smf_table,OUTPUT_FILE_PATH,sep="\t",append = TRUE,col.names = TRUE)
 if (APPENDMGF==T) {
   MGF_DATA <- paste0(dirname(OUTPUT_FILE_PATH),"/spectra_",HASH,".mgf")
   if (!file.exists(MGF_DATA)) {return(NULL)}
-  suppressWarnings(mgf <- readMgf(MGF_DATA))
+  suppressWarnings(mgf <- readMgf(MGF_DATA, msLevel = 2L))
   mgf_dat <- mgf@listData
   n <- mgf@nrows
   if ("acquisitionNum.1" %in% names(mgf_dat)) {mgf_dat$acquisitionNum <- mgf_dat$'acquisitionNum.1'}
@@ -344,7 +344,7 @@ if (APPENDMGF==T) {
   df <- data.frame(COM = replicate(n,'COM'),
                    MGH = replicate(n,'MGF'),
                    mgf_id = as.numeric(mgf_dat$acquisitionNum),
-                   prec_id = as.numeric(mgf_dat$FEAT_ID),
+                   prec_id = as.numeric(mgf_dat$SLAW_ID),
                    prec_rt = mgf_dat$rtime,
                    prec_mz = mgf_dat$precursorMz,
                    prec_int = as.integer(mgf_dat$precursorIntensity),

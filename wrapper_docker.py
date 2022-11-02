@@ -285,8 +285,6 @@ if __name__=="__main__":
     timer.store_point("annotation")
     timer.print_point("annotation")
 
-    exp.export_iso_to_mgf()
-
     ## export mzTab
     if 'MZTAB' in os.environ:
         if "plus" in os.environ['MZTAB'].lower():
@@ -296,9 +294,13 @@ if __name__=="__main__":
     else:
         exp.export_mztab(mztab_format='mzTab')
 
+    exp.export_iso_to_mgf()
+
     if successfully_processed:
         exp.clean()
         logging.info("Processing finished.")
         ###We generate the done file
         PATH_DONE = os.path.join(OUTPUT_DIR, pcr.OUT["DONE"])
         open(PATH_DONE, 'a').close()
+
+
