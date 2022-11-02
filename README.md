@@ -1,7 +1,7 @@
 # SLAW
 
 ### Recent changes:
-__30/10/2022__: Reorganization of file/folder name and organization. Removed filtering on MS1 extraction. Added absolute counts to MS1 data. Improved indexing of MGF file.
+__30/10/2022__: Reorganization of file/folder name and organization. Removed filtering on MS1 extraction. Added absolute counts to MS1 data. Improved indexing of MGF file. Added extraction of isotopic patterns (MS1) to MGF.
 
 ## Introduction
 SLAW is a scalable, containerized workflow for untargeted LC-MS processing. It was developed by Alexis Delabriere in the [Zamboni Lab](https://imsb.ethz.ch/research/zamboni.html) at ETH Zurich. An explanation of the advantages of SLAW and its motivations of development can be found in this [blog post](https://metabolomics.blog/2021/07/02/slaw/). In brief, the core advantages of SLAW are:
