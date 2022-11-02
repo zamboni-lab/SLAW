@@ -22,7 +22,13 @@ RUN R -e "library(devtools);install_github('rformassspectrometry/ProtGenerics');
 RUN R -e "remove.packages('data.table');install.packages('data.table')"
 RUN R -e "install.packages(c('XML','stringr','DBI','RSQLite','igraph','Matrix','jsonlite','optparse','tools'))"
 RUN R -e "library(BiocManager);BiocManager::install('RcppArmadillo')"
-RUN R -e "library(BiocManager);BiocManager::install(c('MSnbase','BiocParallel','CAMERA','cliqueMS','InterpretMSSpectrum','mzR','xcms'))"
+RUN R -e "library(BiocManager);BiocManager::install('BiocParallel')"
+RUN R -e "library(BiocManager);BiocManager::install('mzR')"
+RUN R -e "library(BiocManager);BiocManager::install('MSnbase')"
+RUN R -e "library(BiocManager);BiocManager::install('xcms')"
+RUN R -e "library(BiocManager);BiocManager::install('cliqueMS')"
+RUN R -e "library(BiocManager);BiocManager::install('CAMERA')"
+RUN R -e "library(BiocManager);BiocManager::install('InterpretMSSpectrum')"
 
 #Dependency copy
 COPY MZmine-2.52-Linux /MZmine-2.52-Linux
