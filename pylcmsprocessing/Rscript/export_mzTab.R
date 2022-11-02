@@ -8,16 +8,15 @@ args <- commandArgs(trailingOnly = TRUE)
 
 DEBUG <- FALSE
 
-INPUT_SLAW_FOLDER <- '/output/'
 if (DEBUG) {
   args <- c("D:\\SW\\SLAW_test_data_out\\processing_db.sqlite",
             "D:\\SW\\SLAW_test_data_out\\data_741d552fefa0759df99c04af0d7f6562.mzTab",
             "plus")
-  INPUT_SLAW_FOLDER <- dirname(args[1])
 }
 ##
 PATH_DB <- args[1]
 OUTPUT_FILE_PATH <- args[2]
+INPUT_SLAW_FOLDER <- dirname(OUTPUT_FILE_PATH)
 MZTAB_FORMAT <- args[3]
 
 ## decide export format
@@ -144,7 +143,7 @@ com <- c(paste("COM",paste("File generated from folder:",INPUT_SLAW_FOLDER, "(",
 
 ##All table are derived from the full table
 # DIR_DM <- file.path(INPUT_SLAW_FOLDER,"datamatrices")
-PATH_FULL <- list.files(INPUT_SLAW_FOLDER,"data_full.*.csv",full.names = TRUE)
+PATH_FULL <- list.files(file.path(INPUT_SLAW_FOLDER),"data_full.*.csv",full.names = TRUE)
 if (length(PATH_FULL)>0) {
   ##SMF table Construction
   dm <- fread(PATH_FULL,sep="\t")

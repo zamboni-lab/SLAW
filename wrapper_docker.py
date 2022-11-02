@@ -129,7 +129,6 @@ if __name__=="__main__":
          path_yaml=PATH_YAML)
     PATH_INITIAL = os.path.join(OUTPUT_DIR, pcr.OUT["INITIAL_PARAMETERS"])
 
-
     ###In all case the first table is generated.
     if not vui.parameters_exist():
         ###We just create a an empty yaml file
@@ -285,6 +284,8 @@ if __name__=="__main__":
                 adducts=adducts_str,main_adducts=main_adducts_str, max_workers=num_cpus)
     timer.store_point("annotation")
     timer.print_point("annotation")
+
+    exp.export_iso_to_mgf()
 
     ## export mzTab
     if 'MZTAB' in os.environ:
