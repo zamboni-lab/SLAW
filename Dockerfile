@@ -29,7 +29,9 @@ RUN export JAVA_HOME
 
 # Installing all the dependencies in 1 layer for efficiency
 # IF MISSING add ebase and rbase-dev
-RUN apt-get -y --no-install-recommends install --fix-missing python3.9 python3-dev gcc gfortran musl-dev g++ python3-pip
+RUN apt-get -y --no-install-recommends install --fix-missing gcc gfortran musl-dev g++
+RUN add-apt-repository ppa:deadsnakes/ppa
+RUN apt-get update && apt-get -y --no-install-recommends install --fix-missing python3.9 python3-dev python3-pip
 
 RUN apt-get -y --no-install-recommends --fix-missing install openms
 
