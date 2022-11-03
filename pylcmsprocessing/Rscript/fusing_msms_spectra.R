@@ -813,7 +813,7 @@ for(i in 1:(length(seq_cut)-1)){
 
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
 POL <- dbGetQuery(dbb, "SELECT polarity FROM common")[, 1]
-if (POL=='positive') CHARGE<-'+1' else CHARGE<-'-1'
+if (POL=='positive') CHARGE<-'1+' else CHARGE<-'1-'
 dbDisconnect(dbb)
 
 tcon <- file(description = PATH_MGF, open = "w")
