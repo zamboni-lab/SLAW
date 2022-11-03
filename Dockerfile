@@ -29,7 +29,10 @@ RUN R -e "library(BiocManager);BiocManager::install('InterpretMSSpectrum')"
 
 ##We install the 2 packages in the same folder
 COPY onlineLCMSaligner /onlineLCMSaligner
-RUN R -e "install.packages('ClusterR');setwd('/onlineLCMSaligner');library(devtools);install_local('/onlineLCMSaligner')"
+RUN apt-get install -y libgmp3-dev
+RUN R -e "install.packages('ClusterR')"
+RUN R -e "setwd('/onlineLCMSaligner');library(devtools);install_local('/onlineLCMSaligner')"
+
 COPY MZmineXMLManipulator /MZmineXMLManipulator
 RUN R -e "setwd('/MZmineXMLManipulator');library(devtools);install_local('/MZmineXMLManipulator')"
 
