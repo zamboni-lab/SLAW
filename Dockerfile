@@ -2,7 +2,6 @@ FROM rocker/r-ubuntu:22.04
 
 # We consider the values of the data eventually
 # The in house R packages are stored in the in_house repository
-COPY ./in_house/ /in_house/
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update
