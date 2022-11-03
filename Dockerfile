@@ -87,7 +87,7 @@ COPY MZmine-2.52-Linux /MZmine-2.52-Linux
 COPY onlineLCMSaligner /onlineLCMSaligner
 RUN apt-get install -y libgmp3-dev
 RUN R -e "install.packages(c('ClusterR','ggplot2','gghighlight','lpSolve'))"
-RUN R -e "setwd('/onlineLCMSaligner');library(devtools);install_local('/onlineLCMSaligner')"
+RUN R -e "library(devtools);install_local('/onlineLCMSaligner')"
 
 COPY MZmineXMLManipulator /MZmineXMLManipulator
 RUN R -e "setwd('/MZmineXMLManipulator');library(devtools);install_local('/MZmineXMLManipulator')"
