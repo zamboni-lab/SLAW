@@ -25,7 +25,7 @@ RUN R -e "library(BiocManager);BiocManager::install('RcppArmadillo')"
 RUN R -e "library(BiocManager);BiocManager::install('BiocParallel')"
 
 # adding the dev version of netcdf
-RUN apt-get install libnetcdf-dev
+RUN apt-get install -y libnetcdf-dev
 RUN R -e "library(BiocManager);BiocManager::install('mzR')"
 RUN R -e "library(BiocManager);BiocManager::install('MSnbase')"
 RUN R -e "library(BiocManager);BiocManager::install('xcms')"
