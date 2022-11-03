@@ -8,12 +8,6 @@ RUN apt-get -y --no-install-recommends --fix-missing install openms
 # Fix for singularity on HPC
 RUN strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
 
-##We install the 2 packages in the same folder
-COPY onlineLCMSaligner /onlineLCMSaligner
-RUN R -e "setwd('/onlineLCMSaligner');library(devtools);install_local('/onlineLCMSaligner')"
-COPY MZmineXMLManipulator /MZmineXMLManipulator
-RUN R -e "setwd('/MZmineXMLManipulator');library(devtools);install_local('/MZmineXMLManipulator')"
-
 RUN R -e "install.packages('BiocManager')"
 RUN R -e "library(BiocManager);BiocManager::install('rhdf5')"
 RUN R -e "library(devtools);install_github('rformassspectrometry/ProtGenerics');install_github('rformassspectrometry/MsCoreUtils');install_github('rformassspectrometry/Spectra');install_github('rformassspectrometry/MsBackendMgf')"
@@ -32,6 +26,12 @@ RUN R -e "library(BiocManager);BiocManager::install('xcms')"
 RUN R -e "library(BiocManager);BiocManager::install('cliqueMS')"
 RUN R -e "library(BiocManager);BiocManager::install('CAMERA')"
 RUN R -e "library(BiocManager);BiocManager::install('InterpretMSSpectrum')"
+
+##We install the 2 packages in the same folder
+COPY onlineLCMSaligner /onlineLCMSaligner
+RUN R -e "setwd('/onlineLCMSaligner');library(devtools);install_local('/onlineLCMSaligner')"
+COPY MZmineXMLManipulator /MZmineXMLManipulator
+RUN R -e "setwd('/MZmineXMLManipulator');library(devtools);install_local('/MZmineXMLManipulator')"
 
 #Dependency copy
 COPY MZmine-2.52-Linux /MZmine-2.52-Linux
