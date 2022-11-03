@@ -27,14 +27,14 @@ RUN apt-get install -y build-essential \
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64/
 RUN export JAVA_HOME
 
-# Fix for singularity on HPC
-RUN strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
-
 # Installing all the dependencies in 1 layer for efficiency
 # IF MISSING add ebase and rbase-dev
 RUN apt-get -y --no-install-recommends install --fix-missing python3.9 python3-dev gcc gfortran musl-dev g++ python3-pip
 
 RUN apt-get -y --no-install-recommends --fix-missing install openms
+
+# Fix for singularity on HPC
+RUN strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
 
 # Python libraries
 # Always installing the wheel pip3 package first
