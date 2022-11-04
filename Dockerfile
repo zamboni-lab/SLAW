@@ -36,7 +36,7 @@ RUN export JAVA_HOME
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
 # RUN wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | sudo tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc
 RUN apt-get update && apt-get -y --no-install-recommends install --fix-missing r-base r-base-dev
-RUN add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu focal-cran40/"
+RUN add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu/jammy-cran40/"
 RUN R -e "install.packages('devtools')"
 
 # Install toolboxes
@@ -64,7 +64,9 @@ RUN strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so
 
 RUN R -e "if (!require('BiocManager', quietly = TRUE)) install.packages('BiocManager')"
 # This fix was included to fix the upgrade to 3.16 on R4.2
-RUN R -e "remove.packages("BiocVersion"); BiocManager::install()"
+RUN R -e "BiocManager::version()"
+#RUN R -e "remove.packages("BiocVersion"); BiocManager::install()"
+RUN R -e "BiocManager::install()"
 RUN R -e "BiocManager::version()"
 RUN R -e "BiocManager::install('rhdf5')"
 RUN R -e "BiocManager::install('RcppArmadillo')"
