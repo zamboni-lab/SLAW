@@ -26,7 +26,8 @@ RUN apt-get install -y build-essential \
 
 # Installing all the dependencies in 1 layer for efficiency
 # IF MISSING add ebase and rbase-dev
-RUN apt-get update && apt-get -y --no-install-recommends install --fix-missing python3.9 python3-dev gcc gfortran musl-dev g++ python3-pip
+RUN add-apt-repository ppa:deadsnakes/ppa
+RUN apt-get update && apt-get -y --no-install-recommends install --fix-missing python3.10 python3-dev gcc gfortran musl-dev g++ python3-pip
 # RUN apt-get update && apt-get -y --no-install-recommends install --fix-missing python3-setuptools cifs-utils libgmp3-dev libgit2-dev libnetcdf-dev libnetcdff-dev libhdf5-dev libxml2 libxml2-dev libz-dev liblzma-dev libbz2-dev openjdk-8-jre libssl-dev 
 
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64/
