@@ -62,7 +62,7 @@ RUN apt-get -y --no-install-recommends --fix-missing install openms
 # Fix for singularity on HPC
 RUN strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
 
-RUN R -e "install.packages('BiocManager')"
+RUN R -e "install.packages('BiocManager');library(BiocManager);BiocManager::install(version = '3.16')"
 RUN R -e "library(BiocManager);BiocManager::install('rhdf5')"
 RUN R -e "library(devtools);install_github('rformassspectrometry/ProtGenerics');install_github('rformassspectrometry/MsCoreUtils');install_github('rformassspectrometry/Spectra');install_github('rformassspectrometry/MsBackendMgf')"
 
