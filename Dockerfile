@@ -67,7 +67,7 @@ RUN R -e "library(BiocManager);BiocManager::install('rhdf5')"
 RUN R -e "library(devtools);install_github('rformassspectrometry/ProtGenerics');install_github('rformassspectrometry/MsCoreUtils');install_github('rformassspectrometry/Spectra');install_github('rformassspectrometry/MsBackendMgf')"
 
 #Resinstalling data.table as it seems to become problematic after Rhdf5
-RUN R -e "remove.packages('data.table');install.packages('data.table')"
+RUN R -e "install.packages('data.table')"
 RUN R -e "install.packages(c('XML','stringr','DBI','RSQLite','igraph','Matrix','jsonlite','optparse','tools'))"
 RUN R -e "library(BiocManager);BiocManager::install('RcppArmadillo')"
 RUN R -e "library(BiocManager);BiocManager::install('BiocParallel')"
