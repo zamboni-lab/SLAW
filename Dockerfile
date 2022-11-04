@@ -64,7 +64,7 @@ RUN apt-get -y --no-install-recommends --fix-missing install openms
 RUN strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
 
 RUN R -e "if (!require('BiocManager', quietly = TRUE)) install.packages('BiocManager')"
-RUN R -e "BiocManager::install('BiocVersion')"
+RUN R -e "BiocManager::valid()"
 # This fix was included to fix the upgrade to 3.16 on R4.2
 RUN R -e "BiocManager::version()"
 
