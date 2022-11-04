@@ -63,12 +63,12 @@ RUN apt-get -y --no-install-recommends --fix-missing install openms
 RUN strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
 
 RUN R -e "if (!require('BiocManager', quietly = TRUE)) install.packages('BiocManager')"
+# This fix was included to fix the upgrade to 3.16 on R4.2
+RUN R -e "remove.packages("BiocVersion"); BiocManager::install()"
 RUN R -e "BiocManager::version()"
-RUN R -e "BiocManager::install(version = '3.16')"
-RUN R -e "BiocManager::version()"
+RUN R -e "BiocManager::install('rhdf5')"
 RUN R -e "BiocManager::install('RcppArmadillo')"
 RUN R -e "BiocManager::install('BiocParallel')"
-RUN R -e "BiocManager::install('rhdf5')"
 RUN R -e "library(devtools);install_github('rformassspectrometry/ProtGenerics');install_github('rformassspectrometry/MsCoreUtils');install_github('rformassspectrometry/Spectra');install_github('rformassspectrometry/MsBackendMgf')"
 
 #Resinstalling data.table as it seems to become problematic after Rhdf5
