@@ -36,7 +36,7 @@ RUN export JAVA_HOME
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
 # RUN wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | sudo tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc
 RUN apt-get update && apt-get -y --no-install-recommends install --fix-missing r-base r-base-dev
-RUN add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu/jammy-cran40/"
+RUN add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu jammy-cran40/"
 RUN R -e "install.packages('devtools')"
 
 # Install toolboxes
