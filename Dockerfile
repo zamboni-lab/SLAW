@@ -64,14 +64,13 @@ RUN apt-get -y --no-install-recommends --fix-missing install openms
 RUN strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
 
 RUN R -e "if (!require('BiocManager', quietly = TRUE)) install.packages('BiocManager')"
-RUN R -e "BiocManager::valid()"
+# RUN R -e "BiocManager::valid()"
 # This fix was included to fix the upgrade to 3.16 on R4.2
 RUN R -e "BiocManager::version()"
 
 #RUN R -e "remove.packages("BiocVersion"); BiocManager::install()"
 #RUN R -e "BiocManager::install()"
 #RUN R -e "BiocManager::version()"
-RUN R -e "BiocManager::install('rhdf5')"
 RUN R -e "BiocManager::install('RcppArmadillo')"
 RUN R -e "BiocManager::install('BiocParallel')"
 RUN R -e "library(devtools);install_github('rformassspectrometry/ProtGenerics');install_github('rformassspectrometry/MsCoreUtils');install_github('rformassspectrometry/Spectra');install_github('rformassspectrometry/MsBackendMgf')"
@@ -79,7 +78,6 @@ RUN R -e "library(devtools);install_github('rformassspectrometry/ProtGenerics');
 #Resinstalling data.table as it seems to become problematic after Rhdf5
 RUN R -e "install.packages('data.table')"
 RUN R -e "install.packages(c('XML','stringr','DBI','RSQLite','igraph','Matrix','jsonlite','optparse','tools'))"
-
 
 # adding the dev version of netcdf
 RUN apt-get install -y libnetcdf-dev
@@ -89,6 +87,11 @@ RUN R -e "BiocManager::install('xcms')"
 RUN R -e "BiocManager::install('cliqueMS')"
 RUN R -e "BiocManager::install('CAMERA')"
 RUN R -e "BiocManager::install('InterpretMSSpectrum')"
+
+# I keep this at the end because it breaks BiocVersion (3.16 > 3.14)
+RUN R -e "BiocManager::install('rhdf5')"
+RUN R -e "BiocManager::install()"
+RUN R -e "BiocManager::version()"
 
 #Dependencies copy
 COPY MZmine-2.52-Linux /MZmine-2.52-Linux
