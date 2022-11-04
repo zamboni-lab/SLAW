@@ -62,7 +62,7 @@ RUN apt-get -y --no-install-recommends --fix-missing install openms
 # Fix for singularity on HPC
 RUN strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
 
-RUN R -e "install_version('BiocVersion', version = '3.16.0', repos = 'http://cran.r-project.org')"
+RUN R -e "library(devtools);install_version('BiocVersion', version = '3.16.0', repos = 'http://cran.r-project.org')"
 RUN R -e "if (!require('BiocManager', quietly = TRUE)) install.packages('BiocManager')"
 # This fix was included to fix the upgrade to 3.16 on R4.2
 RUN R -e "BiocManager::version()"
