@@ -992,6 +992,10 @@ for (idx in 1:(length(batches) - 1)) {
 
   # We fill the quantitive informations inferred
   for (iquant in seq_along(quant_cols)) {
+    if (is.na(feat_input_infos[iquant]) {
+      print(paste('NA found in quant_cols at index',iquant))
+      next
+    }
     iquant_infer <- h5read(HDF5_FILE,feat_input_infos[iquant])
     if(length(iquant_infer) == 0){
       next
