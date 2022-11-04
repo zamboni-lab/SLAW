@@ -62,7 +62,10 @@ RUN apt-get -y --no-install-recommends --fix-missing install openms
 # Fix for singularity on HPC
 RUN strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
 
-RUN R -e "if (!require('BiocManager', quietly = TRUE)) install.packages('BiocManager'); BiocManager::install(version = '3.16')"
+RUN R -e "if (!require('BiocManager', quietly = TRUE)) install.packages('BiocManager')"
+RUN R -e "BiocManager::version()"
+RUN R -e "BiocManager::install(version = '3.16')"
+RUN R -e "BiocManager::version()"
 RUN R -e "BiocManager::install('RcppArmadillo')"
 RUN R -e "BiocManager::install('BiocParallel')"
 RUN R -e "BiocManager::install('rhdf5')"
