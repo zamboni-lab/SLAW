@@ -31,15 +31,25 @@ docker pull zambonilab/slaw:latest
 SLAW uses three (types of) inputs available in a **unique folder**:
 * **Raw MS data in mzML format**. Files can include MS1 and DDA-MS2 scans. DIA-MS is not supported. **All data must be centroided and of unique polarity**. Centroided mzML can be obtained with ProteoWizard. Discard all profile data and always prioritize the centroid data provided by vendor's software, e.g. with the filter "peakPicking vendor msLevel=1-2". 
 * A **_parameters.txt_** file including all preferences and settings that govern SLAW's behavior. If a _parameters.txt_ is missing, a default file is created upon executing the Docker. In this case, execution of SLAW stops. More details on parameters are provided below. 
-* A _**samples.csv**_ file that defines the file types. In principle, this csv file consists of two columns (no headers). The first column reports the file names (with mzML ending). Only the basename to the sample will be considered, eg if the name includes a full path like C:/some/path/to/sample1.mzML only the sample1.mzML part will be matched against the file names found in the same folder. From top to bottom, rows should follow the order of injection. The second column must be one of the following four (case insensitive):
+* A _**\*.csv**_ file that defines the file types. In principle, this csv file consists of two columns (no headers). The first column reports the file names (with mzML ending). Only the basename to the sample will be considered, eg if the name includes a full path like C:/some/path/to/sample1.mzML only the sample1.mzML part will be matched against the file names found in the same folder. From top to bottom, rows should follow the order of injection. The second column must be one of the following four (case insensitive):
   * **QC**: QC samples used as reference during parameter optimization, to extract reference peaks for RT alignment, to detect isotopes/adducts, etc. Ideally, QC samples are pooled study samples that are scattered (intercalated) through the whole sequences. QC samples are If no QC samples are defined, or the _samples.csv_ is missing, SLAW will pick random sample files.
   * **samples**: Samples of all kind (study samples, calibrants, spike-ins, etc etc). They should contain MS1 scans and optionally MS2 data. 
   * **MS2**: indicates files that include primarily MS2 spectra and should not be considered for MS1 peak picking and quantification. MS2 spectra will be mapped to MS1 features (identified in QC and samples) after alignment. MS2 is typically used to flag files used with targeted MS2, iterative MS2, or generally DDA-heavy files.
   * **blank**: Blanks will be discarded from the final peaktable.
+A well-formatted example of *.csv file is (from test_data):
+```
+path,type
+QC1.mzML,QC
+S1.mzML,sample
+S2.mzML,sample
+DDA1.mzML,MS2
+DDA2.mzML,MS2
+QC2.mzML,QC
+```
 
 The _parameters.txt_ file is mandatory. If missing, SLAW will create a default file and stop. Upon editing, you'll have to restart processing.
 
-The _samples.csv_ file is optional. If missing, SLAW will pick random samples and proceed with optimization.
+The _*.csv_ file is optional. If missing, SLAW will pick random samples and proceed with optimization.
   
   
 ## Quick start
