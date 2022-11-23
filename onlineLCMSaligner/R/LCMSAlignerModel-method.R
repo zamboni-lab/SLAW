@@ -1392,7 +1392,7 @@ alignPeaktables <-
       if(correct_rt & nrow(peaktable)>2){
       ###We first correct the retention time
       lcc <-
-        correctPeaktable( #tryCatch(correctPeaktable(
+        tryCatch(correctPeaktable(
           ref,
           peaktable,
           peaks=peaks,
@@ -1405,7 +1405,7 @@ alignPeaktables <-
           ratio = ratio,
           lim = lim,
           graphical = graphical
-        )#,error=function(e){return(NA)})
+        ),error=function(e){return(NA)})
         if(is.na(lcc)){
           cpeaktable <- peaktable
         }else{
