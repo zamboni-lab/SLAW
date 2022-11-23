@@ -222,8 +222,8 @@ setMethod("buildDataMatrix", "LCMSAlignerDataStorage", function(object,
   colnames(vmat) <- name_samples
   rmat <- cbind(nums,mu,vmin,vmax)
   summary_vars <- summary_vars[sel_pos]
-  cnames <- c("num_detection",paste("mean",summary_vars,sep="_"),
-              paste("min",summary_vars,sep="_"),paste("max",summary_vars,sep="_"))
+  cnames <- c("num_detection",paste(summary_vars,"mean",sep="_"),
+              paste(summary_vars,"min",sep="_"),paste(summary_vars,"max",sep="_"))
   ###We shuffle the integre sequence evneutally
   new_order <- c(1,as.numeric(t(matrix(1:(ncol(rmat)-1),ncol=3)))+1)
   colnames(rmat) <- cnames
@@ -345,8 +345,8 @@ buildDataMatrix.datatable <- function(object,
   summary_vars <- summary_vars[sel_pos]
   unique_detection <- apply(vmat,1,function(x){sum(x!=0)})
   rmat <- cbind(unique_detection,nums,mu,vmin,vmax)
-  cnames <- c("num_detection","total_detection",paste("mean",summary_vars,sep="_"),
-              paste("min",summary_vars,sep="_"),paste("max",summary_vars,sep="_"))
+  cnames <- c("num_detection","total_detection",paste(summary_vars,"mean",sep="_"),
+              paste(summary_vars,"min",sep="_"),paste(summary_vars,"max",sep="_"))
   tsidx <- seq_along(summary_vars)
   new_order <- as.numeric(rbind(tsidx,tsidx+length(summary_vars),tsidx+2*length(summary_vars)))
   new_order <- c(1,2,new_order+2)
@@ -404,7 +404,7 @@ setMethod("summarizeMetrics","LCMSAlignerDataStorage",function(object,subsample,
 
   rmat <- cbind(nums,mu,sds,cvs)
   vars <- vars[sel_pos]
-  cnames <- c("num_detection",paste("mean",vars,sep="_"),paste("sd",vars,sep="_"),paste("cv",vars,sep="_"))
+  cnames <- c("num_detection",paste(vars,"mean",sep="_"),paste(vars,"sd",sep="_"),paste(vars,"cv",sep="_"))
   ###We shuffle the integre sequence evneutally
   new_order <- c(1,as.numeric(t(matrix(1:(ncol(rmat)-1),ncol=3)))+1)
   colnames(rmat) <- cnames
