@@ -129,7 +129,6 @@ if __name__=="__main__":
          path_yaml=PATH_YAML)
     PATH_INITIAL = os.path.join(OUTPUT_DIR, pcr.OUT["INITIAL_PARAMETERS"])
 
-
     ###In all case the first table is generated.
     if not vui.parameters_exist():
         ###We just create a an empty yaml file
@@ -295,9 +294,13 @@ if __name__=="__main__":
     else:
         exp.export_mztab(mztab_format='mzTab')
 
+    exp.export_iso_to_mgf()
+
     if successfully_processed:
         exp.clean()
         logging.info("Processing finished.")
         ###We generate the done file
         PATH_DONE = os.path.join(OUTPUT_DIR, pcr.OUT["DONE"])
         open(PATH_DONE, 'a').close()
+
+

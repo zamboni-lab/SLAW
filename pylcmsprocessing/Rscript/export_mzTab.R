@@ -8,16 +8,15 @@ args <- commandArgs(trailingOnly = TRUE)
 
 DEBUG <- FALSE
 
-INPUT_SLAW_FOLDER <- '/output/'
 if (DEBUG) {
   args <- c("D:\\SW\\SLAW_test_data_out\\processing_db.sqlite",
             "D:\\SW\\SLAW_test_data_out\\data_741d552fefa0759df99c04af0d7f6562.mzTab",
             "plus")
-  INPUT_SLAW_FOLDER <- dirname(args[1])
 }
 ##
 PATH_DB <- args[1]
 OUTPUT_FILE_PATH <- args[2]
+INPUT_SLAW_FOLDER <- dirname(OUTPUT_FILE_PATH)
 MZTAB_FORMAT <- args[3]
 
 ## decide export format
@@ -144,7 +143,7 @@ com <- c(paste("COM",paste("File generated from folder:",INPUT_SLAW_FOLDER, "(",
 
 ##All table are derived from the full table
 # DIR_DM <- file.path(INPUT_SLAW_FOLDER,"datamatrices")
-PATH_FULL <- list.files(INPUT_SLAW_FOLDER,"data_full.*.csv",full.names = TRUE)
+PATH_FULL <- list.files(file.path(INPUT_SLAW_FOLDER),"data_full.*.csv",full.names = TRUE)
 if (length(PATH_FULL)>0) {
   ##SMF table Construction
   dm <- fread(PATH_FULL,sep="\t")
@@ -244,7 +243,7 @@ if("mgf_ms2_id" %in% colnames(dm)){
     v <- suppressWarnings(na.omit(as.numeric(str_extract_all(s,"\\(?[0-9,.]+\\)?")[[1]])))
     if (length(v)>0) {
       smf_opt_msms_index[i] <- paste(v,collapse = '|')
-      smf_id_map <- rbind(smf_id_map,data.frame(smf_id = replicate(length(v),SMF_ID[i]),mgf_id = as.integer(v))) #, mgf_feat_id = replicate(length(v),dm$mgf_feat_id[i])
+      smf_id_map <- rbind(smf_id_map,data.frame(smf_id = replicate(length(v),SMF_ID[i]),mgf_id = as.integer(v))) #, slaw_id = replicate(length(v),dm$slaw_id[i])
     }
   }
 }
@@ -334,7 +333,7 @@ fwrite(smf_table,OUTPUT_FILE_PATH,sep="\t",append = TRUE,col.names = TRUE)
 if (APPENDMGF==T) {
   MGF_DATA <- paste0(dirname(OUTPUT_FILE_PATH),"/spectra_",HASH,".mgf")
   if (!file.exists(MGF_DATA)) {return(NULL)}
-  suppressWarnings(mgf <- readMgf(MGF_DATA))
+  suppressWarnings(mgf <- readMgf(MGF_DATA, msLevel = 2L))
   mgf_dat <- mgf@listData
   n <- mgf@nrows
   if ("acquisitionNum.1" %in% names(mgf_dat)) {mgf_dat$acquisitionNum <- mgf_dat$'acquisitionNum.1'}
@@ -345,7 +344,7 @@ if (APPENDMGF==T) {
   df <- data.frame(COM = replicate(n,'COM'),
                    MGH = replicate(n,'MGF'),
                    mgf_id = as.numeric(mgf_dat$acquisitionNum),
-                   prec_id = as.numeric(mgf_dat$FEAT_ID),
+                   prec_id = as.numeric(mgf_dat$SLAW_ID),
                    prec_rt = mgf_dat$rtime,
                    prec_mz = mgf_dat$precursorMz,
                    prec_int = as.integer(mgf_dat$precursorIntensity),

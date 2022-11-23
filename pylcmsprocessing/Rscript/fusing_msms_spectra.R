@@ -361,11 +361,12 @@ get_os <- function() {
 args <- commandArgs(trailingOnly = TRUE)
 
 if (DEBUG==T) {
-  args <- c("D:/SW/SLAW_test_data_out/temp_processing_db.sqlite",
+  args <- c("D:/SW/SLAW_test_data_out/processing_db.sqlite",
             0.01,0.05,19,
-            "D:/SW/SLAW_test_data_out/spectra_741d552fefa0759df99c04af0d7f6562.mgf","D:/SW/SLAW_test_data_out/temp/temp_dm_1",
-            "D:/SW/SLAW_test_data_out/temp/temp_dm_2","D:/SW/SLAW_test_data_out/temp/fusing_msms.hdf5")
-}
+            "D:/SW/SLAW_test_data_out/spectra_741d552fefa0759df99c04af0d7f6562.mgf","D:/SW/SLAW_test_data_out_ms1all/temp/temp_dm_1",
+            "D:/SW/SLAW_test_data_out/temp/temp_dm_2","D:/SW/SLAW_test_data_out_ms1all/temp/fusing_msms.hdf5")
+  DATA_ROOT <- "D:/SW/SLAW_test_data_out"
+  }
 
 PATH_DB <- args[1]
 MZ_TOL <- as.numeric(args[2])
@@ -399,13 +400,20 @@ dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
 PATH_MSMS <- dbGetQuery(dbb, "SELECT output_ms2 FROM processing")[, 1]
 dbDisconnect(dbb)
 
+if (DEBUG==T) {
+  PATH_DATAMATRIX <- gsub('/output',DATA_ROOT,PATH_DATAMATRIX)
+  PATH_MSMS <- gsub('/output',DATA_ROOT,PATH_MSMS)
+}
+
 # Some file can be missed if a file is corrupted, so we remove non existing file.
 PATH_MSMS <- PATH_MSMS[file.exists(PATH_MSMS)]
+
 ### Checking if an actual file exist
 if(length(PATH_MSMS)==0) stop("No MS2 spectra to Merge.")
 
 ###We read the data matrix.
 dmm <- fread(PATH_DATAMATRIX,sep="\t",header=TRUE)
+dmm_ms1 <- dmm[,c("mz","rt","num_detection","intensity_mean"),drop=FALSE]
 dmm <- dmm[,c("mz","rt","num_detection","intensity_mean"),drop=FALSE]
 dmm <- as.data.frame(dmm)
 num_line <- nrow(dmm)
@@ -723,7 +731,7 @@ consensus_specs <- lapply(fcc,function(x,tab_summary){
 
 
 ###We make a table of the supplementary informations
-supp_infos <- data.frame(MSLEVEL=2, MS2_ID=1:nrow(dm_idx),FEAT_ID=dm_idx[,1]-1,ENERGY=dm_idx[,2],NUM_CLUSTERED=num_fused,
+supp_infos <- data.frame(MSLEVEL=2, MS2_ID=1:nrow(dm_idx),SLAW_ID=dm_idx[,1]-1,ENERGY=dm_idx[,2],NUM_CLUSTERED=num_fused,
 PRECURSOR_INTENSITY=as.integer(dmm[dm_idx[,1],"intensity_mean"]))
 
 ###We find the columns with the quantitive informations
@@ -792,7 +800,7 @@ for(i in 1:(length(seq_cut)-1)){
 
     ### we add the reference informaiton to the data table
     cnames <- colnames(sub_dm)
-    cnames <- c(cnames[1:(to_cut-1)],"mgf_feat_id","mgf_ms2_id","num_clustered_ms2",cnames[quantities_idx])
+    cnames <- c(cnames[1:(to_cut-1)],"slaw_id","mgf_ms2_id","num_clustered_ms2",cnames[quantities_idx])
     sub_dm <- cbind(sub_dm[,1:(to_cut-1),drop=FALSE],1:nrow(sub_dm),seq_ms2_idx,seq_num_ms2,
     sub_dm[,..quantities_idx,drop=FALSE])
     colnames(sub_dm) <- cnames
@@ -805,15 +813,16 @@ for(i in 1:(length(seq_cut)-1)){
 
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
 POL <- dbGetQuery(dbb, "SELECT polarity FROM common")[, 1]
-if (POL=='positive') CHARGE<-'+1' else CHARGE<-'-1'
+if (POL=='positive') CHARGE<-'1+' else CHARGE<-'1-'
 dbDisconnect(dbb)
 
 tcon <- file(description = PATH_MGF, open = "w")
+writeLines(c('# MS2 spectra extracted by SLAW',''),tcon)
 ## WRITE "MANUALLY" > all packages tested so far did disappoint
 for (i in 1:length(consensus_specs)) {
   rows <- c('BEGIN IONS',
             paste0('SCANS=',supp_infos[i,'MS2_ID']),
-            paste0('TITLE=','MS2_mz=',consensus_specs[[i]]@precursorMz, '_RT=',consensus_specs[[i]]@rt, "_CE=", supp_infos[i,'ENERGY']),
+            paste0('TITLE=','MS2_slawID=',supp_infos[i,'SLAW_ID'],'_mz=',consensus_specs[[i]]@precursorMz, '_RT=',consensus_specs[[i]]@rt, "_CE=", supp_infos[i,'ENERGY']),
             paste0('RTINSECONDS=',consensus_specs[[i]]@rt),
             paste0('PEPMASS=',consensus_specs[[i]]@precursorMz),
             paste0('PRECURSOR_INTENSITY=',supp_infos[i,'PRECURSOR_INTENSITY']),
@@ -821,7 +830,7 @@ for (i in 1:length(consensus_specs)) {
             paste0('ENERGY=',supp_infos[i,'ENERGY']),
             paste0('CHARGE=',CHARGE),
             paste0('MS2_ID=',supp_infos[i,'MS2_ID']),
-            paste0('FEAT_ID=',supp_infos[i,'FEAT_ID']),
+            paste0('SLAW_ID=',supp_infos[i,'SLAW_ID']),
             paste0('PEAKSCOUNT=',consensus_specs[[i]]@peaksCount))
   writeLines(rows,tcon)
   for (j in 1:consensus_specs[[i]]@peaksCount) {
