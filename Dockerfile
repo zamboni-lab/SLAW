@@ -54,7 +54,7 @@ RUN R -e "setwd('/rtree');library(devtools);install_local('/rtree')"
 RUN pip3 install --no-cache-dir wheel psutil
 RUN pip3 install numpy
 RUN pip3 install --no-cache-dir panda PyYAML
-RUN pip3 install sklearn statsmodels
+RUN pip3 install scikit-learn statsmodels
 
 # THis make the DOckerfile build work on github CI
 RUN apt-get update
@@ -66,7 +66,7 @@ RUN strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so
 RUN R -e "if (!require('BiocManager', quietly = TRUE)) install.packages('BiocManager')"
 # RUN R -e "BiocManager::valid()"
 # This fix was included to fix the upgrade to 3.16 on R4.2
-RUN R -e "BiocManager::version()"
+# RUN R -e "BiocManager::version()"
 
 #RUN R -e "remove.packages("BiocVersion"); BiocManager::install()"
 #RUN R -e "BiocManager::install()"
@@ -90,8 +90,8 @@ RUN R -e "BiocManager::install('InterpretMSSpectrum')"
 
 # I keep this at the end because it breaks BiocVersion (3.16 > 3.14)
 RUN R -e "BiocManager::install('rhdf5')"
-RUN R -e "BiocManager::install()"
-RUN R -e "BiocManager::version()"
+# RUN R -e "BiocManager::install()"
+# RUN R -e "BiocManager::version()"
 
 #Dependencies copy
 COPY MZmine-2.52-Linux /MZmine-2.52-Linux
