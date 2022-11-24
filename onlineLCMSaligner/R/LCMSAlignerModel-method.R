@@ -371,122 +371,8 @@ alignToModel.density <- function(lam, peaktable,bw = 10,binSize = 0.01, maxFeatu
                                                                             densFrom=densFrom,densTo=densTo,densN)),
                        BPPARAM = bpp,SIMPLIFY = FALSE)
       vapp <- do.call(rbind,vapp)
-      
     }
     
-
-    # vapp <- bpmapply((masspos[1:(length(mass)-2)])[sel_idx],
-    #                  (masspos[3:length(mass)])[sel_idx]-1,
-    #                  (massposmod[1:(length(massposmod)-2)])[sel_idx],
-    #                  (massposmod[3:length(massposmod)])[sel_idx]-1,
-    #                  FUN=sliceDensity,MoreArgs=list(ref_peaks=ref_peaks,peaktable=peaktable,
-    #                                  bw=bw,maxFeatures=maxFeatures,vrt=vrt,
-    #                                  densFrom=densFrom,densTo=densTo,densN),
-    #                  BPPARAM = bpp,SIMPLIFY = FALSE)
-    
-  
-  ###parallel processing of the density estination to speed up the process.
-  # vapp <- bpmapply((masspos[1:(length(mass)-2)])[sel_idx],
-  #                  (masspos[3:length(mass)])[sel_idx]-1,
-  #                  (massposmod[1:(length(massposmod)-2)])[sel_idx],
-  #                  (massposmod[3:length(massposmod)])[sel_idx]-1,
-  #          FUN=function(startIdx,endIdx,startIdxMod,endIdxMod,peaktable,ref_peaks,
-  #                       bw,maxFeatures,vrt,densFrom,densTo,densN){
-  #            if ((endIdx - startIdx) < 0)
-  #              return(matrix(0,nrow=0,ncol=2))
-  #            if ((endIdxMod - startIdxMod) < 0)
-  #              return(matrix(0,nrow=0,ncol=2))
-  # 
-  #            curMat <- peaktable[startIdx:endIdx, , drop = FALSE]
-  #            subModel <- ref_peaks[startIdxMod:endIdxMod, , drop = FALSE]
-  # 
-  #            ###We generate the density for the model
-  #            den <- suppressWarnings(density(curMat[, vrt], bw = bw, from = densFrom,
-  #                           to = densTo, n = densN))
-  # 
-  #            ###We generate the density of the model
-  #            denModel <- suppressWarnings(density(subModel[,2], bw = bw, from = densFrom,
-  #                                to = densTo, n = densN,weights = subModel[,3]))
-  #            deny <- den$y*nrow(curMat)+sum(subModel[,3])*denModel$y
-  #            maxy <- NULL
-  #            maxden <- max(deny)
-  #            snum <- 0
-  #            sub_res <- matrix(0,nrow=0,ncol=2)
-  #            vres <- vector(mode="list",length=maxFeatures)
-  #            for(i in seq_along(vres)){
-  #              vres[[i]] <- matrix(0,nrow=0,ncol=2)
-  #            }
-  #            num_feat <- 1
-  #            while (deny[maxy <- which.max(deny)] > maxden/500 && snum <
-  #                   maxFeatures) {
-  #              if(num_feat > maxFeatures) break
-  #              grange <- xcms:::descendMin(deny, maxy)
-  #              deny[grange[1]:grange[2]] <- 0
-  #              peaktable_idx <- which(curMat[, vrt] >= den$x[grange[1]] &
-  #                                       curMat[, vrt] <= den$x[grange[2]])
-  # 
-  #              ###We get the number of group which are matched together eventually.
-  #              ref_idx <- which(subModel[, 2] >= den$x[grange[1]] &
-  #                                 subModel[, 2] <= den$x[grange[2]])
-  #              snum <- snum + 1
-  #              num <- num + 1
-  # 
-  #              ###Cas where on of the catheogry is missing under the density.
-  #              if((length(peaktable_idx)==0)|(length(ref_idx)==0)) next
-  #              #We update the value.
-  #              selm <- sapply(curMat[peaktable_idx,2],function(x,ref){which.min(abs(ref-x))},
-  #                             ref=subModel[ref_idx,2])
-  # 
-  # 
-  #                vres[[num_feat]] <- matrix(c(startIdx+peaktable_idx-1,startIdxMod+ref_idx[selm]-1),
-  #                                           ncol=2,byrow=FALSE)
-  #                num_feat <- num_feat+1
-  #            }
-  # 
-  #            if(num_feat>1){
-  #              return(do.call(rbind,vres[1:num_feat]))
-  #            }else{
-  #              return(matrix(0,nrow=0,ncol=2))
-  #            }
-  # 
-  # },MoreArgs=list(ref_peaks=ref_peaks,peaktable=peaktable,
-  #                 bw=bw,maxFeatures=maxFeatures,vrt=vrt,
-  #                 densFrom=densFrom,densTo=densTo,densN),
-  # BPPARAM = bpp,SIMPLIFY = FALSE)
-
-
-  # ####We only keep the best group
-  # mapply(vapp[1:(length(vapp)-1)],vapp[1:(length(vapp)-1)],FUN = function(x,y){
-  # tx <- table(x[,2])
-  # ty <- table(y[,2])
-  # ntx <- as.numeric(names(tx))
-  # nty <- as.numeric(names(ty))
-  # ###We check the intersection
-  # inter <- intersect(x[,1],x[,2])
-  # if(length(inter)!=0){
-  #   vpos <- tx[as.character(inter)]>ty[as.character(inter)]
-  #   ###We remove all the values eventually
-  #   ux <- c(setdiff(ntx,inter),inter[!vpos])
-  #   uy <- c(setdiff(ntx,inter),inter[vpos])
-  # }
-  #
-  # },SIMPLIFY = FALSE,USE.NAMES = FALSE)
-  #
-  #
-  # if (nrow(res)) {
-  #   ## Remove groups that overlap with more "well-behaved" groups
-  #   numsamp <- rowSums(
-  #     as.matrix(res[, (match("npeaks", colnames(res)) +1):(ncol(res) -1),
-  #                   drop = FALSE]))
-  #   uorder <- order(-numsamp, res[, "npeaks"])
-  #
-  #   uindex <- rectUnique(
-  #     as.matrix(res[, c("mzmin", "mzmax", "rtmin", "rtmax"),
-  #                   drop = FALSE]), uorder)
-  #   res <- res[uindex, , drop = FALSE]
-  #   rownames(res) <- NULL
-  # }
-  #
   vsize <- lam@peaks[,"num"]
   vapp <- do.call(rbind,vapp)
   vapp <- bplapply(split(as.data.frame(vapp),f = vapp[,1],
@@ -691,99 +577,7 @@ alignToModelByBatch.density <- function(lam, peaktable,bw = 10,binSize = 0.01, m
     
   }
   message("End parallel processing ",Sys.time())
-  
-  
-  # 
-  # 
-  # ###parallel processing of the density estination to speed up the process.
-  # message("Starting parallel processing ",Sys.time())
-  # vapp <- bpmapply((masspos[1:(length(mass)-2)])[sel_idx],
-  #                  (masspos[3:length(mass)])[sel_idx]-1,
-  #                  (massposmod[1:(length(massposmod)-2)])[sel_idx],
-  #                  (massposmod[3:length(massposmod)])[sel_idx]-1,
-  #                  FUN=function(startIdx,endIdx,startIdxMod,endIdxMod,peaktable,ref_peaks,
-  #                               bw,maxFeatures,vrt,densFrom,densTo,densN,max_idx){
-  #                    if ((endIdx - startIdx) < 0)
-  #                      return(matrix(0,nrow=0,ncol=2))
-  #                    
-  #                    ##In this case ther can still be peak which are put in ther own groups
-  #                    ref <- TRUE
-  #                    if ((endIdxMod - startIdxMod) < 0)
-  #                      ref <- FALSE
-  #                    
-  #                    curMat <- peaktable[startIdx:endIdx, , drop = FALSE]
-  #                    
-  #                    if(ref) subModel <- ref_peaks[startIdxMod:endIdxMod, , drop = FALSE]
-  #                    
-  #                    ###We generate the density for the model
-  #                    den <- suppressWarnings(density(curMat[, vrt], bw = bw, from = densFrom,
-  #                                   to = densTo, n = densN))
-  #                    
-  #                    ###We generate the density of the model
-  #                    if(ref){
-  #                      denModel <- suppressWarnings(density(subModel[,2], bw = bw, from = densFrom,
-  #                                          to = densTo, n = densN,weights = subModel[,3]))
-  #                      deny <- den$y*nrow(curMat)+sum(subModel[,3])*denModel$y
-  #                    }else{
-  #                      deny <- den$y
-  #                    }
-  #                    maxy <- NULL
-  #                    maxden <- max(deny)
-  #                    snum <- 0
-  #                    sub_res <- matrix(0,nrow=0,ncol=2)
-  #                    vres <- vector(mode="list",length=maxFeatures)
-  #                    for(i in seq_along(vres)){
-  #                      vres[[i]] <- matrix(0,nrow=0,ncol=2)
-  #                    }
-  #                    num_feat <- 1
-  #                    while (deny[maxy <- which.max(deny)] > maxden/500 && snum <
-  #                           maxFeatures) {
-  #                      if(num_feat > maxFeatures) break
-  #                      grange <- xcms:::descendMin(deny, maxy)
-  #                      deny[grange[1]:grange[2]] <- 0
-  #                      peaktable_idx <- which(curMat[, vrt] >= den$x[grange[1]] &
-  #                                               curMat[, vrt] <= den$x[grange[2]])
-  #                      
-  #                      
-  #                      ###We get the number of group which are matched together eventually.
-  #                      if(ref){
-  #                        ref_idx <- which(subModel[, 2] >= den$x[grange[1]] &
-  #                                           subModel[, 2] <= den$x[grange[2]])
-  #                      }else{
-  #                        if(length(peaktable_idx)==1) next
-  #                      }
-  #                      snum <- snum + 1
-  #                      num <- num + 1
-  #                      
-  #                      ###Case where on of the catheogry is missing under the density.
-  #                      if(length(peaktable_idx)==0) next
-  #                      #We update the value.
-  #                      
-  #                      ###for each sample we select the closest retention time.
-  #                      if(ref && (length(ref_idx)>0)){
-  #                        selm <- sapply(curMat[peaktable_idx,2],function(x,ref){which.min(abs(ref-x))},
-  #                                       ref=subModel[ref_idx,2])
-  #                        
-  #                        
-  #                        vres[[num_feat]] <- matrix(c(startIdx+peaktable_idx-1,startIdxMod+ref_idx[selm]-1),
-  #                                                   ncol=2,byrow=FALSE)
-  #                      }else{
-  #                        vres[[num_feat]] <- matrix(c(startIdx+peaktable_idx-1,rep(max_idx+snum,length(peaktable_idx))),
-  #                                                   ncol=2,byrow=FALSE)
-  #                      }
-  #                      num_feat <- num_feat+1
-  #                    }
-  #                    
-  #                    if(num_feat>1){
-  #                      return(do.call(rbind,vres[1:num_feat]))
-  #                    }else{
-  #                      return(matrix(0,nrow=0,ncol=2))
-  #                    }
-  #                    
-  #                  },MoreArgs=list(ref_peaks=ref_peaks,peaktable=peaktable,
-  #                                  bw=bw,maxFeatures=maxFeatures,vrt=vrt,
-  #                                  densFrom=densFrom,densTo=densTo,densN=densN,max_idx=max_index),BPPARAM = bpp)
-  # message("End parallel processing ",Sys.time())
+
   vsize <- lam@peaks[,"num"]
   ###if nothing has been aligned correctly.
   if(length(vapp)==0){
@@ -832,49 +626,7 @@ alignToModelByBatch.density <- function(lam, peaktable,bw = 10,binSize = 0.01, m
       vapp[psupp,2] <- match(vapp[psupp,2],unique_values)+max_index-1
       
     }
-    
-  # }
-  
-  ### LOOP VERSION
-  # for(i in seq_along(vapp)){
-  #   if(nrow(vapp[[i]])==0) next
-  #   temp <- vapp[[i]]
-  #   psupp <- which(temp[,2]>=max_index)
-  #   ###Debuggued.
-  #   pmodel <- which(temp[,2]<max_index)
-  #   ##We add the size of the cluster to the new size.
-  #   for(idx in temp[pmodel,2]){
-  #     temp_size[idx] <- temp_size[idx]+1
-  #   }
-  #   if(length(psupp)==0){
-  #     next
-  #   }
-  #   temp[psupp,2] <- temp[psupp,2]+shift
-  #   
-  #   ###We check the size of the new index
-  #   if(max(temp[psupp,2])>length(temp_size)){
-  #     temp_size <- c(temp_size,rep(0,length(temp_size)))
-  #   }
-  #   
-  #   t2 <- table(temp[psupp,2])
-  #   temp_size[temp[psupp,2]] <- t2[match(temp[psupp,2],names(t2))]
-  #   vapp[[i]] <- temp
-  #   shift <- shift+length(unique(temp[psupp,2]))
-  # }
-  # message("End refinement ",Sys.time())
-  # vapp <- do.call(rbind,vapp)
-  # vapp <- bplapply(split(as.data.frame(vapp),f = vapp[,1],
-  #                        drop = FALSE),FUN=function(x,vsize){x[which.max(vsize[x[,2]]),]},
-  #                  vsize=temp_size,BPPARAM = bpp)
-  # 
-  # vapp <- do.call(rbind,vapp)
-  # ###We relabel with consecutive integer
-  # psupp <- which(vapp[,2]>max_index)
-  # if(length(psupp)>=1){
-  #   unique_values <- unique(vapp[psupp,2])
-  #   vapp[psupp,2] <- match(vapp[psupp,2],unique_values)+max_index-1
-  #   
-  # }
+
   message("End refinement ",Sys.time())
   if(nrow(vapp)==0) return(groupindex)
   ##If there is any NA we remove it (TODEBUG LATER)
@@ -918,7 +670,8 @@ finalClustering <- function(lam,bw,binSize=0.01,bpp=NULL){
   maxFeatures <-  50
   num <- 0
   ###parallel processing of the density estination to speed up the process.
-  vapp <- bpmapply((masspos[1:(length(masspos)-2)])[sel_idx],
+  # DEBUG vapp <- bpmapply((masspos[1:(length(masspos)-2)])[sel_idx],
+  vapp <- mapply((masspos[1:(length(masspos)-2)])[sel_idx],
                    (masspos[3:length(masspos)])[sel_idx]-1,
                    FUN=function(startIdx,endIdx,peaktable,
                                 bw,maxFeatures,densFrom,densTo,densN){
@@ -1391,8 +1144,8 @@ alignPeaktables <-
       cpeaktable <- NULL
       if(correct_rt & nrow(peaktable)>2){
       ###We first correct the retention time
-      lcc <-
-        tryCatch(correctPeaktable(
+      lcc <- correctPeaktable(
+        # DEBUG tryCatch(correctPeaktable(
           ref,
           peaktable,
           peaks=peaks,
@@ -1405,7 +1158,8 @@ alignPeaktables <-
           ratio = ratio,
           lim = lim,
           graphical = graphical
-        ),error=function(e){return(NA)})
+        )
+		#,error=function(e){return(NA)})
         if(is.na(lcc)){
           cpeaktable <- peaktable
         }else{
@@ -1438,13 +1192,15 @@ alignPeaktables <-
     
     message("Starting retention correction.")
     start_time <- Sys.time()
-    values <- bplapply(paths,FUN = correctPeaktablePar,ref=lam@references,rt_scaling = rt_scaling,
+    # DEBUG values <- bplapply(paths,FUN = correctPeaktablePar,ref=lam@references,rt_scaling = rt_scaling,
+    values <- lapply(paths,FUN = correctPeaktablePar,ref=lam@references,rt_scaling = rt_scaling,
              ransac_niter = ransac_niter,
              ransac_dist_threshold = ransac_dist_threshold,
              ransac_l1=ransac_l1,peaks=tpeaks,
              rt_extensions = rt_extensions, ratio=ratio,
              ransac_span = ransac_span,lim = lim,
-             supp_data=supp_data,graphical=graphical,correct_rt=correct_rt,BPPARAM = bpp)
+             supp_data=supp_data,graphical=graphical,correct_rt=correct_rt)
+    #          supp_data=supp_data,graphical=graphical,correct_rt=correct_rt,BPPARAM = bpp)
     end_time <- Sys.time()
     # message("Retention time correction finshed in ", end_time-start_time))
     ### We bind all the peaktable

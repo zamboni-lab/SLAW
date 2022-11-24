@@ -85,10 +85,11 @@ RUN R -e "BiocManager::install('InterpretMSSpectrum')"
 #Dependencies copy
 COPY ./MZmine-2.52-Linux /MZmine-2.52-Linux
 COPY ./MZmineXMLManipulator /MZmineXMLManipulator
+RUN R -e "install.packages(c('openssl'))"
 RUN R -e "setwd('/MZmineXMLManipulator');library(devtools);install_local('/MZmineXMLManipulator')"
 
 RUN apt-get install -y libgmp3-dev
-RUN R -e "install.packages(c('ClusterR','ggplot2','gghighlight','lpSolve'))"
+RUN R -e "install.packages(c('ClusterR','ggplot2','gghighlight','lpSolve','viridis'))"
 COPY ./onlineLCMSaligner /onlineLCMSaligner
 RUN R -e "library(devtools);install_local('/onlineLCMSaligner')"
 
