@@ -47,9 +47,6 @@ RUN R -e "install.packages('devtools')"
 # COPY ./MZmineXMLManipulator /MZmineXMLManipulator
 # RUN R -e "setwd('/MZmineXMLManipulator');library(devtools);install_local('/MZmineXMLManipulator')"
 
-COPY ./rtree /rtree
-RUN R -e "setwd('/rtree');library(devtools);install_local('/rtree')"
-
 # Always installing the wheel pip3 package first
 RUN pip3 install --no-cache-dir wheel psutil
 RUN pip3 install numpy
@@ -83,6 +80,10 @@ RUN R -e "BiocManager::install('CAMERA')"
 RUN R -e "BiocManager::install('InterpretMSSpectrum')"
 
 #Dependencies copy
+# COPY ./rtree /rtree
+# RUN R -e "setwd('/rtree');library(devtools);install_local('/rtree')"
+RUN R -e "install.packages('rtree')"
+
 COPY ./MZmine-2.52-Linux /MZmine-2.52-Linux
 COPY ./MZmineXMLManipulator /MZmineXMLManipulator
 RUN R -e "install.packages(c('openssl'))"
