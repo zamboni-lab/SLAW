@@ -11,10 +11,10 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 
-RcppExport SEXP _rcpp_module_boot_rtreecpp2();
+RcppExport SEXP _rcpp_module_boot_rtreecpp();
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_rcpp_module_boot_rtreecpp2", (DL_FUNC) &_rcpp_module_boot_rtreecpp2, 0},
+    {"_rcpp_module_boot_rtreecpp", (DL_FUNC) &_rcpp_module_boot_rtreecpp, 0},
     {NULL, NULL, 0}
 };
 

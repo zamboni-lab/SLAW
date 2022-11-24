@@ -1,2 +1,0 @@
-# Makevars
-PKG_CXXFLAGS=-std=c++11

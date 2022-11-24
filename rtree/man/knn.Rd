@@ -13,7 +13,28 @@ knn(rTree, y, k)
 
 \item{k}{A positive integer.}
 }
+\value{
+A list with one entry per row of `y`.
+Each entry is a vector of row indices.
+}
 \description{
-For each point \eqn{y_i} in set \code{y}, returns the row-indices of the \code{k} points indexed in \code{rTree}
+For each point \eqn{y_i} in set \code{y}, returns the row-indices of
+the \code{k} points indexed in \code{rTree}
 that are closest to \eqn{y_i}.
+}
+\examples{
+# For two sets of points, A and B, find the 10 nearest neighbors in B
+# for each point in A.
+n <- 10^4
+A <- cbind(runif(n), runif(n))
+B <- cbind(runif(n), runif(n))
+
+# Make an RTree on B
+B_rtree <- RTree(B)
+
+# Find 10 nearest neighbors in B for each point in A
+nearest <- knn(B_rtree, A, 10L)
+
+# Each element of nearest is a vector of row indices of 10 points in B
+print(nearest[[1]])
 }
