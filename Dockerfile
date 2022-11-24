@@ -91,7 +91,7 @@ RUN R -e "setwd('/MZmineXMLManipulator');library(devtools);install_local('/MZmin
 RUN apt-get install -y libgmp3-dev
 RUN R -e "install.packages(c('ClusterR','ggplot2','gghighlight','lpSolve','viridis'))"
 COPY ./onlineLCMSaligner /onlineLCMSaligner
-RUN R -e "library(devtools);install_local('/onlineLCMSaligner')"
+RUN R -e "library(devtools);install_local('/onlineLCMSaligner',force=TRUE)"
 
 COPY pylcmsprocessing /pylcmsprocessing
 
