@@ -41,10 +41,10 @@ RUN add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu jammy-c
 RUN R -e "install.packages('devtools')"
 
 # Install toolboxes
-COPY ./onlineLCMSaligner /onlineLCMSaligner
+# COPY ./onlineLCMSaligner /onlineLCMSaligner
 # RUN R -e "setwd('/onlineLCMSaligner');library(devtools);install_local('/onlineLCMSaligner')"
 
-COPY ./MZmineXMLManipulator /MZmineXMLManipulator
+# COPY ./MZmineXMLManipulator /MZmineXMLManipulator
 # RUN R -e "setwd('/MZmineXMLManipulator');library(devtools);install_local('/MZmineXMLManipulator')"
 
 COPY ./rtree /rtree
@@ -64,15 +64,9 @@ RUN apt-get -y --no-install-recommends --fix-missing install openms
 RUN strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
 
 RUN R -e "if (!require('BiocManager', quietly = TRUE)) install.packages('BiocManager')"
-# RUN R -e "BiocManager::valid()"
-# This fix was included to fix the upgrade to 3.16 on R4.2
-# RUN R -e "BiocManager::version()"
-
-#RUN R -e "remove.packages("BiocVersion"); BiocManager::install()"
-#RUN R -e "BiocManager::install()"
-#RUN R -e "BiocManager::version()"
 RUN R -e "BiocManager::install('RcppArmadillo')"
 RUN R -e "BiocManager::install('BiocParallel')"
+RUN R -e "BiocManager::install('rhdf5')"
 RUN R -e "library(devtools);install_github('rformassspectrometry/ProtGenerics');install_github('rformassspectrometry/MsCoreUtils');install_github('rformassspectrometry/Spectra');install_github('rformassspectrometry/MsBackendMgf')"
 
 #Resinstalling data.table as it seems to become problematic after Rhdf5
@@ -88,19 +82,14 @@ RUN R -e "BiocManager::install('cliqueMS')"
 RUN R -e "BiocManager::install('CAMERA')"
 RUN R -e "BiocManager::install('InterpretMSSpectrum')"
 
-# I keep this at the end because it breaks BiocVersion (3.16 > 3.14)
-RUN R -e "BiocManager::install('rhdf5')"
-# RUN R -e "BiocManager::install()"
-# RUN R -e "BiocManager::version()"
-
 #Dependencies copy
-COPY MZmine-2.52-Linux /MZmine-2.52-Linux
-COPY MZmineXMLManipulator /MZmineXMLManipulator
+COPY ./MZmine-2.52-Linux /MZmine-2.52-Linux
+COPY ./MZmineXMLManipulator /MZmineXMLManipulator
 RUN R -e "setwd('/MZmineXMLManipulator');library(devtools);install_local('/MZmineXMLManipulator')"
 
 RUN apt-get install -y libgmp3-dev
 RUN R -e "install.packages(c('ClusterR','ggplot2','gghighlight','lpSolve'))"
-COPY onlineLCMSaligner /onlineLCMSaligner
+COPY ./onlineLCMSaligner /onlineLCMSaligner
 RUN R -e "library(devtools);install_local('/onlineLCMSaligner')"
 
 COPY pylcmsprocessing /pylcmsprocessing
