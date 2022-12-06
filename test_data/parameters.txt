@@ -156,6 +156,21 @@ optimization:
       step.
     priority: LOW
     value: 30
+output_format:
+  description: Output format for both MS1 and MS2 data in SLAW
+  ms1:
+    description: String. What MS1 informations should be output. non-filled datamatrix.
+      Authorized values are 'gap-filled data matrix' and 'data matrix' corresponds
+      to the filled and non filled sample x feature table. 'mztab' will output a valid
+      mzTab without annotation.
+    priority: LOW
+    value: gap-filled data matrix
+  ms2:
+    description: String. What MS2 information should be output, 'fused mgf with isotopes'
+      refer to MGF file containing MS-MS under the MS2 tag and isotopic patterns under
+      the MS1 tag. 'fused mgf' output a single mgf with one MS-MS spectrum by feature.
+    priority: LOW
+    value: fused mgf
 peakpicking:
   algorithm:
     description: Character. The algorithm used for peakpikcing. Authorized value are
@@ -244,6 +259,13 @@ peakpicking:
       value:
       - 0.0005
       - 0.005
+  peaktable_filter:
+    description: String. A string describing the postprocessing to apply to the peaktable.
+      See the wiki for examples. The default is to only take the 30000 most intense
+      peaks.
+    priority: LOW
+    type: str
+    value: absolute_intensity top 30000
   traces_construction:
     description: Parameters used in the detection of consecutive mass points with
       similar masses in different acquisitions.
