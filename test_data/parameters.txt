@@ -63,24 +63,24 @@ ion_annotation:
       See the provided examples for syntax.
     priority: HIGH
     value:
-    - '[M+H]+'
+    - '[M+H]1+'
     - '[M+2H]2+'
-    - '[M+Na]+'
-    - '[M+K]+'
-    - '[M+NH4]+'
-    - '[M+2Na-H]+'
-    - '[2M+H]+'
+    - '[M+Na]1+'
+    - '[M+K]1+'
+    - '[M+NH4]1+'
+    - '[M+2Na-H]1+'
+    - '[2M+H]1+'
     - '[2M+2H]2+'
     - '[2M+H+Na]2+'
-    - '[2M+Na]+'
-    - '[2M+2Na-H]+'
+    - '[2M+Na]1+'
+    - '[2M+2Na-H]1+'
     - '[M+2H-NH3]2+'
-    - '[M+H-H2O]+'
+    - '[M+H-H2O]1+'
     - '[M+2H-H2O]2+'
     - '[M+3H]3+'
-    - '[M+CH3COONa+H]+'
-    - '[M+CH3COONa+Na]+'
-    - '[M+CH3COONa+NH4]+'
+    - '[M+CH3COONa+H]1+'
+    - '[M+CH3COONa+Na]1+'
+    - '[M+CH3COONa+NH4]1+'
   description: Grouping of ions originating form the same metabolite and annotations
     of adducts and fragments. The detection is done using a modified MScliques the
     annotation of ion is done using the InterpretMSSpectrum package.
@@ -99,10 +99,10 @@ ion_annotation:
       peaks. See the provided examples for syntax.
     priority: HIGH
     value:
-    - '[M+H]+'
+    - '[M+H]1+'
     - '[M+2H]2+'
-    - '[M+Na]+'
-    - '[M+NH4]+'
+    - '[M+Na]1+'
+    - '[M+NH4]1+'
   max_charge:
     description: Integer. The maximum number of charges allowed.
     priority: LOW
