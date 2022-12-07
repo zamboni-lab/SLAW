@@ -592,9 +592,9 @@ annotateCliqueInterpretMSspectrum <-
     library(InterpretMSSpectrum)
     def_ion <- NULL
     if (ionization_mode == "positive") {
-      def_ion <- "[M+H]+"
-    } else{
-      def_ion <- "[M-H]-"
+      def_ion <- "[M+H]1+"
+    } else {
+      def_ion <- "[M-H]1-"
     }
     if (length(clique) == 1) {
       return(list(
@@ -691,23 +691,22 @@ annotateCliqueInterpretMSspectrum <-
       }
 
       annot <- annots[[ii]][sel_idx,,drop=FALSE]
-      ###We remove trhe unfiltered valued
+      ## We remove the unfiltered valued
 
-      # mz int isogr iso charge     adduct      ppm      label
-      # 132.00  10    NA  NA     NA [M+H-H2O]+ 80.03561 [M+H-H2O]+
-      # 150.00 100     1   0      1     [M+H]+       NA     [M+H]+
-      # 151.01  30     1   1      1       <NA>       NA       <NA>
-      # 415.00  95    NA  NA     NA       <NA>       NA       <NA>
+      # mz     int   isogr iso  charge  adduct      ppm      label
+      # 132.00  10   NA    NA    NA     [M+H-H2O]1+ 80.03561 [M+H-H2O]1+
+      # 150.00 100   1     0     1      [M+H]1+     NA       [M+H]1+
+      # 151.01  30   1     1     1      <NA>        NA       <NA>
+      # 415.00  95   NA    NA    NA     <NA>        NA       <NA>
 
-      ####In case of error we consider all the values as the default
-
-
+      ## In case of error we consider all the values as the default
 
       sel_adducts <- which(!is.na(annot[, "adduct"]))
       if (length(sel_adducts) <= 0)
         next
 
-      ###in this case we can leave the loop safely as there won t be 2 adduts annotation. In the future.
+      ## In this case we can leave the loop safely as there won t be 
+      ## 2 adducts annotation. In the future.
       if (length(sel_adducts) == 1) {
         annot$label <- def_ion
         annot$adduct <- def_ion
@@ -816,9 +815,9 @@ convertFeatures <- function(resAnnot, polarity = "negative") {
   unique_groups <- unique(resAnnot$group_label)
   resList <- vector(mode = "list", length = length(unique_groups))
   current_dec <- 0
-  def_label <- "[M+H]+"
+  def_label <- "[M+H]1+"
   if (polarity == "negative") {
-    def_label <- "[M-H]-"
+    def_label <- "[M-H]1-"
   }
   # message("Features conversion: ")
   for (ig in seq_along(resList)) {
