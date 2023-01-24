@@ -138,7 +138,7 @@ if __name__=="__main__":
         ##We always remove the database after processing
         try:
             os.remove(os.path.join(OUTPUT_DIR, "temp_processing_db.sqlite"))
-        exit(0)
+        return
     else:
         ###We check the parameter
         pcheck = ParametersChecker(vui.path_yaml)
