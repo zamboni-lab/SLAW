@@ -35,17 +35,17 @@ class UI:
             path_yaml = self.path_yaml
         with open(path_yaml, 'r') as stream:
             raw_yaml = yaml.safe_load(stream)
-        if polarity == "positive":
-            if raw_yaml["ion_annotation"]["adducts_positive"]["value"] == "NONE":
-                raw_yaml["ion_annotation"]["adducts_positive"]["value"] = cr.default_adducts_positive()
-                raw_yaml["ion_annotation"]["main_adducts_positive"]["value"] = cr.default_adducts_main_positive()
-        else:
-            if raw_yaml["ion_annotation"]["adducts_negative"]["value"] == "NONE":
-                raw_yaml["ion_annotation"]["adducts_negative"]["value"] = cr.default_adducts_negative()
-                raw_yaml["ion_annotation"]["main_adducts_negative"]["value"] = cr.default_adducts_main_negative()
+        #if polarity == "positive": NEWLY IT FILLS ALL ADDUCTS FOR BOTH MODES. SPLITTING IS CONFUSING.
+        if raw_yaml["ion_annotation"]["adducts_positive"]["value"] == "NONE":
+            raw_yaml["ion_annotation"]["adducts_positive"]["value"] = cr.default_adducts_positive()
+            raw_yaml["ion_annotation"]["main_adducts_positive"]["value"] = cr.default_adducts_main_positive()
+        #if polarity == "positive": NEWLY IT FILLS ALL ADDUCTS FOR BOTH MODES. SPLITTING IS CONFUSING.else:
+        if raw_yaml["ion_annotation"]["adducts_negative"]["value"] == "NONE":
+            raw_yaml["ion_annotation"]["adducts_negative"]["value"] = cr.default_adducts_negative()
+            raw_yaml["ion_annotation"]["main_adducts_negative"]["value"] = cr.default_adducts_main_negative()
         # We write the yaml in the output directory
         with open(path_yaml, 'w') as outfile:
-            yaml.dump(raw_yaml, outfile, default_flow_style=False, sort_keys=False)
+            yaml.safe_dump(raw_yaml, outfile, default_flow_style=False, sort_keys=False)
 
 
     def generate_yaml_files(self,force=False):
@@ -55,7 +55,7 @@ class UI:
         #We write the yaml in the output directory
         if not os.path.isfile(self.path_yaml) or force:
             with open(self.path_yaml, 'w') as outfile:
-                yaml.dump(raw_yaml,outfile, default_flow_style=False, sort_keys=False)
+                yaml.safe_dump(raw_yaml,outfile, default_flow_style=False, sort_keys=False)
             self.initialize_yaml_polarity(self.polarity,self.path_yaml)
 
 
