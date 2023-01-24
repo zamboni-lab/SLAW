@@ -276,7 +276,7 @@ class ParametersFileHandler:
 
     def write_parameters(self,path):
         with open(path, 'w') as outfile:
-            yaml.dump(self.dic, outfile, default_flow_style=False)
+            yaml.safe_dump(self.dic, outfile, default_flow_style=False, sort_keys=False)
 
 
 class ParametersChecker:
