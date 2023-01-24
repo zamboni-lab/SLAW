@@ -223,14 +223,14 @@ filtering:
     type: float
 ion_annotation:
     description: Grouping of ions originating form the same metabolite and annotations of adducts and fragments. The detection is done using a modified MScliques the annotation of ion is done using the InterpretMSSpectrum package.
-    polarity:
-      priority: ESSENTIAL
-      description: String. The polarity of the acquired mass spectrometry data, can be 'positive' or 'negative'
-      value: positive
-      set:
-        - positive
-        - negative
-      type: str
+#    polarity:
+#      priority: ESSENTIAL
+#      description: String. The polarity of the acquired mass spectrometry data, can be 'positive' or 'negative'
+#      value: positive
+#      set:
+#        - positive
+#        - negative
+#      type: str
     ppm:
       priority: HIGH
       description: Float. The m/z tolerance in part per million to match ions coming for the same metabolites. It is given by max(ppm x m/z x 1e-6,dmz).
