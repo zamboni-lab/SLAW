@@ -136,8 +136,8 @@ if __name__=="__main__":
         vui.initialize_yaml_polarity(polarity = pol)
         logging.info("Parameters file generated please check the parameters values/ranges and toggle optimization if needed.")
         ##We always remove the database after processing
-        path_temp_db = os.path.join(OUTPUT_DIR, "temp_processing_db.sqlite")
-        os.remove(path_temp_db)
+        try:
+            os.remove(os.path.join(OUTPUT_DIR, "temp_processing_db.sqlite"))
         exit(0)
     else:
         ###We check the parameter
