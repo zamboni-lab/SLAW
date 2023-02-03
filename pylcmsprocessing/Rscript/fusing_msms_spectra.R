@@ -362,7 +362,7 @@ FILE_GROUP <- "FILE"
 SPEC_GROUP <- "SPEC"
 
 ##Can be changed
-BY_BATCH <- 30000
+BY_BATCH <- 3000
 bpp <- NULL
 
 if (get_os() == "win") {
@@ -543,7 +543,7 @@ ocnames <- as.character(fread(PATH_DATAMATRIX,sep = "\t",nrows=1,header=FALSE)[1
 quant_prefix <- 'quant_'
 to_cut <- which(startsWith(ocnames,quant_prefix))[1]
 
-##We now add two oclumns ot the data matrix add two columns to the data matrix to avoid later complication.
+##We now add two oclumns ot the data matrix to avoid later complication.
 ###We rewrite the data matrix by batch
 
 df_meta <- data.frame(feature=dm_idx[,1],energy=dm_idx[,2],index=1:nrow(dm_idx))
@@ -602,7 +602,7 @@ for(i in 1:(length(seq_cut)-1)){
     ### we add the reference informaiton to the data table
     cnames <- colnames(sub_dm)
     cnames <- c(cnames[1:(to_cut-1)],"slaw_id","mgf_ms2_id","num_clustered_ms2",cnames[quantities_idx])
-    sub_dm <- cbind(sub_dm[,1:(to_cut-1),drop=FALSE],1:nrow(sub_dm),seq_ms2_idx,seq_num_ms2,
+    sub_dm <- cbind(sub_dm[,1:(to_cut-1),drop=FALSE],firstLine:lastLine,seq_ms2_idx,seq_num_ms2,
     sub_dm[,..quantities_idx,drop=FALSE])
     colnames(sub_dm) <- cnames
     if(i==1){
