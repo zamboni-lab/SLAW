@@ -19,8 +19,6 @@ get_os <- function() {
   }
 }
 
-
-
 readMS2mzML <- function(path, outfile, noise_level=0) {
   suppressMessages(suppressWarnings(library(MSnbase, quietly = TRUE)))
   
@@ -81,10 +79,20 @@ readMS2mzML <- function(path, outfile, noise_level=0) {
   return(1)
 }
 
+### DEBUG
+DEBUG <- FALSE
 
 args <- commandArgs(trailingOnly = TRUE)
-# args <- c("U:/users/Alexis/data/slaw_evaluation/test_data/output/processing_db.sqlite",
-#           "U:/users/Alexis/sandbox/test_output","500","4","TRUE")
+
+# testing
+if (DEBUG) {
+  DEBUG_OUTPUT <- "D:/Data/mario_CID_neg_slaw2/"
+  DEBUG_INPUT <- "D:/Data/mario_CID_neg/"
+  args <- c("/output/processing_db.sqlite",
+            "/output/",0,12,TRUE)
+  args <- sapply(args,str_replace,"/output/",DEBUG_OUTPUT)
+}
+
 PATH_DB <- args[1]
 DIR_OUTPUT <- args[2]
 NOISE_LEVEL <- as.numeric(args[3])
@@ -97,10 +105,10 @@ bpp <- NULL
 if (get_os() == "win") {
   bpp <- SnowParam(workers = NUM_CORES, progressbar = FALSE)
 } else{
-  bpp <- MulticoreParam(workers = min(NUM_CORES, 4), progressbar = FALSE)
+  bpp <- MulticoreParam(workers = NUM_CORES, progressbar = FALSE)
 }
 
-
+if (DEBUG) {print(bpp)}
 
 ##SELECT ALL THE MS2FILE
 dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
@@ -164,7 +172,6 @@ if (length(need_computing) != 0) {
   dbDisconnect(dbb)
 }
 
-
 if(ALL){
   cat("Extracting all MS-MS spectra.")
   dbb <- dbConnect(RSQLite:::SQLite(), PATH_DB)
@@ -172,6 +179,10 @@ if(ALL){
   dbDisconnect(dbb)
   pout <- all_msms[,2]
   psamples <- all_msms[,1]
+  if (DEBUG) {
+    psamples <- sapply(psamples,str_replace,"/input/",DEBUG_INPUT)
+    pout <- sapply(pout,str_replace,"/output/",DEBUG_OUTPUT)
+  }
   need_computing <- which(!file.exists(pout))
   if (length(need_computing) != 0) {
     vv <- bpmapply(
@@ -186,4 +197,3 @@ if(ALL){
   message("MS-MS spectra extraction finished")
 }
 
-# readMS2mzML("U:/users/Alexis/data/slaw_evaluation/MTBLS865/mzML/neg_AEG15_Ac.mi._SPIL2_1-B,6_01_18851.mzML","U:/users/Alexis/data/slaw_evaluation/MTBLS865/neg_AEG15_Ac.mi._SPIL2_1-B,6_01_18851.mgf",noise_level=1000)
