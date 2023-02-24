@@ -340,6 +340,26 @@ get_os <- function() {
 }
 
 
+###Modified Mgf Writing function
+writeMgfDataFileToConnection <- function (splist, con, TITLE = NULL,
+addFields = NULL)
+{
+    if (length(addFields)) {
+        if (length(dim(addFields)) != 2)
+        stop("'addFields' has to be a matrix or data.frame.")
+        if (!is.matrix(addFields))
+        addFields <- do.call(cbind, lapply(addFields, as.character))
+        if (is.null(colnames(addFields)))
+        stop("Column names required on 'addFields'.")
+        if (nrow(addFields) != length(splist))
+        stop("nrow of 'addFields' has to match length of 'splist'")
+    }
+    for (i in seq(along = splist)) {
+        MSnbase:::writeMgfContent(splist[[i]], TITLE = TITLE, con = con,
+        addFields = addFields[i, ])
+    }
+}
+
 args <- commandArgs(trailingOnly = TRUE)
 
 if (DEBUG==T) {
@@ -368,7 +388,7 @@ bpp <- NULL
 if (get_os() == "win") {
     bpp <- SnowParam(workers = NUM_CORES,progressbar=FALSE)
 } else{
-    bpp <- MulticoreParam(workers = min(NUM_CORES, 4),progressbar=FALSE)
+    bpp <- MulticoreParam(workers = NUM_CORES,progressbar=FALSE)
 }
 
 
@@ -411,9 +431,6 @@ vmat[,1] <- vmat[,1]/RT_TOL
 vmat[,2] <- vmat[,2]/MZ_TOL
 rtt <- RTree(vmat)
 
-###############################################################
-###This is a more efficient not totally online implmentation###
-###############################################################
 
 extract_informations <- function(x){
   suppressWarnings(suppressMessages(library(MSnbase,warn.conflicts = FALSE)))
@@ -473,8 +490,7 @@ tab_summary[,"retention.time"] <- tab_summary[,"retention.time"]/(60*RT_TOL)
 
 ####We find the nearest neighbour for eveyr spectrum.
 vclose <- rtree::knn.RTree(rtt,as.matrix(tab_summary[,c("retention.time","precursor.mz")]),as.integer(1))
-vbox <- rtree::withinBox.RTree(rtt,as.matrix(tab_summary[,c("retention.time","precursor.mz")]),dx=1,
-                               dy=1)
+vbox <- rtree::withinBox.RTree(rtt,as.matrix(tab_summary[,c("retention.time","precursor.mz")]),dx=1,dy=1)
 
 ##We calculate the intersection which give the real matched feature every time.
 def_val <- mapply(vclose,vbox,FUN=function(x,y){
@@ -499,19 +515,6 @@ listspecs <- lapply(
 
 #This is the aggregation
 fcc <- bpmapply(listidx,listspecs,FUN = mergeSpectraEfficient,BPPARAM=bpp,SIMPLIFY = FALSE)
-
-fcc <- bpmapply(listidx,listspecs,FUN = mergeSpectraEfficient,BPPARAM=bpp,SIMPLIFY = FALSE)
-
-
-#fcc <- bplapply(listidx,FUN = mergeSpectra,specs=vmgf,tab_summary=tab_summary,make_spec_path=make_spec_name,
-#               hdf5_file=HDF5_FILE,BPPARAM=bpp)
-
-###This is the refactored version
-#mergeSpectraRefactored <- function(x,tab_summary,make_spec_path,hdf5_file,cos_thresh=0.7,round=10){
-#fcc <- bplapply(listidx,FUN = mergeSpectraRefactored,tab_summary=tab_summary,
-#                FILE_GROUP=FILE_GROUP,SPEC_GROUP=SPEC_GROUP,hdf5_file=HDF5_FILE,BPPARAM=bpp)
-
-#list(idx=x[fc[[3]][ppmax]],num_total=length(x),num_fused=size_comp[ppmax]))
 
 ###We extract all the necessary spectra
 dm_idx <- str_split(names(listidx),fixed("_"),simplify = TRUE)
@@ -543,7 +546,7 @@ ocnames <- as.character(fread(PATH_DATAMATRIX,sep = "\t",nrows=1,header=FALSE)[1
 quant_prefix <- 'quant_'
 to_cut <- which(startsWith(ocnames,quant_prefix))[1]
 
-##We now add two oclumns ot the data matrix to avoid later complication.
+##We now add two oclumns ot the data matrix add two columns to the data matrix to avoid later complication.
 ###We rewrite the data matrix by batch
 
 df_meta <- data.frame(feature=dm_idx[,1],energy=dm_idx[,2],index=1:nrow(dm_idx))
@@ -602,7 +605,7 @@ for(i in 1:(length(seq_cut)-1)){
     ### we add the reference informaiton to the data table
     cnames <- colnames(sub_dm)
     cnames <- c(cnames[1:(to_cut-1)],"slaw_id","mgf_ms2_id","num_clustered_ms2",cnames[quantities_idx])
-    sub_dm <- cbind(sub_dm[,1:(to_cut-1),drop=FALSE],firstLine:lastLine,seq_ms2_idx,seq_num_ms2,
+    sub_dm <- cbind(sub_dm[,1:(to_cut-1),drop=FALSE],(firstLine-1):(lastLine-1),seq_ms2_idx,seq_num_ms2,
     sub_dm[,..quantities_idx,drop=FALSE])
     colnames(sub_dm) <- cnames
     if(i==1){
