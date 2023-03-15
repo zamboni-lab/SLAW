@@ -41,7 +41,9 @@ MS2_DIST <- "([0-9]+)_\\(e([0123456789\\.]+)\\)"
 mgf_id <- pdm[[MGF_ID_COL]]
 fms2 <- which(mgf_id!="")
 info_ms2 <- str_match_all(pdm[[MS2_COL]],MS2_DIST)
-first_idx <- length(info_ms2)- sum(sapply(info_ms2,isEmpty))
+# check if the MS2 is empty
+isEmpty <- function(x) {return(length(x)==0)}
+first_idx <- length(info_ms2)- sum(sapply(info_ms2, isEmpty))
 #info_ms2 <- str_match_all(mgf_id[fms2],MS2_DIST)
 #info_iso_mass <- str_match_all(pdm[[ISO_NAME_COL]][fms2],MASS_DIFF_REGEXP)
 #info_iso_int <- str_match_all(pdm[[ISO_DIST_COL]][fms2],ISO_DIST_REGEXP)
@@ -78,10 +80,10 @@ for (i in 1:nrow(pdm)) {
               paste0('TITLE=','MS1_slawID=',pdm[i,'slaw_id'],'_mz=',sprintf("%.4f",pdm[i,'mz']), '_RT=',sprintf("%.2f",pdm[i,'rt'])),
               paste0('RTINSECONDS=',pdm[i,'rt']*60),
               paste0('PEPMASS=',pdm[i,'mz']),
-              paste0('PRECURSOR_INTENSITY=',as.integer(pdm[i,'intensity_mean'])),
+              #paste0('PRECURSOR_INTENSITY=',as.integer(pdm[i,'intensity_mean'])),
               'MSLEVEL=1',
               paste0('ENERGY=0'),
-              paste0('CHARGE=NA'),
+              #paste0('CHARGE='),
               paste0('SLAW_ID=',pdm[i,'slaw_id']),
               paste0('PEAKSCOUNT=',nrow(spec)))
     writeLines(rows,tcon)

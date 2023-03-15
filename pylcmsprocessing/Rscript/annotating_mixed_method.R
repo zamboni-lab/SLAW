@@ -1059,7 +1059,6 @@ buildDataMatrixSimplified <-
     invisible(close(f))
   }
 
-
 groupFeatures <-
   function(dm,
            val_int,
