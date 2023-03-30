@@ -18,20 +18,20 @@ DEBUG <- FALSE
 # testing
 if (DEBUG) {
   ## FOR DEBUGGING, SWITCH ALLS SINKS TO LOCAL FOLDERS, AND USE SerialParam instad of bpp
-
-  DEBUG_OUTPUT <- "D:/Data/ZenoTOF2/LipidMix_EAD15_slaw/"
-  DEBUG_INPUT <- "D:/Data/ZenoTOF2/LipidMix_EAD15/"
-  args <- c("/output/temp/data_filled_fd98f806e1890eff405ad8025b825a42.csv",
-            "/output/processing_db.sqlite",
-            "/output/data_full_fd98f806e1890eff405ad8025b825a42.csv",
-            "/output/data_reduced_fd98f806e1890eff405ad8025b825a42.csv",
-            1,
-            "D:/SW/SLAW_temp/pylcmsprocessing/data/xcms_raw_model.RData",
+  DEBUG_OUTPUT <- "D:/SW/SLAW_test_data_out/"
+  DEBUG_INPUT <- "D:/SW/SLAW_test_data_in/mzML/"
+  args <- c("/output/datamatrices/datamatrix_741d552fefa0759df99c04af0d7f6562.csv",
+            "/output/temp_processing_db.sqlite",
+            "/output/datamatrices/annotated_peaktable_741d552fefa0759df99c04af0d7f6562_full.csv",
+            "/output/datamatrices/annotated_peaktable_741d552fefa0759df99c04af0d7f6562_reduced.csv",
+            16,
+            "D:/SW/SLAW-pycharm/pylcmsprocessing/data/xcms_raw_model.RData",
             "/output/temp/adducts.csv",
             "/output/temp/main_adducts.csv",
             "positive",
-            15.0, 0.01, 10.0, 10, 4,
-            "D:/SW/SLAW_temp/pylcmsprocessing/Rscript/cliques_matching.cpp")
+            15.0,0.01,10,2.0,
+            "D:/SW/SLAW-pycharm/pylcmsprocessing/Rscript/cliques_matching.cpp"
+)
   args <- sapply(args,str_replace,"/output/",DEBUG_OUTPUT)
 } else {
   args <- commandArgs(trailingOnly = TRUE)
@@ -49,14 +49,13 @@ PATH_MAIN_ADDUCTS <- args[8]
 POLARITY <- args[9]
 PPM <-  as.numeric(args[10])
 DMZ <-  as.numeric(args[11])
-RTGAP_MAX <- as.numeric(args[12])
 ###We peak the FILE_USED most intense files.
-FILES_USED <- max(min(as.numeric(args[13]), 25,NUM_CORES*2),4)
-FILTER_MIN_DETECTIONS <- max(1, as.numeric(args[14]))
-PATH_MATCHING <- args[15]
+FILES_USED <- min(as.numeric(args[12]), 25,NUM_CORES*2)
+FILTER_NUMS <- max(1, as.numeric(args[13]))
+PATH_MATCHING <- args[14]
 NUM_BY_BATCH <- 5000
-if (length(args) == 16) {
-  NUM_BY_BATCH <- as.numeric(args[16])
+if (length(args) == 15) {
+  NUM_BY_BATCH <- as.numeric(args[15])
 }
 
 
@@ -73,15 +72,17 @@ get_os <- function() {
     stop("Unknown OS")
   }
 }
+  getIntensityPos <- function(dm) {
+    p0 <- which(startsWith(colnames(dm),"int"))
+    if(length(p0)==0){
+      p0 <- which(startsWith(colnames(dm),"hei"))
+    }
+    return(p0)
+  }
 
-getIntensityPos <- function(dm) {
-  p0 <- which(startsWith(colnames(dm),"quant"))
-  return(p0)
-}
 
-
-##Convert a data matrix in an output similar to XCMS output
-## For clique MS
+###Convert a data matrix in an output similar to XCMS output
+### For clique MS
 convertToCliqueMS <- function(dm,
                               path_raw,
                               mzraw,
@@ -104,7 +105,10 @@ convertToCliqueMS <- function(dm,
     sel_idx <- sort(sample(sel_idx, maxPeaks))
 
   getIntensityPos <- function(dm) {
-    p0 <- which(startsWith(colnames(dm),"quant"))
+    p0 <- which(startsWith(colnames(dm),"int"))
+    if(length(p0)==0){
+      p0 <- which(startsWith(colnames(dm),"hei")) 
+    }
     return(p0)
   }
   # pint <- getIntensityPos(dm)
@@ -118,7 +122,7 @@ convertToCliqueMS <- function(dm,
   }
 
 
-  ###We modify all the fields of the available object
+  ###We mdoify all the fileds of the available object
   cnames <- c(
     "mz",
     "mzmin",
@@ -139,11 +143,15 @@ convertToCliqueMS <- function(dm,
   tdf <-
     data.frame(
       mz = dm[sel_idx, mz],
-      mzmin = dm[sel_idx, mz] - (dm[sel_idx, mz_max] - dm[sel_idx, mz_min]) * 1.5 ,
-      mzmax = dm[sel_idx, mz] + (dm[sel_idx, mz_max] - dm[sel_idx, mz_min]) * 1.5,
+      mzmin = dm[sel_idx, mz] - (dm[sel_idx, mz_max] - dm[sel_idx, mz_min]) *
+        1.5 ,
+      mzmax = dm[sel_idx, mz] + (dm[sel_idx, mz_max] - dm[sel_idx, mz_min]) *
+        1.5,
       rt = 60 * (dm[sel_idx, rt]),
-      rtmin = 60 * (dm[sel_idx, rt] - dm[sel_idx, peakwidth_mean] - 0.002),
-      rtmax = 60 * (dm[sel_idx, rt] + dm[sel_idx, peakwidth_mean] + 0.002),
+      rtmin = 60 * (dm[sel_idx, rt] - dm[sel_idx, peakwidth_mean] -
+                      0.002),
+      rtmax = 60 * (dm[sel_idx, rt] + dm[sel_idx, peakwidth_mean] +
+                      0.002),
       into = intensity,
       intb = intensity,
       maxo = intensity,
@@ -156,14 +164,18 @@ convertToCliqueMS <- function(dm,
   ###We look for the closest retention time in these data
   rttime <- rtime(mzraw)
   blim <- c(-1000, rttime[2:length(rttime)] - diff(rttime) / 2, 100000)
-  rtmatch_min <- .bincode(tdf[, "rtmin"], breaks = blim, include.lowest = TRUE)
-  rtmatch_min <- ifelse(rtmatch_min > 1, rtmatch_min - 1, rep(1, length(rtmatch_min)))
-  rtmatch_max <- .bincode(tdf[, "rtmax"], breaks = blim, include.lowest = TRUE)
+  rtmatch_min <-
+    .bincode(tdf[, "rtmin"], breaks = blim, include.lowest = TRUE)
+  rtmatch_min <-
+    ifelse(rtmatch_min > 1, rtmatch_min - 1, rep(1, length(rtmatch_min)))
+  rtmatch_max <-
+    .bincode(tdf[, "rtmax"], breaks = blim, include.lowest = TRUE)
   rtmatch_max <-
     ifelse(rtmatch_max < length(rttime),
            rtmatch_max + 1,
            rep(length(rttime), length(rtmatch_max)))
-  rtmatch_med <- .bincode(tdf[, "rt"], breaks = blim, include.lowest = TRUE)
+  rtmatch_med <-
+    .bincode(tdf[, "rt"], breaks = blim, include.lowest = TRUE)
 
   # sel <- apply(rtmatch_min,rtmatch_max)
 
@@ -183,6 +195,8 @@ convertToCliqueMS <- function(dm,
   return(list(mzdata, sel, sel_idx))
 }
 
+
+
 ###Compute a cosine similarity network
 computeNetworkRawfile <-
   function(dm,
@@ -194,8 +208,7 @@ computeNetworkRawfile <-
            maxPeaks = 5000) {
     suppressMessages(library(cliqueMS, warn.conflicts = FALSE))
     suppressMessages(library(igraph, warn.conflicts = FALSE))
-
-    ###convert a datamatrix to a peaktable
+    ####convert a datamatrix to a peaktable
     convertToCliqueMS <- function(dm,
                                   idx,
                                   path_raw,
@@ -214,7 +227,10 @@ computeNetworkRawfile <-
       # if needed add the maxPeks argument ot the function
 
       getIntensityPos <- function(dm) {
-        p0 <- which(startsWith(colnames(dm),"quant"))
+        p0 <- which(startsWith(colnames(dm),"int"))
+        if(length(p0)==0){
+          p0 <- which(startsWith(colnames(dm),"hei"))
+        }
         return(p0)
       }
       # pint <- getIntensityPos(dm)
@@ -266,7 +282,6 @@ computeNetworkRawfile <-
             rep(1, length(sel_idx)),
           is_filled = rep(0, length(sel_idx))
         )
-
       ###We look for the closest retention time in these data
       rttime <- rtime(mzraw)
       blim <-
@@ -285,6 +300,7 @@ computeNetworkRawfile <-
         .bincode(tdf[, "rt"], breaks = blim, include.lowest = TRUE)
 
       # sel <- apply(rtmatch_min,rtmatch_max)
+
       tdf[, "rtmin"] <- rttime[rtmatch_min]
       tdf[, "rtmax"] <- rttime[rtmatch_max]
       tdf[, "rt"] <- rttime[rtmatch_med]
@@ -300,8 +316,8 @@ computeNetworkRawfile <-
       mzdata@processingData@files <- path_raw
       return(list(mzdata, sel, sel_idx))
     }
-    
-    ldata <- convertToCliqueMS(dm,
+    ldata <-
+      convertToCliqueMS(dm,
                         idx = idx,
                         path_raw = raw_data,
                         mzraw = mzraw,
@@ -323,14 +339,14 @@ computeNetworkRawfile <-
                 filter = TRUE,
                 mzerror = 5e-06,
                 intdiff = 1e-04,
-                rtdiff_min = 1e-04,
+                rtdiff = 1e-04,
                 cosFilter = 0.3)
       {
         # sink("D:/outout.txt")
         # sink("/dev/null")
-        suppressWarnings(sink(NULL))
-        eicmat <- suppressWarnings(cliqueMS:::defineEIC(mzdata))
-        suppressWarnings(sink(file = NULL))
+        sink(NULL)
+        eicmat <- cliqueMS:::defineEIC(mzdata)
+        sink(file = NULL)
         sparseeic <- as(t(eicmat), "sparseMatrix")
         cosTotal <- qlcMatrix::cosSparse(sparseeic)
         if (filter == TRUE) {
@@ -339,7 +355,7 @@ computeNetworkRawfile <-
               cosTotal,
               peaklist,
               mzerror = mzerror,
-              rtdiff = rtdiff_min,
+              rtdiff = rtdiff,
               intdiff = intdiff
             )
           cosTotal <- filterOut$cosTotal
@@ -352,10 +368,13 @@ computeNetworkRawfile <-
                                            diag = FALSE,
                                            mode = "undirected")
         igraph::V(network)$id = seq_len(nrow(peaklist))
-        nozeroEdges = igraph::E(network)[which(igraph::E(network)$weight > cosFilter)]
+        nozeroEdges = igraph::E(network)[which(igraph::E(network)$weight >
+                                                 cosFilter)]
         network <- igraph::subgraph.edges(network, nozeroEdges)
-        igraph::E(network)$weight <- round(igraph::E(network)$weight, digits = 10)
-        igraph::E(network)$weight[which(igraph::E(network)$weight == 1)] <- 0.99999999999
+        igraph::E(network)$weight <- round(igraph::E(network)$weight,
+                                           digits = 10)
+        igraph::E(network)$weight[which(igraph::E(network)$weight ==
+                                          1)] <- 0.99999999999
         return(list(network = network, peaklist = peaklist))
       }
     netlist <-
@@ -374,16 +393,13 @@ computeNetworkRawfile <-
     }
     alle <- as_data_frame(netlist, "edges")
     vid <- vertex_attr(netlist, name = "id")
-    vdata = anclique@peaklist[sel,]
-    # add a column to calculate the rt gap
-    alle$rtdiff = apply(abs(rbind(vdata[alle$from,'rtmax']-vdata[alle$to,'rtmin'],vdata[alle$from,'rtmin']-vdata[alle$to,'rtmax'])),2,min)
-    # convert 
-    alle <- as.matrix(alle)
     alle[, 1] <- sel_idx[sel[vid[alle[, 1]]]]
     alle[, 2] <- sel_idx[sel[vid[alle[, 2]]]]
-    
+    alle <- as.matrix(alle)
     return(alle)
   }
+
+
 
 createNetworkMultifiles <-
   function(dm,
@@ -393,13 +409,13 @@ createNetworkMultifiles <-
            size_batch = 5,
            ref_xcms = "X:/Documents/dev/script/diverse/xcms_raw_with_peaks.RData",
            cosFilter = 0.4,
-           rtgap_max = 5,
            bpp = NULL) {
-    size_batch <- min(size_batch, length(raw_files))
-    
-    if (is.null(bpp)) bpp = bpparam()
-    
-    ###The sparse matrix which will be used to create the network.
+    size_batch <- min(size_batch, length(raw_files) - 1)
+    if(get_os()=="win"){
+      bpp <- SnowParam() # SerialParam()?
+    }
+
+    ###The sparse matrix which will be used ot create the network.
     countMat <- Matrix(0,
                        nrow = nrow(dm),
                        ncol = nrow(dm),
@@ -420,9 +436,10 @@ createNetworkMultifiles <-
 
 
     for (i in 1:(length(seq_cut) - 1)) {
-      #We compute the network for the selected files.
+      ###We compute the network for the selected files.
+
       ledges <-
-          bpmapply(
+          bpmapply( # bptry({ bpmapply
             seq_cut[i]:(seq_cut[i + 1] - 1),
             as.list(raw_files[seq_cut[i]:(seq_cut[i + 1] - 1)]),
             as.list(opened_raw_files[seq_cut[i]:(seq_cut[i + 1] - 1)]),
@@ -433,22 +450,15 @@ createNetworkMultifiles <-
               cosFilter = cosFilter
             ),BPPARAM = bpp)
       
-      # ledges <-
-      #   mapply(
-      #     seq_cut[i]:(seq_cut[i + 1] - 1),
-      #     as.list(raw_files[seq_cut[i]:(seq_cut[i + 1] - 1)]),
-      #     as.list(opened_raw_files[seq_cut[i]:(seq_cut[i + 1] - 1)]),
-      #     FUN = computeNetworkRawfile,
-      #     MoreArgs = list(
-      #       ref_xcms = ref_xcms,
-      #       dm = dm,
-      #       cosFilter = cosFilter
-      #     ))
-      
+      #bpp
+          #bptry( )
+     #   )}, error=identity)
+      # message("ledges",format(object.size(ledges),"Mb"))
+
+
       found_errors <- which(sapply(ledges, function(x) {
         "remote_perror" %in% class(x)
       }))
-      
       ##Cahcing errors
       if (length(found_errors)>=1){
         for(err_pos in found_errors){
@@ -468,8 +478,6 @@ createNetworkMultifiles <-
         if (nrow(alle) == 0)
           next
         alle <- as.matrix(alle)
-        ## remove all edges with excessive rt gap
-        alle <- alle[alle[,4]<=rtgap_max,]
         ##We update the cost matrix
         cosMat[alle[, c(1, 2)]] <-
           (cosMat[alle[, 1:2]] * countMat[alle[, 1:2]] + alle[, 3]) /
@@ -634,9 +642,9 @@ annotateCliqueInterpretMSspectrum <-
     library(InterpretMSSpectrum)
     def_ion <- NULL
     if (ionization_mode == "positive") {
-      def_ion <- "[M+H]1+"
-    } else {
-      def_ion <- "[M-H]1-"
+      def_ion <- "[M+H]+"
+    } else{
+      def_ion <- "[M-H]-"
     }
     if (length(clique) == 1) {
       return(list(
@@ -733,22 +741,23 @@ annotateCliqueInterpretMSspectrum <-
       }
 
       annot <- annots[[ii]][sel_idx,,drop=FALSE]
-      ## We remove the unfiltered valued
+      ###We remove trhe unfiltered valued
 
-      # mz     int   isogr iso  charge  adduct      ppm      label
-      # 132.00  10   NA    NA    NA     [M+H-H2O]1+ 80.03561 [M+H-H2O]1+
-      # 150.00 100   1     0     1      [M+H]1+     NA       [M+H]1+
-      # 151.01  30   1     1     1      <NA>        NA       <NA>
-      # 415.00  95   NA    NA    NA     <NA>        NA       <NA>
+      # mz int isogr iso charge     adduct      ppm      label
+      # 132.00  10    NA  NA     NA [M+H-H2O]+ 80.03561 [M+H-H2O]+
+      # 150.00 100     1   0      1     [M+H]+       NA     [M+H]+
+      # 151.01  30     1   1      1       <NA>       NA       <NA>
+      # 415.00  95    NA  NA     NA       <NA>       NA       <NA>
 
-      ## In case of error we consider all the values as the default
+      ####In case of error we consider all the values as the default
+
+
 
       sel_adducts <- which(!is.na(annot[, "adduct"]))
       if (length(sel_adducts) <= 0)
         next
 
-      ## In this case we can leave the loop safely as there won t be 
-      ## 2 adducts annotation. In the future.
+      ###in this case we can leave the loop safely as there won t be 2 adduts annotation. In the future.
       if (length(sel_adducts) == 1) {
         annot$label <- def_ion
         annot$adduct <- def_ion
@@ -856,9 +865,9 @@ convertFeatures <- function(resAnnot, polarity = "negative") {
   unique_groups <- unique(resAnnot$group_label)
   resList <- vector(mode = "list", length = length(unique_groups))
   current_dec <- 0
-  def_label <- "[M+H]1+"
+  def_label <- "[M+H]+"
   if (polarity == "negative") {
-    def_label <- "[M-H]1-"
+    def_label <- "[M-H]-"
   }
   # message("Features conversion: ")
   for (ig in seq_along(resList)) {
@@ -1073,7 +1082,6 @@ groupFeatures <-
            size_batch = 10,
            cut_size = 10000,
            cosFilter = 0.5,
-           rtgap_max = 5,
            ref_xcms = "X:/Documents/dev/script/diverse/xcms_raw_with_peaks.RData",
            path_matching = "cliques_matching.cpp",
            bbp = NULL) {
@@ -1114,7 +1122,7 @@ groupFeatures <-
       message("Processing batch ",i)
       message("Variables: ",cut_rts[i],"-",cut_rts[i+2]," current cliques size is ",length(cliques))
       sel_idx <- ort[cut_rts[i]:cut_rts[i + 2]]
-      anclique <- createNetworkMultifiles( 
+      anclique <- createNetworkMultifiles(
         dm[sel_idx, , drop = FALSE],
         raw_files,
         opened_raw_files,
@@ -1122,15 +1130,14 @@ groupFeatures <-
         size_batch = size_batch,
         ref_xcms = ref_xcms,
         cosFilter = cosFilter,
-        rtgap_max = rtgap_max,
         bpp = bpp
       )
       ###we compute the cliques
       # sink(file="/dev/null")
       # sink("D:/out.txt")
-      suppressWarnings(sink(NULL))
+      sink(NULL)
       anclique <- computeCliques(anclique, 1e-5, TRUE)
-      suppressWarnings(sink(NULL))
+      sink(NULL)
       ###We correct the index for subselection.
       for (ic in seq_along(anclique@cliques)) {
         anclique@cliques[[ic]] <- sel_idx[anclique@cliques[[ic]]]
@@ -1221,11 +1228,11 @@ num_detect <- unlist(ldetect)
 val_int_var <- unlist(lints)
 
 ##We read the data matrix by batch
-vdetect <- num_detect >= FILTER_MIN_DETECTIONS
+vdetect <- num_detect >= FILTER_NUMS
 ###We only keep the fitting ammount of features.
 while (sum(vdetect) > 200000) {
-  FILTER_MIN_DETECTIONS <- FILTER_MIN_DETECTIONS + 1
-  vdetect <- num_detect >= FILTER_MIN_DETECTIONS
+  FILTER_NUMS <- FILTER_NUMS + 1
+  vdetect <- num_detect >= FILTER_NUMS
 }
 
 rm(sdata)
@@ -1241,11 +1248,11 @@ sel_files <-
   order(val_int, decreasing = TRUE)[1:min(FILES_USED, length(val_int))]
 raw_files <- raw_files[sel_files]
 
-###Creating the parallel porcessing objects.
+###Setting up the parallel processing
 bpp <- NULL
-if(get_os()=="win"){
+if (get_os() == "win") {
   bpp <- SnowParam(workers = NUM_CORES,progressbar=TRUE,stop.on.error=FALSE)
-}else{
+} else{
   bpp <- MulticoreParam(workers = min(NUM_CORES, 10),progressbar=TRUE,stop.on.error=FALSE)
 }
 
@@ -1289,10 +1296,9 @@ annot <-
     ionization_mode = POLARITY,
     ppm = PPM,
     dmz = DMZ,
-    size_batch = 10,
+    size_batch = NUM_CORES,
     cut_size = NUM_BY_BATCH,
     cosFilter = 0.6,
-    rtgap_max = RTGAP_MAX,
     ref_xcms = PATH_MODEL,
     path_matching = PATH_MATCHING,
     bbp = bpp
