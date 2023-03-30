@@ -44,9 +44,9 @@ info_ms2 <- str_match_all(pdm[[MS2_COL]],MS2_DIST)
 # check if the MS2 is empty
 isEmpty <- function(x) {return(length(x)==0)}
 first_idx <- length(info_ms2)- sum(sapply(info_ms2, isEmpty))
-#info_ms2 <- str_match_all(mgf_id[fms2],MS2_DIST)
-#info_iso_mass <- str_match_all(pdm[[ISO_NAME_COL]][fms2],MASS_DIFF_REGEXP)
-#info_iso_int <- str_match_all(pdm[[ISO_DIST_COL]][fms2],ISO_DIST_REGEXP)
+info_ms2 <- str_match_all(mgf_id[fms2],MS2_DIST)
+info_iso_mass <- str_match_all(pdm[[ISO_NAME_COL]][fms2],MASS_DIFF_REGEXP)
+info_iso_int <- str_match_all(pdm[[ISO_DIST_COL]][fms2],ISO_DIST_REGEXP)
 
 #to_edit <- which((sapply(info_iso_int,nrow)!=0)&(sapply(info_ms2,nrow)!=0))
 #to_edit_raw_pos <- fms2[to_edit]
