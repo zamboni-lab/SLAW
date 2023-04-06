@@ -17,9 +17,9 @@ class Timer:
 
     def print_point(self,name):
         pindex = self.names.index(name)
-        tval = self.measures[pindex]-self.measures[0]
-        last_interval = self.measures[pindex]-self.measures[pindex-1]
-        logging.info("STEP: "+name+" TOTAL_TIME:"+"%0.2f" % tval+"s"+" LAST_STEP:"+"%0.2f" % last_interval+"s")
+        tval = (self.measures[pindex]-self.measures[0])/60
+        last_interval = (self.measures[pindex]-self.measures[pindex-1])/60
+        logging.info("STEP: " + name +"   DURATION: " + "%0.1f" % last_interval +" min   TOTAL:"+"%0.1f" % tval +" min")
 
 
 if __name__=="__main__":
