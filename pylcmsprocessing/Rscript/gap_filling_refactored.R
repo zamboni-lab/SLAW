@@ -47,7 +47,7 @@ MAX_CHARGE <- as.integer(args[9])
 PPM <- as.numeric(args[10])
 DMZ <- as.numeric(args[11])
 NUM_FILES <- as.integer(args[12])
-FRAC_CUTOFF <- as.numeric(args[12])
+FRAC_CUTOFF <- as.numeric(args[13])
 NUM_WORKERS <- as.integer(args[14])
 
 if(file.exists(gsub('data_prefill_','data_filled_',PATH_DM))){
