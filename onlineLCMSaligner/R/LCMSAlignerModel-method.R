@@ -29,7 +29,7 @@ getPeaktableRtree <- function(peaktable, name_int = "int") {
 findCandidates <- function(lar, rtree, peak) {
   boxlims <- getBoxLimit(lar, peak)
   inbox <-
-    withinBox.RTree(rtree, matrix(peak[c(1, 2)],ncol=2), boxlims[1], boxlims[2])
+    withinBox(rtree, matrix(peak[c(1, 2)],ncol=2), boxlims[1], boxlims[2])
   return(inbox)
 }
 
