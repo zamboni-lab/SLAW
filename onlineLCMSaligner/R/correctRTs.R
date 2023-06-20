@@ -23,7 +23,7 @@ findReferencesPoints <- function(lar,rtree_data,peaktable_data,rt_scaling = 1){
     npoints <- as.matrix(npoints)
     inboxes <- vector(mode="list",length=nrow(npoints))
     for(i in seq_along(inboxes)){
-      inboxes[[i]] <- withinBox.RTree(rtree_data,npoints[i,c(1,2),drop=FALSE],dx=dev_mz[i],dy=3*dev_rt)[[1]]+1
+      inboxes[[i]] <- withinBox(rtree_data,npoints[i,c(1,2),drop=FALSE],dx=dev_mz[i],dy=3*dev_rt)[[1]]+1
     }
     penalties <- mapply(split(npoints,f = 1:nrow(npoints)),dev_mz,FUN=function(x,dx,dy,fdist){
       sxp <- c(x[1]+dx,x[2]+5*dy,x[3]*3)
