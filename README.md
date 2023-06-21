@@ -1,5 +1,9 @@
 # SLAW
 
+## Note to users
+
+This (public) repository  is updated and maintained according to users' requests and reported issues. SLAW is under continuous and active development in our lab. As this work includes a lot of customization to our workflows and environment, we don't publish novel features unless there is a specific request. Hence, please use the Issues tab to submit your ideas or problems.   
+
 ## Changelog
 
 Can be found in the [NEWS](NEWS.md).
