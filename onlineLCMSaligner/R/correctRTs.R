@@ -151,16 +151,16 @@ estimatesRTDeviationModel <- function(lar,peaktable,peaks,rt_scaling = c(0.9,0.9
   }
   # message("Loess done")
   ###We dont ocrrect anything os linear model.
-  if(is.null(rloess)||is.na(rloess)){
+  if(all(is.null(rloess)) || all(is.na(rloess))){
+    warning("Invalid LOESS. Skipped.")
     return(identity_fun())
   }
 
-
   if((length(rloess)==1) && is.na(rloess)){
-    warning("LOESS modeldid  not fit well enough.")
+    warning("LOESS model did not fit well enough.")
   }
 
-  ####We need to be sure that the loess alway include on correction
+  ####We need to be sure that the loess always include on correction
   return(rloess)
 }
 
