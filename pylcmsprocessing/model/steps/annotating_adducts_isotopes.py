@@ -8,7 +8,7 @@ import model.helper.output_handler as oh
 class IonAnnotater:
     ####Row is a row of the processing database and peak
     def __init__(self,hash,path_db,path_datamatrix,out,polarity,model,ncores,nfiles,
-                 ppm,dmz,min_filter=2,adducts=None,main_adducts=None):
+                 ppm,dmz,drt,min_filter=2,adducts=None,main_adducts=None):
         self.hash = hash
         self.path_db = path_db
         self.path_datamatrix = path_datamatrix
@@ -24,6 +24,7 @@ class IonAnnotater:
         self.num_files= nfiles
         self.ppm=ppm
         self.dmz=dmz
+        self.drt=drt
         self.min_filter = min_filter
 
     ###Wrti both type of adduct to a temporry directory
@@ -54,6 +55,6 @@ class IonAnnotater:
                           '"'+self.output_dm_full+'"','"'+self.output_dm_reduced+'"',
                  str(self.num_cores),'"'+common.references.DATA["IONANNOTATION"]["XCMS_MODEL"]+'"'
                              ,'"'+ohv.getFile(cr.TEMP["IONANNOTATION"]["FULL"])+'"',
-                 '"'+ohv.getFile(cr.TEMP["IONANNOTATION"]["MAIN"])+'"','"'+self.polarity+'"',str(self.ppm),str(self.dmz),
+                 '"'+ohv.getFile(cr.TEMP["IONANNOTATION"]["MAIN"])+'"','"'+self.polarity+'"',str(self.ppm),str(self.dmz),str(self.drt),
                           str(self.num_files),str(self.min_filter),'"'+pmatching+'"'])
         return cline

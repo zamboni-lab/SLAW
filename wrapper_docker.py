@@ -264,6 +264,7 @@ if __name__=="__main__":
     # If the memory is too small we reduce that
     ion_ppm = float(ph["ion_annotation__ppm"]["value"])
     ion_dmz = float(ph["ion_annotation__dmz"]["value"])
+    ion_drt = 5
     ion_filter = float(ph["ion_annotation__min_filter"]["value"])
     max_iso = int(ph["ion_annotation__max_isotopes"]["value"])
     max_charge = int(ph["ion_annotation__max_charge"]["value"])
@@ -283,7 +284,7 @@ if __name__=="__main__":
     if ion_num > 10:
         ion_num = 10
 
-    successfully_processed = exp.annotate_ions(ion_num,ion_ppm,ion_dmz,min_filter=ion_filter,
+    successfully_processed = exp.annotate_ions(ion_num,ion_ppm,ion_dmz,ion_drt,min_filter=ion_filter,
                 adducts=adducts_str,main_adducts=main_adducts_str, max_workers=num_cpus)
     timer.store_point("annotation")
     timer.print_point("annotation")

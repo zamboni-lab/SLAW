@@ -793,7 +793,7 @@ class Experiment:
         logging.info("Alignment finished")
 
     #Parallelism is handled by R always a single trhead in this case
-    def annotate_ions(self, nfiles, ppm, dmz, adducts=None, main_adducts=None, max_workers=2, min_filter = 2):
+    def annotate_ions(self, nfiles, ppm, dmz, drt=10, adducts=None, main_adducts=None, max_workers=2, min_filter = 2):
         num_workers = self.get_workers()
         polarity = self.get_polarity()
         #We create all the grouper eventually
@@ -834,7 +834,7 @@ class Experiment:
                 continue
 
             ppg = mai.IonAnnotater(pp[3], self.db, pp[4], os.environ['OUTPUT'], polarity, cr.DATA["IONANNOTATION"]["XCMS_MODEL"], num_workers, nfiles,
-                                   ppm, dmz, min_filter, adducts, main_adducts)
+                                   ppm, dmz, drt, min_filter, adducts, main_adducts)
 
             #We update the output of the processing into the database.
             ppg.write_adducts(self.output)
