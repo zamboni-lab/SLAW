@@ -26,10 +26,10 @@ args <- commandArgs(trailingOnly = TRUE)
 # testing
 if (length(args)<10) {
   DEBUG <- TRUE
-  DEBUG_OUTPUT <- "D:/Data/petrova8irina_slaw/"
-  DEBUG_INPUT <- "D:/Data/petrova8irina_mzML/"
+  DEBUG_OUTPUT <- "D:/Data/test_pwiz3023_slaw/"
+  DEBUG_INPUT <- "D:/Data/test_pwiz3023/"
   args <- c("/output/processing_db.sqlite",
-            "/output/temp/data_prefill_15a7e729de05c6b45404789a4bbe2809.csv",
+            "/output/temp/data_prefill_9a08a61020295d2c79a91ecec29a4892.csv",
             "/output/temp","/output/temp/alignment.rds","/output/temp/gap_filling.hdf5",
             "D:\\SW\\SLAW\\pylcmsprocessing\\data\\isotopes.tsv","quant"
             ,8,3,15.0,0.01,5,0.5,16)
@@ -49,7 +49,7 @@ PPM <- as.numeric(args[10])
 DMZ <- as.numeric(args[11])
 NUM_FILES <- as.integer(args[12])
 FRAC_CUTOFF <- as.numeric(args[13])
-NUM_WORKERS <- as.integer(args[14])
+NUM_WORKERS <- as.integer(args[13])
 
 if(file.exists(gsub('data_prefill_','data_filled_',PATH_DM))){
   print("Matrix already exists. Skipping gap filling. Delete the file to repeat this step.") 
