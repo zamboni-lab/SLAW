@@ -24,7 +24,7 @@ sink(file=stdout())
 args <- commandArgs(trailingOnly = TRUE)
 
 # testing
-if (length(args)<14) {
+if (length(args)<10) {
   DEBUG <- TRUE
   DEBUG_OUTPUT <- "D:/Data/petrova8irina_slaw/"
   DEBUG_INPUT <- "D:/Data/petrova8irina_mzML/"
