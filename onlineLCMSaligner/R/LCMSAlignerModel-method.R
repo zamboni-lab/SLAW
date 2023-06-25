@@ -96,10 +96,6 @@ findBestCandidate <-
     return(neighbours[pmin])
   }
 
-
-
-
-
 updateFeatureInfos <- function(lam, peaks, pos) {
   vp <- by(cbind(peaks,pos),INDICES = pos,FUN = function(x){
     c(sum(x[,1]*x[,3])/sum(x[,3]),sum(x[,2]*x[,3])/sum(x[,3]),nrow(x),x[1,ncol(x)])
@@ -1405,8 +1401,11 @@ alignPeaktables <-
           ratio = ratio,
           lim = lim,
           graphical = graphical
-        ),error=function(e){return(NA)})
-        if(is.na(lcc)){
+        ),error=function(e){
+          print(e)
+          return(NA)})
+
+        if(any(is.na(lcc))){
           cpeaktable <- peaktable
         }else{
           cpeaktable <- lcc$peaktable

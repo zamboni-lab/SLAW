@@ -257,7 +257,7 @@ LCMSAlignerModelFromDirectory <-
         )
     }
     ###We check the file to be processed
-    vpro <- isProcessed(lam, all_files)
+    vpro <- isProcessed(lam@files, all_files)
     all_files <- all_files[!vpro]
     num_align <- 0
 
@@ -267,7 +267,7 @@ LCMSAlignerModelFromDirectory <-
       if(online){
         all_files <- list.files(directory, full.names = TRUE)
       }
-      vpro <- isProcessed(lam, all_files)
+      vpro <- isProcessed(lam@files, all_files)
       all_files <- all_files[!vpro]
       if (length(all_files) != 0) {
         message("Found ", length(all_files), " files to process.")
@@ -392,7 +392,7 @@ LCMSAlignerModelFromDirectoryByBatch <-
         )
     }
     ###We check the file to be processed
-    vpro <- isProcessed(lam, all_files)
+    vpro <- isProcessed(lam@files, all_files)
     # cat("Processing",sum(!vpro),"files.",all_files[!vpro])
     
     all_files <- all_files[!vpro]
@@ -412,7 +412,7 @@ LCMSAlignerModelFromDirectoryByBatch <-
         sseq <- c(sseq,length(all_files)+1)
       }
       
-      vpro <- isProcessed(lam, all_files)
+      vpro <- isProcessed(lam@files, all_files)
       all_files <- all_files[!vpro]
       if (length(all_files) != 0) {
         message("Found ", length(all_files), " files to process.")

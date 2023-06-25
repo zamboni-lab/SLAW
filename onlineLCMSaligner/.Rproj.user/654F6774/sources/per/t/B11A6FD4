@@ -1,0 +1,26 @@
+{
+    "id": "B11A6FD4",
+    "path": "D:/SW/SLAW-rebase/pylcmsprocessing/Rscript/construct_peaktable_online.R",
+    "project_path": null,
+    "type": "r_source",
+    "hash": "403097074",
+    "contents": "",
+    "dirty": false,
+    "created": 1669200881175.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "92,69",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1669306898,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1669306898624,
+    "read_only": false,
+    "read_only_alternatives": []
+}

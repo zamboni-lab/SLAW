@@ -187,7 +187,11 @@ extractWellBehavedPeaksManyFiles <- function(lar,peaktables,
   tcandidates <- as.matrix(btab[candidates,])
 
   ###We find the neughbors of the candidate points and keep only those present in each file
+<<<<<<< Updated upstream
   neighbors <- knn(rtree,y = as.matrix(tcandidates[,1:2]),k=k)
+=======
+  neighbors <- knn(rtree,y = as.matrix(tcandidates[,1:2]),k=k) #knn..RTree
+>>>>>>> Stashed changes
   numfiles <- sapply(neighbors,.bincode,breaks=bfiles,include.lowest=TRUE,simplify=FALSE)
   num_present <- sapply(numfiles,function(x){length(unique(x))})
   opp <- order(num_present,decreasing=TRUE)
@@ -238,7 +242,11 @@ extractWellBehavedPeaksManyFiles <- function(lar,peaktables,
     ct <- ct-correction
     rtr <- RTree(as.matrix(pt[,1:2]))
     tpt <- pt[ct,,drop=FALSE]
+<<<<<<< Updated upstream
     kneigh <- knn(rtr,as.matrix(tpt[,1:2,drop=FALSE]),k=as.integer(length(peaktables)))
+=======
+    kneigh <- knn(rtr,as.matrix(tpt[,1:2,drop=FALSE]),k=as.integer(length(peaktables))) #knn.RTree
+>>>>>>> Stashed changes
 
     ##We remove the peak himself
     kneigh <- mapply(kneigh,ct,FUN=function(x,y){

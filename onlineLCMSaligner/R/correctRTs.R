@@ -151,8 +151,12 @@ estimatesRTDeviationModel <- function(lar,peaktable,peaks,rt_scaling = c(0.9,0.9
   }
   # message("Loess done")
   ###We dont ocrrect anything os linear model.
+<<<<<<< Updated upstream
   if(all(is.null(rloess)) || all(is.na(rloess))){
     warning("Invalid LOESS. Skipped.")
+=======
+  if(any(is.null(rloess))||any(is.na(rloess))){
+>>>>>>> Stashed changes
     return(identity_fun())
   }
 

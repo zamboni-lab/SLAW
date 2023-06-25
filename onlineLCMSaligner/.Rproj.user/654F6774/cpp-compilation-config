@@ -1,0 +1,20 @@
+{
+    "args": [
+        "-nostdinc",
+        "-IC:/RBuildTools/4.0/mingw64/include/c++/8.3.0",
+        "-IC:/RBuildTools/4.0/mingw64/include/c++/8.3.0/x86_64-w64-mingw32",
+        "-IC:/RBuildTools/4.0/mingw64/include/c++/8.3.0/backward",
+        "-IC:/RBuildTools/4.0/mingw64/lib/gcc/x86_64-w64-mingw32/8.3.0/include",
+        "-IC:/RBuildTools/4.0/mingw64/include",
+        "-IC:/RBuildTools/4.0/mingw64/lib/gcc/x86_64-w64-mingw32/8.3.0/include-fixed",
+        "-IC:/RBuildTools/4.0/mingw64/x86_64-w64-mingw32/include",
+        "-ID:/libs/R/R-4.1.2/library/Rcpp/include",
+        "-std=gnu++11",
+        "-Id:/libs/R/R-4.1.2/include",
+        "-DNDEBUG"
+    ],
+    "pch": "Rcpp",
+    "is_cpp": true,
+    "hash": "1641379968",
+    "compiler": "15831801441610807778"
+}
