@@ -9,9 +9,10 @@ args <- commandArgs(trailingOnly = TRUE)
 DEBUG <- FALSE
 
 if (DEBUG) {
-  args <- c("D:\\SW\\SLAW_test_data_out\\processing_db.sqlite",
-            "D:\\SW\\SLAW_test_data_out\\data_741d552fefa0759df99c04af0d7f6562.mzTab",
-            "plus")
+  args <- c("D:/Data/wiff_test_slaw3/processing_db.sqlite",
+            "D:/Data/wiff_test_slaw3/data_36b876d210a25d47cb58c6eca918c966.mzTab",
+            "plus"
+            )
 }
 ##
 PATH_DB <- args[1]
@@ -333,9 +334,11 @@ fwrite(smf_table,OUTPUT_FILE_PATH,sep="\t",append = TRUE,col.names = TRUE)
 if (APPENDMGF==T) {
   MGF_DATA <- paste0(dirname(OUTPUT_FILE_PATH),"/spectra_",HASH,".mgf")
   if (!file.exists(MGF_DATA)) {return(NULL)}
+  # keep only the rows with mslevel==2
   suppressWarnings(mgf <- readMgf(MGF_DATA, msLevel = 2L))
   mgf_dat <- mgf@listData
   n <- mgf@nrows
+  if ("SCAN" %in% names(mgf_dat)) mgf_dat$acquisitionNum = mgf_dat$SCAN
   if ("acquisitionNum.1" %in% names(mgf_dat)) {mgf_dat$acquisitionNum <- mgf_dat$'acquisitionNum.1'}
   if (is.na(mgf_dat$acquisitionNum[1])) mgf_dat$acquisitionNum <- 1:n
   if ("PRECURSOR_INTENSITY" %in% names(mgf_dat)) {mgf_dat$precursorIntensity <- as.numeric(mgf_dat$'PRECURSOR_INTENSITY')}
@@ -356,16 +359,27 @@ if (APPENDMGF==T) {
                    spec_tic = replicate(n,NA),
                    spec_len = replicate(n,NA)
   )
-  mz_end <- c(0,mgf_dat$mz@partitioning@end)
-  int_end <- c(0,mgf_dat$int@partitioning@end)
-
-  for (i in 1:nrow(df)){
-    df[[i,'spec_mz']] <- mgf_dat$mz@unlistData[(mz_end[i]+1):mz_end[i+1]]
-    df[[i,'spec_int']] <- mgf_dat$intensity@unlistData[(int_end[i]+1):int_end[i+1]]
-    df[i,'spec_tic'] <- sum(df[[i,'spec_int']])
-    df[i,'spec_len'] <- mz_end[i+1]-mz_end[i]
-  }
   
+  if (DEBUG) { # this is the new version
+    mz_end <- c(0,mgf_dat$mz@partitioning@end)
+    int_end <- c(0,mgf_dat$intensity@partitioning@end)
+    for (i in 1:nrow(df)){
+      df[[i,'spec_mz']] <- mgf_dat$mz@unlistData[(mz_end[i]+1):mz_end[i+1]]
+      df[[i,'spec_int']] <- mgf_dat$intensity@unlistData[(int_end[i]+1):int_end[i+1]]
+      df[i,'spec_tic'] <- sum(df[[i,'spec_int']])
+      df[i,'spec_len'] <- mz_end[i+1]-mz_end[i]
+    }
+  }
+  else
+  { # this is the new version for 4.0.3 with package 1.7.2
+    for (i in 1:nrow(df)){
+      df[[i,'spec_mz']] <- mgf_dat$mz[[i]]
+      df[[i,'spec_int']] <- mgf_dat$intensity[[i]]
+      df[i,'spec_tic'] <- sum(df[[i,'spec_int']])
+      df[i,'spec_len'] <- length(mgf_dat$mz[[i]])
+    }
+  }
+
   df <- merge(df,smf_id_map,by=c('mgf_id'),all.y = F)
   df$prec_id <- df$smf_id
 
