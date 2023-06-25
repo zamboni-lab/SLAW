@@ -24,14 +24,15 @@ sink(file=stdout())
 args <- commandArgs(trailingOnly = TRUE)
 
 # testing
-if (DEBUG) {
-  DEBUG_OUTPUT <- "D:/Data/mario_CID_neg_slaw2/"
-  DEBUG_INPUT <- "D:/Data/mario_CID_neg/"
+if (length(args)<14) {
+  DEBUG <- TRUE
+  DEBUG_OUTPUT <- "D:/Data/petrova8irina_slaw/"
+  DEBUG_INPUT <- "D:/Data/petrova8irina_mzML/"
   args <- c("/output/processing_db.sqlite",
-            "/output/temp/data_prefill_c0313714e54128c184a474d3819eb2ce.csv",
+            "/output/temp/data_prefill_15a7e729de05c6b45404789a4bbe2809.csv",
             "/output/temp","/output/temp/alignment.rds","/output/temp/gap_filling.hdf5",
             "D:\\SW\\SLAW\\pylcmsprocessing\\data\\isotopes.tsv","quant"
-            ,4,3,15.0,0.01,5,0.5,39)
+            ,8,3,15.0,0.01,5,0.5,16)
   args <- sapply(args,str_replace,"/output/",DEBUG_OUTPUT)
 }
 
@@ -51,8 +52,9 @@ FRAC_CUTOFF <- as.numeric(args[13])
 NUM_WORKERS <- as.integer(args[14])
 
 if(file.exists(gsub('data_prefill_','data_filled_',PATH_DM))){
-  cat("Matrix already exists.Gap filling won't be performed: ",gsub('data_prefill_','data_filled_',PATH_DM),"\n") # ,file=stdout()
-  return()
+  print("Matrix already exists. Skipping gap filling. Delete the file to repeat this step.") 
+  # stop execution
+  quit(save = "no", status = 0, runLast = FALSE)  
 }
 #Path of the temporary filled matrix
 # TEMP_FILLED <- file.path(PATH_TEMP,"filled_dm.csv")
