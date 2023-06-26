@@ -250,7 +250,6 @@ class Experiment:
 
 
     def build_samples(self, path_samples, path_ms2=None, is_optim=False):
-
         ###We build the majority
         pscript = os.path.join(ct.find_rscript(), "createSQLiteexperiment.R")
         cline = os.environ['RscriptString'] + ' ' + pscript + ' -d "' + path_samples + '" -b "' + self.db + '"'
@@ -258,7 +257,7 @@ class Experiment:
             cline = cline + " -o '"+path_ms2+"'"
         if "SLAWSUMMARY" in os.environ and not is_optim:
             cline = cline + " -s "+ os.environ["SLAWSUMMARY"]
-        logging.debug(cline)
+        #logging.debug(cline)
         pr.run_cl_solo(cline,error=False,output=False)
         # subprocess.call(cline, shell=True)
         ##We check if the database has been created
