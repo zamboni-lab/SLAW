@@ -1,6 +1,8 @@
 # SLAW
 
 ### Recent changes:
+__26/06/2023__: Multiple updates to ensure compatibility in R4.3. 
+
 __30/10/2022__: Reorganization of file/folder name and organization. Removed filtering on MS1 extraction. Added absolute counts to MS1 data. Improved indexing of MGF file. Added extraction of isotopic patterns (MS1) to MGF.
 
 ## Introduction
