@@ -1,6 +1,0 @@
-setGeneric("params<-",function(lar,values) standardGeneric("params<-"))
-setGeneric("params",function(lar) standardGeneric("params"))
-setGeneric("addFile",function(object,path) standardGeneric("addFile"))
-setGeneric("isProcessed",function(object,paths) standardGeneric("isProcessed"))
-setGeneric("buildDataMatrix",function(object,...) standardGeneric("buildDataMatrix"))
-setGeneric("summarizeMetrics",function(object,...) standardGeneric("summarizeMetrics"))

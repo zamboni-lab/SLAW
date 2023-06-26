@@ -16,7 +16,7 @@ DEBUG <- FALSE
 args <- commandArgs(trailingOnly = TRUE)
 
 # testing
-if (length(args)<15) {
+if (length(args)<10) {
   DEBUG <- TRUE
   DEBUG_OUTPUT <- "D:/Data/test_pwiz3023_slaw/"
   DEBUG_INPUT <- "D:/Data/test_pwiz3023/"
@@ -259,7 +259,7 @@ computeNetworkRawfile <-
     vid <- vertex_attr(netlist, name = "id")
     vdata = anclique@peaklist[sel,]
     # add a column to calculate the rt gap
-    #alle$rtdiff = #apply(abs(rbind(vdata[alle$from,'rtmax']-vdata[alle$to,'rtmin'],vdata[alle$from,'rtmin']-#vdata[alle$to,'r#tmax'])),2,min)
+    alle$rtdiff = apply(abs(rbind(vdata[alle$from,'rtmax']-vdata[alle$to,'rtmin'],vdata[alle$from,'rtmin']-vdata[alle$to,'rtmax'])),2,min)
     #alle <- as.matrix(alle)	
     alle[, 1] <- sel_idx[sel[vid[alle[, 1]]]]
     alle[, 2] <- sel_idx[sel[vid[alle[, 2]]]]

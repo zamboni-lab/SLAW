@@ -11,8 +11,8 @@ RUN strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so
 
 ##We install the 3 packages in the same folder
 #RUN R -e "install.packages('rtree')"
-COPY onlineLCMSaligner /onlineLCMSaligner
-RUN R -e "setwd('/onlineLCMSaligner');library(devtools);install_local('/onlineLCMSaligner')"
+#COPY onlineLCMSaligner /onlineLCMSaligner
+#RUN R -e "setwd('/onlineLCMSaligner');library(devtools);install_local('/onlineLCMSaligner')"
 #COPY MZmineXMLManipulator /MZmineXMLManipulator
 #RUN R -e "setwd('/MZmineXMLManipulator');library(devtools);install_local('/MZmineXMLManipulator')"
 RUN R -e "library(BiocManager);BiocManager::install('rhdf5')"
