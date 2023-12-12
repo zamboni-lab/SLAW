@@ -53,7 +53,7 @@ Discard all profile data and always prioritize the centroid data provided by ven
 If a `parameters.txt` is missing, a default file is created upon executing the Docker.
 In this case, execution of SLAW stops.
 More details on parameters are provided below. 
-* A `*.csv` file that defines the file types.
+* A `samples.csv` file that defines the file types.
 In principle, this csv file consists of two columns (no headers).
 The first column (from the left) reports the file names (with mzML ending).
 Only the basename to the sample will be considered, e.g. if the name includes a full path like `C:/some/path/to/sample1.mzML` only the `sample1.mzML` part will be matched against the file names found in the same folder.
