@@ -37,7 +37,12 @@ def get_val(raw,path):
     if len(path)==0:
         return raw
     k = path[0]
-    return get_val(raw[k],path[1:])
+    # try to get the value
+    try:
+        val = get_val(raw[k],path[1:])
+    except KeyError:
+        raise KeyError("Key "+k+" not found in "+str(raw) + " for path "+str(path))
+    return val
 
 def set_val(raw,path,value,field="value"):
     if len(path)==0:
