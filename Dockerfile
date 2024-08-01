@@ -19,6 +19,7 @@ RUN R -e "setwd('/MZmineXMLManipulator');library(devtools);install_local('/MZmin
 RUN R -e "install.packages('BiocManager')"
 RUN R -e "library(BiocManager);BiocManager::install('rhdf5')"
 RUN R -e "library(devtools);install_github('rformassspectrometry/ProtGenerics');install_github('rformassspectrometry/MsCoreUtils');install_github('rformassspectrometry/Spectra');install_github('rformassspectrometry/MsBackendMgf')"
+RUN R -e "library(BiocManager);BiocManager::install('mzR')"
 
 #Resinstalling data.table as it seems to become problematic after Rhdf5
 RUN R -e "remove.packages('data.table');install.packages('data.table')"
