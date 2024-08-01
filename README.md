@@ -36,8 +36,14 @@ For users, **the recommended way to use SLAW is to pull the container from *Dock
 The SLAW container comes preconfigured with all components and - thanks to the self-optimizing algorithms - it can be used as a black box:
 
 ```
-docker pull zambonilab/slaw:latest
+docker pull zambonilab/slaw:stable
 ```
+
+## Versions
+`v1.0.0` refers to the version that was used for the publication.
+`stable` is the latest stable version. Currently, it refers to v1.0.0.
+`latest` is the latest version, which is the most recent version of the software.
+`dev` is for development and testing. It is not recommended for production.
 
 ## Input files
 
@@ -96,7 +102,7 @@ In addition, **a local output folder must be created**.
 Both folders must be mounted with the `-v` option to either `/input` and `/output` when running the container:
 
 ```
-docker run --rm -v PATH_INPUT:/input -v PATH_OUTPUT:/output zambonilab/slaw:latest
+docker run --rm -v PATH_INPUT:/input -v PATH_OUTPUT:/output zambonilab/slaw:stable
 ```
 
 In the above example, `PATH_INPUT` and `PATH_OUTPUT` should be replaced with the full path of the aforementioned input and output folder.
@@ -157,7 +163,7 @@ However a high number of cores (n>80) may encounter internal R limitations, ther
 Therefore, a more complete command-line example on a Windows machine is:
 
 ```
-docker run --rm -v D:\mydata\input_folder_with_mzML:/input -v D:\mydata\output_folder:/output -e NCORES=16 -e LOGGING=DEBUG zambonilab/slaw:latest
+docker run --rm -v D:\mydata\input_folder_with_mzML:/input -v D:\mydata\output_folder:/output -e NCORES=16 -e LOGGING=DEBUG zambonilab/slaw:stable
 ```
 
 ## Parameters
@@ -206,7 +212,7 @@ If you need to run SLAW on a HPC infrastructure that does not provide the rights
 As SingularityHub went read-only, the recommended way to get the singularity container is to pull it from DockerHub:
 
 ```
- singularity pull slaw.sif docker://zambonilab/slaw:latest
+ singularity pull slaw.sif docker://zambonilab/slaw:stable
 ```
 
 A similar processing can be run using singularity like this:

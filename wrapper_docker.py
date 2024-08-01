@@ -142,7 +142,7 @@ if __name__=="__main__":
         ###We check the parameter
         pcheck = ParametersChecker(vui.path_yaml)
         ph = pcheck.check_parameters()
-        #@todo
+        # todo
         ph.write_parameters(PATH_YAML)
         if os.path.isfile(PATH_YAML):
             dummy = shutil.copyfile(PATH_YAML, PATH_INITIAL)

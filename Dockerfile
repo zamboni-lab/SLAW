@@ -27,6 +27,10 @@ RUN R -e "remove.packages('data.table');install.packages('data.table')"
 COPY MZmine-2.52-Linux /MZmine-2.52-Linux
 COPY pylcmsprocessing /pylcmsprocessing
 
+# Python
+COPY requirements.txt ./requirements.txt
+RUN pip3 install -r requirements.txt
+
 #This is the 2 workflow running script
 COPY run_lcms_processing.sh /run_workflow.sh
 COPY wrapper_docker.py /wrapper_docker.py

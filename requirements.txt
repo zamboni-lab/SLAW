@@ -1,0 +1,11 @@
+pandas
+psutil
+PyYAML
+numpy
+scikit-learn
+statsmodels
+wheel
+plotly
+kaleido
+ms_entropy
+pyteomics
