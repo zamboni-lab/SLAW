@@ -1,18 +1,18 @@
-suppressWarnings(suppressMessages(library(optparse,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
-suppressWarnings(suppressMessages(library(DBI,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
-suppressWarnings(suppressMessages(library(RSQLite,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
-suppressWarnings(suppressMessages(library(stringr,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
-suppressWarnings(suppressMessages(library(tools,warn.conflicts = FALSE,quietly = TRUE,verbose = FALSE)))
+suppressWarnings(suppressMessages(library(optparse, warn.conflicts = FALSE, quietly = TRUE, verbose = FALSE)))
+suppressWarnings(suppressMessages(library(DBI, warn.conflicts = FALSE, quietly = TRUE, verbose = FALSE)))
+suppressWarnings(suppressMessages(library(RSQLite, warn.conflicts = FALSE, quietly = TRUE, verbose = FALSE)))
+suppressWarnings(suppressMessages(library(stringr, warn.conflicts = FALSE, quietly = TRUE, verbose = FALSE)))
+suppressWarnings(suppressMessages(library(tools, warn.conflicts = FALSE, quietly = TRUE, verbose = FALSE)))
 
-
-###CONSTANT
-DBSAMPLES <-  "samples" ###Containing peak and path
-DBPROCESSINGSAMPLE <-  "processing" ###Containing peak and path
+### CONSTANT
+DBSAMPLES <- "samples" ### Containing peak and path
+DBPROCESSINGSAMPLE <- "processing" ### Containing peak and path
 DBPEAKSPICKING <- "peakpicking"
-DBNAME <-    "MSexperiment"
+DBNAME <- "MSexperiment"
 
+args <- commandArgs(trailingOnly = TRUE)
 
-option_list = list(
+option_list <- list(
   make_option(
     c("-d", "--directory"),
     type = "character",
@@ -30,8 +30,8 @@ option_list = list(
   make_option(
     c("-s", "--summary"),
     type = "character",
-    default = "summary.csv",
-    help = "data file summarizing the experiments [default= %default]",
+    default = "samples.csv",
+    help = "CSV summarizing the file types [default= %default]",
     metavar = "character"
   ),
   make_option(
@@ -69,30 +69,27 @@ option_list = list(
     help = "name of default database [default= %default]",
     metavar = "character"
   ),
-    make_option(
+  make_option(
     c("-o", "--pathms2"),
     type = "character",
     default = NA,
     help = "path to MS2 data if there is some eventually [default= %default]",
     metavar = "character"
   )
-
 )
 
+opt_parser <- OptionParser(option_list = option_list)
+opt <- parse_args(opt_parser, args = args)
 
-
-
-opt_parser <-  OptionParser(option_list = option_list)
-opt <- parse_args(opt_parser)
-
-#####We move to the target experiment repostory.
-if (!is.null(opt$directory))
+##### We move to the target experiment repostory.
+if (!is.null(opt$directory)) {
   setwd(opt$directory)
+}
 
 # print(getwd())
-####Parsing files and replicates informations
-paths <-  NULL
-replicates <-  NULL
+#### Parsing files and replicates informations
+paths <- NULL
+replicates <- NULL
 types <- NULL
 MSlevels <- NULL
 
@@ -107,63 +104,62 @@ if (file.exists(opt$summary)) {
     )
 
   path_dir <- NULL
-  ###Getting the pah of the raw files
-  if(dir.exists(opt$mzml)){
+  ### Getting the pah of the raw files
+  if (dir.exists(opt$mzml)) {
     path_dir <- opt$mzml
-  }else{
+  } else {
     path_dir <- opt$directory
   }
-  paths <- normalizePath(list.files(path_dir, full.names = TRUE,pattern=".mzX?ML"))
+  paths <- normalizePath(list.files(path_dir, full.names = TRUE, pattern = ".mzX?ML"))
 
   expected_paths <- tsummary[[opt$summarypath]]
   vm <- match(basename(expected_paths), basename(paths))
-  if (any(is.na(vm)))
+  if (any(is.na(vm))) {
     stop("Missing files :", paste(expected_paths[is.na(vm)], sep = ", "))
-  ##We reorder path
-  
-  if (anyDuplicated(vm)){
-    stop("Duplicated paths in summary.txt:",paste(expected_paths[duplicated(vm)], sep = ", "))
   }
-  
-  
+  ## We reorder path
+
+  if (anyDuplicated(vm)) {
+    stop("Duplicated paths in summary.txt:", paste(expected_paths[duplicated(vm)], sep = ", "))
+  }
+
+
   paths <- paths[vm]
   rnames <- opt$summary
   if (opt$summaryreplicate %in% colnames(tsummary)) {
-    replicates <-  tsummary[[opt$summaryreplicate]]
-  } else{
-    replicates <-  rep(1, length(paths))
+    replicates <- tsummary[[opt$summaryreplicate]]
+  } else {
+    replicates <- rep(1, length(paths))
   }
-  
-  if (opt$summarytype %in% colnames(tsummary)){
+
+  if (opt$summarytype %in% colnames(tsummary)) {
     types <- tsummary[[opt$summarytype]]
 
 
-    ###Three type of terminology are authorized, QC,blank,sample and QC and a number.
-    msamp <- types=="sample"
-    mQC <- types=="QC"|types=="qc"
-    mBlank <- types=="blank"
+    ### Three type of terminology are authorized, QC,blank,sample and QC and a number.
+    msamp <- types == "sample"
+    mQC <- types == "QC" | types == "qc"
+    mBlank <- types == "blank" | types == "BLANK"
 
-    ###We extrct the dilution QCs.
-    vmatch <-str_match(types,"QC([0-9]+)")
+    ### We extrct the dilution QCs.
+    vmatch <- str_match(types, "QC([0-9]+)")
     mDilQCs <- !is.na(vmatch)
-
-  }else{
-    types <- rep("sample",length(paths))
+  } else {
+    types <- rep("sample", length(paths))
   }
-
-} else{
-  if(dir.exists(opt$mzml)){
-      paths <- normalizePath(list.files(opt$mzml, full.names = TRUE,pattern=".mzX?ML"))
-  }else{
-    paths <- normalizePath(list.files(opt$directory, full.names = TRUE,pattern=".mzX?ML"))
+} else {
+  if (dir.exists(opt$mzml)) {
+    paths <- normalizePath(list.files(opt$mzml, full.names = TRUE, pattern = ".mzX?ML"))
+  } else {
+    paths <- normalizePath(list.files(opt$directory, full.names = TRUE, pattern = ".mzX?ML"))
   }
-  types <- rep("sample",length(paths))
-  replicates <-  rep(1, length(paths))
+  types <- rep("sample", length(paths))
+  replicates <- rep(1, length(paths))
 }
 
-levels_str <- rep("MS2",length(paths))
-ms1_str <- rep("MS1",length(paths))
-levels_str <- ifelse(types=="MS2",levels_str,ms1_str)
+levels_str <- rep("MS2", length(paths))
+ms1_str <- rep("MS1", length(paths))
+levels_str <- ifelse(types == "MS2" | types == "ms2", levels_str, ms1_str)
 
 sample_tab <- data.frame(
   id = seq_along(paths),
@@ -174,41 +170,48 @@ sample_tab <- data.frame(
   stringsAsFactors = FALSE
 )
 
-###We check if an MS2 argument is present if it the case we add the samples in the table as MS2
-if(!is.na(opt$pathms2)){
-  ##We add the MS2
-  path_ms2 <- list.files(opt$pathms2,full.names=TRUE)
-  ##Now we rebuild the next step
+### Print a summary of the number of samples, MS2, and QCs
+print(paste("Number of samples:", nrow(sample_tab)))
+print(paste("Number of MS2:", sum(sample_tab$types == "MS2")))
+print(paste("Number of QCs:", sum(sample_tab$types == "QC")))
+
+### We check if an MS2 argument is present if it the case we add the samples in the table as MS2
+if (!is.na(opt$pathms2)) {
+  ## We add the MS2
+  path_ms2 <- list.files(opt$pathms2, full.names = TRUE)
+  ## Now we rebuild the next step
   supp_tab <- data.frame(
-    id = seq_along(path_ms2)+nrow(sample_tab),
+    id = seq_along(path_ms2) + nrow(sample_tab),
     path = path_ms2,
-    level = rep("MS2",length(path_ms2)),
-    types = rep("MS2",length(path_ms2)),
-    replicate = as.integer(rep(0,length(path_ms2))),
+    level = rep("MS2", length(path_ms2)),
+    types = rep("MS2", length(path_ms2)),
+    replicate = as.integer(rep(0, length(path_ms2))),
     stringsAsFactors = FALSE
   )
-  sample_tab <- rbind(sample_tab,supp_tab)
+  sample_tab <- rbind(sample_tab, supp_tab)
 }
 
 db <- dbConnect(RSQLite::SQLite(), opt$database)
-dd <- dbExecute(db,"PRAGMA foreign_keys = ON")
+dd <- dbExecute(db, "PRAGMA foreign_keys = ON")
 
-###WE always activate the foreign key constrainct pracma
-dd <- dbExecute(db,paste("CREATE TABLE IF NOT EXISTS ",DBSAMPLES," (
+### WE always activate the foreign key constrainct pracma
+dd <- dbExecute(db, paste("CREATE TABLE IF NOT EXISTS ", DBSAMPLES, " (
           id INTEGER PRIMARY KEY,
           path TEXT NOT NULL,
           level TEXT NOT NULL,
           types TEXT NOT NULL,
           replicate INTEGER NOT NULL
-)",sep=""))
+)", sep = ""))
 
-###We get the list of ids and rmeove the existing one, if they exists.
+### We get the list of ids and rmeove the existing one, if they exists.
 
 
-###We then isert the values
-dd <- dbAppendTable(conn = db,
-             sample_tab,
-             name = DBSAMPLES)
+### We then isert the values
+dd <- dbAppendTable(
+  conn = db,
+  sample_tab,
+  name = DBSAMPLES
+)
 
-####We close the database in every case.
+#### We close the database in every case.
 dbDisconnect(db)
