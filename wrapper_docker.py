@@ -117,9 +117,44 @@ if __name__=="__main__":
     path_ms2 = None
     if "MS2" in os.environ:
         path_ms2 = os.environ["MS2"]
-    ###We try to guess the polarity form the middle file.
-    pol = exp.guess_polarity(INPUT)
-    logging.info("Polarity detected: " + exp.polarity)
+        
+    
+    try:
+        pol = exp.guess_polarity(INPUT)
+        logging.info("Polarity detected: " + exp.polarity)
+    except:
+        logging.error("Polarity could not be determined. Likely, there are no mzML or mzXML files in the input folder")
+        sys.exit()
+
+    # check if a *.csv file exists in the input folder.
+    if not os.path.isfile(os.path.join(INPUT, "samples.csv")):
+        # if not, create one as a csv file that include all *.mzML and *.mzXML files in the input folder in the first column.
+        # in the second column, write "sample" by default. In case the sample name includes "QC", write "QC" instead.
+        # In case the sample name includes "blank"  write "blank" instead. The check should be case insensitive.
+        # create a file called "summary.csv" in the input folder.
+        # the file should have two columns: "file" and "sample"
+        with open(os.path.join(INPUT, "samples.csv"), "w") as f:
+            f.write("path,type\n")
+            for file in os.listdir(INPUT):
+                if file.endswith(".mzML") or file.endswith(".mzXML"):
+                    if "qc" in file.lower():
+                        f.write(file + ",QC\n")
+                    elif "blank" in file.lower():
+                        f.write(file + ",blank\n")
+                    elif "ms2" in file.lower():
+                        f.write(file + ",MS2\n")
+                    else:
+                        f.write(file + ",sample\n")
+        logging.info("samples.csv file created.")
+        os.environ["SLAWSUMMARY"] = os.path.join(INPUT, "samples.csv")
+    else:
+        # find the first csv file in the input folder
+        for file in os.listdir(INPUT):
+            if file.endswith(".csv"):
+                os.environ["SLAWSUMMARY"] = os.path.join(INPUT, file)
+                break
+
+
     exp.initialise_database(num_cpus, OUTPUT_DIR, pol, INPUT, ["ADAP"], 1, path_ms2=path_ms2)
     timer.store_point("initialisation")
     timer.print_point("initialisation")
