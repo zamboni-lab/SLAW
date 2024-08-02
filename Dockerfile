@@ -25,7 +25,7 @@ RUN R -e "library(BiocManager);BiocManager::install('mzR')"
 
 #Resinstalling data.table as it seems to become problematic after Rhdf5
 RUN R -e "remove.packages('data.table');install.packages('data.table')"
-RUN R -e "install.packages('RSQLite')"
+RUN R -e "install.packages('RSQLite');install.packages('xcms');"
 
 #Dependency copy
 COPY MZmine-2.52-Linux /MZmine-2.52-Linux
